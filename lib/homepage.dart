@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'appointmentgambang.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -107,58 +108,43 @@ class _HomepageState extends State<Homepage> {
     return Column(
       children: [
         const SizedBox(
-            height: 16.0), // Space between Dual Campus and Select Campus box
-        Container(
-          padding: const EdgeInsets.symmetric(
-              vertical: 10.0, horizontal: 16.0), // Adjusted padding
-          decoration: BoxDecoration(
-            color: Colors.white, // Background color of the box
-            border: Border.all(
-                color: Colors.teal, width: 2.0), // Border color and width
-            borderRadius: BorderRadius.circular(8.0), // Rounded corners
-          ),
-          child: Column(
-            children: [
-              const Text(
-                'Select Campus',
-                style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(
-                  height: 10.0), // Reduced space between title and buttons
-              buildCampusButton('UMPSA Gambang'),
-              const SizedBox(height: 10.0),
-              buildCampusButton('UMPSA Pekan'),
-            ],
-          ),
+            height: 16.0), // Space between Dual Campus and Select Campus title
+        const Text(
+          'Select Campus',
+          style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
         ),
+        const SizedBox(height: 10.0), // Space between title and buttons
+        buildCampusButton('UMPSA Gambang'),
+        const SizedBox(height: 10.0),
+        buildCampusButton('UMPSA Pekan'),
       ],
     );
   }
 
   Widget buildCampusButton(String campusName) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
-          backgroundColor: Colors.teal[100], // Light turquoise background color
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.0),
-          ),
+    return InkWell(
+      onTap: () {
+        if (campusName == 'UMPSA Gambang') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AppointmentGambangPage()),
+          );
+        } else if (campusName == 'UMPSA Pekan') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AppointmentPekanPage()),
+          );
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
+        decoration: BoxDecoration(
+          color: Colors.teal, // Background color of the button
+          borderRadius: BorderRadius.circular(8.0), // Rounded corners
         ),
-        onPressed: () {
-          // Add navigation or action here for campus selection
-        },
-        child: Row(
-          children: [
-            const Icon(Icons.school, color: Colors.teal),
-            const SizedBox(width: 10.0),
-            Text(
-              campusName,
-              style: const TextStyle(fontSize: 16.0, color: Colors.black),
-            ),
-          ],
+        child: Text(
+          campusName,
+          style: const TextStyle(color: Colors.white, fontSize: 16.0),
         ),
       ),
     );
