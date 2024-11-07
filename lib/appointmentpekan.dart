@@ -1,34 +1,36 @@
+import 'package:appointmentpractice/appointmentconfirm.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'appointmentconfirm.dart';
 
-class Appointmentgambang extends StatefulWidget {
-  const Appointmentgambang({super.key});
+class Appointmentpekan extends StatefulWidget {
+  const Appointmentpekan({super.key});
 
   @override
-  State<Appointmentgambang> createState() => _AppointmentgambangState();
+  State<Appointmentpekan> createState() => _AppointmentpekanState();
 }
 
-class _AppointmentgambangState extends State<Appointmentgambang> {
+class _AppointmentpekanState extends State<Appointmentpekan> {
   DateTime selectedDate = DateTime.now();
-  String selectedService = 'Dental(3)';
+  String selectedService = 'Hypertension(3)';
   String selectedTimeslot = '9:00 AM';
 
   final List<String> services = [
-    'Dental(3)',
-    'Hypertension(1)',
+    'Hypertension(3)',
     'Obesity(2)',
-    'Physiotherapy(3)',
+    'Dental(3)',
     'Stress Consultation(1)',
+    'Physiotherapy(3)',
     'Checkup(3)', //first time go to checkout without knowing their symptom
   ];
 
   // Map to hold timeslots for each service
   final Map<String, List<String>> serviceTimeslots = {
-    'Dental(3)': ['9:00 AM', '2:00 PM', '5:00 PM'],
-    'Hypertension(1)': ['10:00 AM'],
-    'Obesity(2)': ['11:00 AM', '2.00 PM'],
-    'Physiotherapy(3)': ['1:00 PM', '3:30 PM', '5:30 PM'],
+    'Hypertension(3)': ['9:00 AM', '2:00 PM', '5:00 PM'],
+    'Obesity(2)': ['10:00 AM', '12.00 PM'],
+    'Dental(3)': ['11:00 AM', '2.00 PM', '4.00 PM'],
     'Stress Consultation(1)': ['9:30 AM'],
+    'Physiotherapy(3)': ['1:00 PM', '3:30 PM', '5:30 PM'],
     'Checkup(3)': ['9.00 AM', '12.00 PM', '3.00 PM'],
   };
 
@@ -61,7 +63,8 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Services'),
-        backgroundColor: const Color(0xFF009FA0), // Turquoise color for the AppBar
+        backgroundColor:
+            const Color(0xFF009FA0), // Turquoise color for the AppBar
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -79,7 +82,8 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
                 InkWell(
                   onTap: () => _selectDate(context),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 8.0, horizontal: 16.0),
                     decoration: BoxDecoration(
                       color: Colors.teal[100],
                       borderRadius: BorderRadius.circular(8.0),
@@ -131,7 +135,6 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
               ),
             ),
             const SizedBox(height: 20.0),
-
             // Timeslot selection
             const Text(
               'Select a timeslot',
@@ -166,11 +169,23 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
                 ),
               ),
               onPressed: () {
-                // Action on book button press
+                // Navigate to the appointment confirmation page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => Appointmentconfirm(
+                            selectedService: selectedService,
+                            selectedTimeslot: selectedTimeslot,
+                            selectedDate: selectedDate,
+                          )),
+                );
               },
               child: const Text(
                 'BOOK',
-                style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
               ),
             ),
           ],
