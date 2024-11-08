@@ -1,3 +1,4 @@
+import 'package:appointmentpractice/forgotpass.dart';
 import 'package:flutter/material.dart';
 import 'homepage.dart'; // Import the Homepage class
 
@@ -24,61 +25,17 @@ class _LoginPageState extends State<LoginPage> {
     myColor = Theme.of(context).primaryColor;
     mediaSize = MediaQuery.of(context).size;
 
-    return Container(
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: const AssetImage("assets/images/doc.png"),
-          fit: BoxFit.cover,
-          colorFilter:
-              ColorFilter.mode(myColor.withOpacity(0.2), BlendMode.dstATop),
+    return Scaffold(
+      backgroundColor: Colors.white,  // Set a plain white background
+      body: SingleChildScrollView(
+        // Allow scrolling for smaller screens
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildBottom(), // Call _buildBottom here for the form content
+          ],
         ),
       ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SingleChildScrollView(
-          // Allow scrolling
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildTop(),
-              _buildBottom(), // Call _buildBottom here
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTop() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: mediaSize.width,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.location_on_sharp,
-                size: 100,
-                color: Colors.white,
-              ),
-              const SizedBox(
-                  height: 20), // Add some space between the icon and text
-              Text(
-                "DUAL CAMPUS BOOKING",
-                textAlign: TextAlign.center, // Center text alignment
-                style: TextStyle(
-                    color:
-                        turquoiseColor, // Set to the specified turquoise color
-                    fontWeight: FontWeight.bold,
-                    fontSize: 40,
-                    letterSpacing: 2),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -105,11 +62,11 @@ class _LoginPageState extends State<LoginPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           "Welcome",
-          style: const TextStyle(
-              color: Colors.black, // Set text color to black
-              fontSize: 32,
+          style: TextStyle(
+              color: Colors.blueGrey, // Set text color to black
+              fontSize: 30,
               fontWeight: FontWeight.w500),
         ),
         _buildGreyText("Please login with your information"),
@@ -123,7 +80,7 @@ class _LoginPageState extends State<LoginPage> {
         _buildRememberForgot(),
         const SizedBox(height: 20),
         _buildLoginButton(),
-        const SizedBox(height: 20),
+        const SizedBox(height: 260),
       ],
     );
   }
@@ -162,27 +119,36 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildRememberForgot() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Checkbox(
-              value: rememberUser,
-              onChanged: (value) {
-                setState(() {
-                  rememberUser = value ?? false; // Handle null case
-                });
-              },
-            ),
-            _buildGreyText("Remember me"),
-          ],
-        ),
-        TextButton(
-            onPressed: () {}, child: _buildGreyText("I forgot my password"))
-      ],
-    );
-  }
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Row(
+        children: [
+          Checkbox(
+            value: rememberUser,
+            onChanged: (value) {
+              setState(() {
+                rememberUser = value ?? false; // Handle null case
+              });
+            },
+          ),
+          _buildGreyText("Remember me"),
+        ],
+      ),
+      TextButton(
+        onPressed: () {
+          // Navigate to the ForgotPassword page
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => Forgotpass()),
+          );
+        },
+        child: _buildGreyText("Forgot password"),
+      ),
+    ],
+  );
+}
+
 
   Widget _buildLoginButton() {
     return ElevatedButton(
@@ -195,7 +161,7 @@ class _LoginPageState extends State<LoginPage> {
       },
       style: ElevatedButton.styleFrom(
         shape: const StadiumBorder(),
-        elevation: 20,
+        elevation: 10,
         shadowColor: turquoiseColor, // Set to the specified turquoise color
         minimumSize: const Size.fromHeight(60),
         backgroundColor: turquoiseColor, // Set to the specified turquoise color
@@ -203,7 +169,7 @@ class _LoginPageState extends State<LoginPage> {
       child: const Text(
         "LOGIN",
         style: TextStyle(
-          color: Colors.black, // Set text color to black
+          color: Colors.white, // Set text color to black
           fontWeight: FontWeight.bold, // Make the text bold
         ),
       ),

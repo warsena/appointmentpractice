@@ -1,4 +1,3 @@
-import 'package:appointmentpractice/appointmentconfirm.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'appointmentconfirm.dart';
@@ -173,7 +172,7 @@ class _AppointmentpekanState extends State<Appointmentpekan> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => Appointmentconfirm(
+                      builder: (context) => AppointmentConfirm(
                             selectedService: selectedService,
                             selectedTimeslot: selectedTimeslot,
                             selectedDate: selectedDate,
