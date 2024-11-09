@@ -16,7 +16,7 @@ class _LandingpageState extends State<Landingpage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset('assets/images/umplogo.png', height: 100, width: 100),
+            Image.asset('assets/images/umplogo.png', height: 150, width: 110),
             const SizedBox(height: 20),
             const Text(
               'Dual Campus Booking',  
