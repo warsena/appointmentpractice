@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'appointmentgambang.dart';
 import 'appointmentpekan.dart';
+import 'profile.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -15,7 +16,9 @@ class _HomepageState extends State<Homepage> {
   // List of widgets for each page
   final List<Widget> _pages = const [
     Center(child: Text('Home Page')),
-    Center(child: Text('Calendar Page')), // This will be replaced by Campus Selection
+    Center(
+        child:
+            Text('Calendar Page')), // This will be replaced by Campus Selection
     Center(child: Text('Notifications Page')),
     Center(child: Text('Settings Page')),
   ];
@@ -40,10 +43,12 @@ class _HomepageState extends State<Homepage> {
             ),
           ),
         ),
-        backgroundColor: const Color(0xFF009FA0), // Turquoise color for the AppBar
+        backgroundColor:
+            const Color(0xFF009FA0), // Turquoise color for the AppBar
         toolbarHeight: 60.0, // Adjust the height if needed
       ),
-      body: _selectedIndex == 1 ? buildCampusSelection() : _pages[_selectedIndex],
+      body:
+          _selectedIndex == 1 ? buildCampusSelection() : _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
@@ -80,16 +85,22 @@ class _HomepageState extends State<Homepage> {
             label: '',
           ),
           BottomNavigationBarItem(
-            icon: GestureDetector(
-              onTap: () => _onItemTapped(3),
-              child: const SizedBox(
-                width: 24.0,
-                height: 24.0,
-                child: Icon(Icons.settings),
-              ),
-            ),
-            label: '',
-          ),
+  icon: GestureDetector(
+    onTap: () {
+      // Navigate to the Profile page when the settings icon is clicked
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => Profile()),
+      );
+    },
+    child: const SizedBox(
+      width: 24.0,
+      height: 24.0,
+      child: Icon(Icons.settings),
+    ),
+  ),
+  label: '',
+),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: const Color(0xFF009FA0),
@@ -110,9 +121,11 @@ class _HomepageState extends State<Homepage> {
           style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 20.0),
-        buildCampusButton('UMPSA Gambang', Appointmentgambang()), // Navigate to Appointmentgambang
+        buildCampusButton('UMPSA Gambang',
+            Appointmentgambang()), // Navigate to Appointmentgambang
         const SizedBox(height: 10.0),
-        buildCampusButton('UMPSA Pekan', Appointmentpekan()), // Navigate to Appointmentpekan
+        buildCampusButton(
+            'UMPSA Pekan', Appointmentpekan()), // Navigate to Appointmentpekan
       ],
     );
   }

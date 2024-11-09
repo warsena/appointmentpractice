@@ -162,7 +162,7 @@ class _AppointmentpekanState extends State<Appointmentpekan> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF009FA0),
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                padding: const EdgeInsets.symmetric(vertical: 10.0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.0),
                 ),
@@ -180,7 +180,7 @@ class _AppointmentpekanState extends State<Appointmentpekan> {
                 );
               },
               child: const Text(
-                'BOOK',
+                'Book',
                 style: TextStyle(
                     fontSize: 16.0,
                     fontWeight: FontWeight.bold,

@@ -169,7 +169,7 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
                 // Action on book button press
               },
               child: const Text(
-                'BOOK',
+                'Book',
                 style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ),

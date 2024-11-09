@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'newpassword.dart';
 
 class Verification extends StatefulWidget {
   const Verification({super.key});
@@ -18,7 +19,7 @@ class _VerificationState extends State<Verification> {
     for (var controller in _otpControllers) {
       controller.dispose();
     }
-    super.dispose(); //dispose
+    super.dispose();
   }
 
   @override
@@ -63,14 +64,16 @@ class _VerificationState extends State<Verification> {
                       width: 40,
                       height: 40,
                       child: TextField(
-                        controller: _otpControllers[i], //entering a number in one box won't affect the others
+                        controller: _otpControllers[
+                            i], //entering a number in one box won't affect the others
                         keyboardType: TextInputType.number,
                         textAlign: TextAlign.center,
                         maxLength: 1,
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
                           counterText: '', // Remove character counter
-                          contentPadding: const EdgeInsets.symmetric(vertical: 8), // Center text vertically
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 8), // Center text vertically
                         ),
                       ),
                     ),
@@ -85,6 +88,11 @@ class _VerificationState extends State<Verification> {
             const SizedBox(height: 40),
             ElevatedButton(
               onPressed: () {
+                //Navigate to the new password page
+                Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const NewPassword()));
                 // Handle OTP verification
                 // ...
               },
