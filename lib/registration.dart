@@ -13,7 +13,8 @@ class _RegistrationFormState extends State<RegistrationForm> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   String? _gender;
   String? _userType;
@@ -54,7 +55,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                   controller: _nameController,
                   decoration: const InputDecoration(
                     labelText: 'Name',
-                    border: InputBorder.none,  // Removes internal border
+                    border: InputBorder.none, // Removes internal border
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -84,7 +85,8 @@ class _RegistrationFormState extends State<RegistrationForm> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your email';
                     }
-                    if (!RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+                    if (!RegExp(
+                            r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
                         .hasMatch(value)) {
                       return 'Please enter a valid email address';
                     }
@@ -171,7 +173,8 @@ class _RegistrationFormState extends State<RegistrationForm> {
                   ),
                   items: const [
                     DropdownMenuItem(value: 'Student', child: Text('Student')),
-                    DropdownMenuItem(value: 'Lecturer', child: Text('Lecturer')),
+                    DropdownMenuItem(
+                        value: 'Lecturer', child: Text('Lecturer')),
                     DropdownMenuItem(value: 'Doctor', child: Text('Doctor')),
                   ],
                   validator: (value) {

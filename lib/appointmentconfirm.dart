@@ -7,11 +7,11 @@ class AppointmentConfirm extends StatefulWidget {
   final DateTime selectedDate;
 
   const AppointmentConfirm({
-    Key? key,
+    super.key,
     required this.selectedService,
     required this.selectedTimeslot,
     required this.selectedDate,
-  }) : super(key: key);
+  });
 
   @override
   State<AppointmentConfirm> createState() => _AppointmentConfirmState();

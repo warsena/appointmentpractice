@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "754378976666",
+    "project_id": "my-firebase-fyp-b2455",
+    "storage_bucket": "my-firebase-fyp-b2455.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:754378976666:android:94303a37d5b95bbe7c1e23",
+        "android_client_info": {
+          "package_name": "com.example.appointmentpractice"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIrqPjpr40VPByDEd0Fv6nXvtwGbkpXHY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

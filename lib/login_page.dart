@@ -18,7 +18,7 @@ class _LoginPageState extends State<LoginPage> {
   bool isPasswordVisible = false; // Variable to track password visibility
 
   // Define the turquoise color
-  final Color turquoiseColor = Color(0xFF009FA0);
+  final Color turquoiseColor = const Color(0xFF009FA0);
 
   @override
   Widget build(BuildContext context) {
@@ -140,7 +140,7 @@ class _LoginPageState extends State<LoginPage> {
           // Navigate to the ForgotPassword page
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => Forgotpass()),
+            MaterialPageRoute(builder: (context) => const Forgotpass()),
           );
         },
         child: _buildGreyText("Forgot password"),

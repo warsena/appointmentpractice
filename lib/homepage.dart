@@ -90,7 +90,7 @@ class _HomepageState extends State<Homepage> {
       // Navigate to the Profile page when the settings icon is clicked
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => Profile()),
+        MaterialPageRoute(builder: (context) => const Profile()),
       );
     },
     child: const SizedBox(
@@ -122,10 +122,10 @@ class _HomepageState extends State<Homepage> {
         ),
         const SizedBox(height: 20.0),
         buildCampusButton('UMPSA Gambang',
-            Appointmentgambang()), // Navigate to Appointmentgambang
+            const Appointmentgambang()), // Navigate to Appointmentgambang
         const SizedBox(height: 10.0),
         buildCampusButton(
-            'UMPSA Pekan', Appointmentpekan()), // Navigate to Appointmentpekan
+            'UMPSA Pekan', const Appointmentpekan()), // Navigate to Appointmentpekan
       ],
     );
   }
