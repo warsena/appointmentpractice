@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'appointmentgambang.dart';
-import 'appointmentpekan.dart';
-import 'profile.dart';
+import '../appointmentgambang.dart';
+import '../appointmentpekan.dart';
+import '../profile.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -90,7 +90,7 @@ class _HomepageState extends State<Homepage> {
       // Navigate to the Profile page when the settings icon is clicked
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const Profile()),
+        MaterialPageRoute(builder: (context) => Profile()),
       );
     },
     child: const SizedBox(

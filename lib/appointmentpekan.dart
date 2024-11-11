@@ -82,7 +82,7 @@ class _AppointmentpekanState extends State<Appointmentpekan> {
                   onTap: () => _selectDate(context),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        vertical: 8.0, horizontal: 16.0),
+                        vertical: 8.0, horizontal: 15.0),
                     decoration: BoxDecoration(
                       color: Colors.teal[100],
                       borderRadius: BorderRadius.circular(8.0),

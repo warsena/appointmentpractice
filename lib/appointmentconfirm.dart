@@ -112,7 +112,9 @@ class _AppointmentConfirmState extends State<AppointmentConfirm> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF009FA0),
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                padding: const EdgeInsets.symmetric(
+                    vertical: 10.0,
+                    horizontal: 40.0), // Adjusted padding for larger size
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.0),
                 ),
@@ -125,7 +127,7 @@ class _AppointmentConfirmState extends State<AppointmentConfirm> {
               child: Text(
                 isConfirmed ? 'CLOSE' : 'CONFIRM',
                 style: const TextStyle(
-                  fontSize: 16.0,
+                  fontSize: 18.0, // Increased font size
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),

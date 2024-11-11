@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class RegistrationForm extends StatefulWidget {
@@ -9,24 +11,88 @@ class RegistrationForm extends StatefulWidget {
 
 class _RegistrationFormState extends State<RegistrationForm> {
   final _formKey = GlobalKey<FormState>();
+  final _auth = FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance;
+  
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
 
   String? _gender;
   String? _userType;
   String? _campus;
+  bool _isLoading = false;
 
-  void _submitForm() {
+  // Visibility toggles for password fields
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
+
+
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      // Handle registration logic here
-      // You can call an API or save data locally
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registration successful')),
-      );
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        // Create user with email and password
+        UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+
+        // Get the newly created user's ID
+        String userId = userCredential.user!.uid;
+
+        // Create user document in Firestore
+        await _firestore.collection('User').doc(userId).set({
+          'User_ID': userId,
+          'User_Name': _nameController.text.trim(),
+          'User_Email': _emailController.text.trim(),
+          'User_Contact': _contactController.text.trim(),
+          'User_Gender': _gender,
+          'User_Password': _passwordController.text, // Note: Storing password in Firestore is not recommended for security
+          'User_Confirm_Password' : _passwordController.text,
+          'User_Type': _userType,
+          'Campus': _campus,
+          'Created_At': FieldValue.serverTimestamp(),
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Registration successful')),
+        );
+
+        // Navigate to login or home screen
+        // Navigator.pushReplacement(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => LoginScreen()),
+        // );
+
+      } on FirebaseAuthException catch (e) {
+        String errorMessage = 'An error occurred';
+        
+        if (e.code == 'weak-password') {
+          errorMessage = 'The password provided is too weak';
+        } else if (e.code == 'email-already-in-use') {
+          errorMessage = 'An account already exists for this email';
+        } else if (e.code == 'invalid-email') {
+          errorMessage = 'Please enter a valid email address';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -55,7 +121,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                   controller: _nameController,
                   decoration: const InputDecoration(
                     labelText: 'Name',
-                    border: InputBorder.none, // Removes internal border
+                    border: InputBorder.none,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -85,8 +151,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your email';
                     }
-                    if (!RegExp(
-                            r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+                    if (!RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
                         .hasMatch(value)) {
                       return 'Please enter a valid email address';
                     }
@@ -173,8 +238,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                   ),
                   items: const [
                     DropdownMenuItem(value: 'Student', child: Text('Student')),
-                    DropdownMenuItem(
-                        value: 'Lecturer', child: Text('Lecturer')),
+                    DropdownMenuItem(value: 'Lecturer', child: Text('Lecturer')),
                     DropdownMenuItem(value: 'Doctor', child: Text('Doctor')),
                   ],
                   validator: (value) {
@@ -206,8 +270,8 @@ class _RegistrationFormState extends State<RegistrationForm> {
                     border: InputBorder.none,
                   ),
                   items: const [
+                    DropdownMenuItem(value: 'Gambang', child: Text('Gambang')),
                     DropdownMenuItem(value: 'Pekan', child: Text('Pekan')),
-                    DropdownMenuItem(value: 'Pahang', child: Text('Pahang')),
                   ],
                   validator: (value) {
                     if (value == null) {
@@ -228,19 +292,33 @@ class _RegistrationFormState extends State<RegistrationForm> {
                 ),
                 child: TextFormField(
                   controller: _passwordController,
-                  decoration: const InputDecoration(
+                  obscureText: !_isPasswordVisible,
+                  decoration: InputDecoration(
                     labelText: 'Password',
                     border: InputBorder.none,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                    ),
                   ),
-                  obscureText: true,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your password';
+                    }
+                    if (value.length < 6) {
+                      return 'Password must be at least 6 characters';
                     }
                     return null;
                   },
                 ),
               ),
+              
               const SizedBox(height: 10),
 
               // Confirm Password
@@ -249,6 +327,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey),
                   borderRadius: BorderRadius.circular(8.0),
+                  
                 ),
                 child: TextFormField(
                   controller: _confirmPasswordController,
@@ -272,7 +351,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
 
               // Register Button
               ElevatedButton(
-                onPressed: _submitForm,
+                onPressed: _isLoading ? null : _submitForm,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.teal,
                   padding: const EdgeInsets.symmetric(vertical: 12.0),
@@ -280,15 +359,27 @@ class _RegistrationFormState extends State<RegistrationForm> {
                     borderRadius: BorderRadius.circular(8.0),
                   ),
                 ),
-                child: const Text(
-                  'Register',
-                  style: TextStyle(fontSize: 16.0, color: Colors.white),
-                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        'Register',
+                        style: TextStyle(fontSize: 16.0, color: Colors.white),
+                      ),
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _contactController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
   }
 }

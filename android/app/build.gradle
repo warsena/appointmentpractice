@@ -44,3 +44,4 @@ flutter {
     source = "../.."
 }
 
+apply plugin : 'com.google.gms.google-services' // Add this at the bottom
