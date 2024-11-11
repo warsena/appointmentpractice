@@ -1,6 +1,8 @@
 import 'package:appointmentpractice/forgotpass.dart';
+import 'package:appointmentpractice/UserHomepage/admindashboard.dart';
 import 'package:flutter/material.dart';
-import 'UserHomepage/homepage.dart'; // Import the Homepage class
+// import 'UserHomepage/homepage.dart'; // Import the Homepage class
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -26,7 +28,7 @@ class _LoginPageState extends State<LoginPage> {
     mediaSize = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: Colors.white,  // Set a plain white background
+      backgroundColor: Colors.white, // Set a plain white background
       body: SingleChildScrollView(
         // Allow scrolling for smaller screens
         child: Column(
@@ -119,35 +121,35 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildRememberForgot() {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      Row(
-        children: [
-          Checkbox(
-            value: rememberUser,
-            onChanged: (value) {
-              setState(() {
-                rememberUser = value ?? false; // Handle null case
-              });
-            },
-          ),
-          _buildGreyText("Remember me"),
-        ],
-      ),
-      TextButton(
-        onPressed: () {
-          // Navigate to the ForgotPassword page
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const Forgotpass()),
-          );
-        },
-        child: _buildGreyText("Forgot password"),
-      ),
-    ],
-  );
-}
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Checkbox(
+              value: rememberUser,
+              onChanged: (value) {
+                setState(() {
+                  rememberUser = value ?? false; // Handle null case
+                });
+              },
+            ),
+            _buildGreyText("Remember me"),
+          ],
+        ),
+        TextButton(
+          onPressed: () {
+            // Navigate to the ForgotPassword page
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const Forgotpass()),
+            );
+          },
+          child: _buildGreyText("Forgot password"),
+        ),
+      ],
+    );
+  }
 
 
   Widget _buildLoginButton() {
@@ -156,7 +158,7 @@ class _LoginPageState extends State<LoginPage> {
         // Navigate to the Homepage when the login button is pressed
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const Homepage()),
+          MaterialPageRoute(builder: (context) => const AdminHomePage()),
         );
       },
       style: ElevatedButton.styleFrom(

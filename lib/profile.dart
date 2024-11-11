@@ -26,59 +26,59 @@ class _ProfileState extends State<Profile> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // User Profile Section
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Colors.teal[50],
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              child: GestureDetector(
-                onTap: () {
-                  // Navigate to the Edit Profile page when tapped
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const EditProfilePage()),
-                  );
-                },
-                child: const Row(
-                  children: [
-                    // Profile Image Placeholder
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.teal,
-                      child: Icon(
-                        Icons.person,
-                        size: 40,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(width: 16.0),
-                    // User Name and Profile Label
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Amira Sofea Binti Othman',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        Text(
-                          'Profile',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            // // User Profile Section
+            // Container(
+            //   padding: const EdgeInsets.all(16.0),
+            //   decoration: BoxDecoration(
+            //     color: Colors.teal[50],
+            //     borderRadius: BorderRadius.circular(8.0),
+            //   ),
+            //   child: GestureDetector(
+            //     onTap: () {
+            //       // Navigate to the Edit Profile page when tapped
+            //       Navigator.push(
+            //         context,
+            //         MaterialPageRoute(builder: (context) => const EditProfilePage()),
+            //       );
+            //     },
+            //     child: const Row(
+            //       children: [
+            //         // Profile Image Placeholder
+            //         CircleAvatar(
+            //           radius: 30,
+            //           backgroundColor: Colors.teal,
+            //           child: Icon(
+            //             Icons.person,
+            //             size: 40,
+            //             color: Colors.white,
+            //           ),
+            //         ),
+            //         SizedBox(width: 16.0),
+            //         // User Name and Profile Label
+            //         Column(
+            //           crossAxisAlignment: CrossAxisAlignment.start,
+            //           children: [
+            //             Text(
+            //               'Amira Sofea Binti Othman',
+            //               style: TextStyle(
+            //                 fontSize: 18,
+            //                 fontWeight: FontWeight.bold,
+            //                 color: Colors.black,
+            //               ),
+            //             ),
+            //             Text(
+            //               'Profile',
+            //               style: TextStyle(
+            //                 fontSize: 14,
+            //                 color: Colors.grey,
+            //               ),
+            //             ),
+            //           ],
+            //         ),
+            //       ],
+            //     ),
+            //   ),
+            // ),
             const SizedBox(height: 16.0),
             // Settings Options
             Container(
