@@ -271,7 +271,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                   ),
                   items: const [
                     DropdownMenuItem(value: 'Gambang', child: Text('Gambang')),
-                    DropdownMenuItem(value: 'Pekan', child: Text('P')),
+                    DropdownMenuItem(value: 'Pekan', child: Text('Pahang')),
                   ],
                   validator: (value) {
                     if (value == null) {
@@ -327,9 +327,9 @@ class _RegistrationFormState extends State<RegistrationForm> {
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey),
                   borderRadius: BorderRadius.circular(8.0),
-                  
-                ),
 
+                ),
+                
                 child: TextFormField(
                   controller: _confirmPasswordController,
                   decoration: const InputDecoration(
