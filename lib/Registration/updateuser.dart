@@ -1,3 +1,4 @@
+import 'package:appointmentpractice/UserHomepage/admindashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,7 +12,7 @@ class UpdateUser extends StatefulWidget {
 }
 
 class _UpdateUserState extends State<UpdateUser> {
- final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
   
@@ -61,26 +62,18 @@ class _UpdateUserState extends State<UpdateUser> {
           'Created_At': FieldValue.serverTimestamp(),
         });
 
+        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Registration successful')),
         );
 
-        // Navigate to login or home screen
-        // Navigator.pushReplacement(
-        //   context,
-        //   MaterialPageRoute(builder: (context) => LoginScreen()),
-        // );
-
-      } on FirebaseAuthException catch (e) {
-        String errorMessage = 'An error occurred';
-        
-        if (e.code == 'weak-password') {
-          errorMessage = 'The password provided is too weak';
-        } else if (e.code == 'email-already-in-use') {
-          errorMessage = 'An account already exists for this email';
-        } else if (e.code == 'invalid-email') {
-          errorMessage = 'Please enter a valid email address';
-        }
+       // After registration, navigate back to AdminHomePage
+        Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const AdminHomePage()),
+      );
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'An error occurred';
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMessage)),

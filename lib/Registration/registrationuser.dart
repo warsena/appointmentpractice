@@ -1,3 +1,6 @@
+import 'package:appointmentpractice/UserHomepage/admindashboard.dart';
+import 'package:appointmentpractice/UserHomepage/doctorhomepage.dart';
+import 'package:appointmentpractice/UserHomepage/homepage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -60,9 +63,42 @@ class _RegistrationUserState extends State<RegistrationUser> {
           'Created_At': FieldValue.serverTimestamp(),
         });
 
+        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Registration successful')),
         );
+
+       // After registration, navigate back to AdminHomePage
+        Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const AdminHomePage()),
+      );
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'An error occurred';
+
+        // // Redirect user based on User_Type
+        // if (_userType == 'Admin') {
+        //   Navigator.pushReplacement(
+        //     context,
+        //     MaterialPageRoute(builder: (context) => const AdminHomePage()),
+        //   );
+        // } else if (_userType == 'Student' || _userType == 'Lecturer') {
+        //   Navigator.pushReplacement(
+        //     context,
+        //     MaterialPageRoute(builder: (context) => const Homepage()),
+        //   );
+        // } else if (_userType == 'Doctor') {
+        //   Navigator.pushReplacement(
+        //     context,
+        //     MaterialPageRoute(builder: (context) => const Doctorhomepage()),
+        //   );
+        // } else {
+        //   // If User_Type is unexpected, show a warning
+        //   ScaffoldMessenger.of(context).showSnackBar(
+        //     const SnackBar(content: Text('Unknown user type, please contact support.')),
+        //   );
+        // }
+
 
         // Navigate to login or home screen
         // Navigator.pushReplacement(
@@ -70,16 +106,16 @@ class _RegistrationUserState extends State<RegistrationUser> {
         //   MaterialPageRoute(builder: (context) => LoginScreen()),
         // );
 
-      } on FirebaseAuthException catch (e) {
-        String errorMessage = 'An error occurred';
+    //   } on FirebaseAuthException catch (e) {
+    //     String errorMessage = 'An error occurred';
         
-        if (e.code == 'weak-password') {
-          errorMessage = 'The password provided is too weak';
-        } else if (e.code == 'email-already-in-use') {
-          errorMessage = 'An account already exists for this email';
-        } else if (e.code == 'invalid-email') {
-          errorMessage = 'Please enter a valid email address';
-        }
+    //     if (e.code == 'weak-password') {
+    //       errorMessage = 'The password provided is too weak';
+    //     } else if (e.code == 'email-already-in-use') {
+    //       errorMessage = 'An account already exists for this email';
+    //     } else if (e.code == 'invalid-email') {
+    //       errorMessage = 'Please enter a valid email address';
+    //     }
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMessage)),

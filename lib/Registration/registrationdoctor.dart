@@ -1,3 +1,6 @@
+import 'package:appointmentpractice/UserHomepage/admindashboard.dart';
+import 'package:appointmentpractice/UserHomepage/doctorhomepage.dart';
+import 'package:appointmentpractice/UserHomepage/homepage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -21,7 +24,7 @@ class _RegistrationDoctorState extends State<RegistrationDoctor> {
   final TextEditingController _confirmPasswordController = TextEditingController();
 
   String? _gender;
-  String? _userType;
+  String? _userType; // User type field
   String? _campus;
   bool _isLoading = false;
 
@@ -35,39 +38,74 @@ class _RegistrationDoctorState extends State<RegistrationDoctor> {
       });
 
       try {
+        // Create user with email and password
         UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
 
+        // Get the newly created user's ID
         String userId = userCredential.user!.uid;
 
+        // Save user data in Firestore, including User_Type
         await _firestore.collection('User').doc(userId).set({
-          'User_ID': userId,
-          'User_Name': _nameController.text.trim(),
-          'User_Email': _emailController.text.trim(),
-          'User_Contact': _contactController.text.trim(),
-          'User_Gender': _gender,
-          'User_Password': _passwordController.text,
-          'User_Confirm_Password' : _passwordController.text,
-          'User_Type': _userType,
+          'User _ID': userId,
+          'User _Name': _nameController.text.trim(),
+          'User _Email': _emailController.text.trim(),
+          'User _Contact': _contactController.text.trim(),
+          'User _Gender': _gender,
+          'User _Password': _passwordController.text,
+          'User _Confirm_Password': _passwordController.text,
+          'User _Type': _userType, // Added user type
           'Campus': _campus,
           'Created_At': FieldValue.serverTimestamp(),
         });
 
+        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Registration successful')),
         );
-      } on FirebaseAuthException catch (e) {
-        String errorMessage = 'An error occurred';
-        
-        if (e.code == 'weak-password') {
-          errorMessage = 'The password provided is too weak';
-        } else if (e.code == 'email-already-in-use') {
-          errorMessage = 'An account already exists for this email';
-        } else if (e.code == 'invalid-email') {
-          errorMessage = 'Please enter a valid email address';
-        }
+
+        // After registration, navigate back to AdminHomePage
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const AdminHomePage()),
+      );
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'An error occurred';
+
+        // Redirect user based on User_Type
+      //   if (_userType == 'Admin') {
+      //     Navigator.pushReplacement(
+      //       context,
+      //       MaterialPageRoute(builder: (context) => const AdminHomePage()),
+      //     );
+      //   } else if (_userType == 'Student' || _userType == 'Lecturer') {
+      //     Navigator.pushReplacement(
+      //       context,
+      //       MaterialPageRoute(builder: (context) => const Homepage()),
+      //     );
+      //   } else if (_userType == 'Doctor') {
+      //     Navigator.pushReplacement(
+      //       context,
+      //       MaterialPageRoute(builder: (context) => const Doctorhomepage()),
+      //     );
+      //   } else {
+      //     // If User_Type is unexpected, show a warning
+      //     ScaffoldMessenger.of(context).showSnackBar(
+      //       const SnackBar(content: Text('Unknown user type, please contact support.')),
+      //     );
+      //   }
+      // } on FirebaseAuthException catch (e) {
+      //   String errorMessage = 'An error occurred';
+
+      //   if (e.code == 'weak-password') {
+      //     errorMessage = 'The password provided is too weak';
+      //   } else if (e.code == 'email-already-in-use') {
+      //     errorMessage = 'An account already exists for this email';
+      //   } else if (e.code == 'invalid-email') {
+      //     errorMessage = 'Please enter a valid email address';
+      //   }
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMessage)),
@@ -104,7 +142,7 @@ class _RegistrationDoctorState extends State<RegistrationDoctor> {
               ),
               const SizedBox(height: 10),
 
-              //Email Address
+              // Email Address
               _buildTextField(
                 controller: _emailController,
                 labelText: 'Email Address',
@@ -119,7 +157,7 @@ class _RegistrationDoctorState extends State<RegistrationDoctor> {
               ),
               const SizedBox(height: 10),
 
-              //Gender
+              // Gender
               _buildDropdownField(
                 value: _gender,
                 labelText: 'Gender',
@@ -138,7 +176,7 @@ class _RegistrationDoctorState extends State<RegistrationDoctor> {
               ),
               const SizedBox(height: 10),
 
-              //Contact Number
+              // Contact Number
               _buildTextField(
                 controller: _contactController,
                 labelText: 'Contact Number',
@@ -146,9 +184,27 @@ class _RegistrationDoctorState extends State<RegistrationDoctor> {
                 validatorMessage: 'Please enter your contact number',
               ),
               const SizedBox(height: 10),
-              
 
-             //Service
+              // User Type
+              _buildDropdownField(
+                value: _userType,
+                labelText: 'User  Type',
+                hintText: 'Select user type',
+                items: const [
+                  DropdownMenuItem(value: 'Doctor', child: Text('Doctor')),
+                  DropdownMenuItem(value: 'Student', child: Text('Student')),
+                  DropdownMenuItem(value: 'Lecturer', child: Text('Lecturer')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _userType = value;
+                  });
+                },
+                validatorMessage: 'Please select your user type',
+              ),
+              const SizedBox(height: 10),
+
+              // Type of Service
               _buildDropdownField(
                 value: _campus,
                 labelText: 'Type of Service',
@@ -170,7 +226,7 @@ class _RegistrationDoctorState extends State<RegistrationDoctor> {
               ),
               const SizedBox(height: 10),
 
-              //Password
+              // Password
               _buildPasswordField(
                 controller: _passwordController,
                 labelText: 'Password',
@@ -184,6 +240,7 @@ class _RegistrationDoctorState extends State<RegistrationDoctor> {
               ),
               const SizedBox(height: 10),
 
+              // Confirm Password
               _buildPasswordField(
                 controller: _confirmPasswordController,
                 labelText: 'Confirm Password',
@@ -215,7 +272,7 @@ class _RegistrationDoctorState extends State<RegistrationDoctor> {
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text(
-                        'Register',
+                        'Register ',
                         style: TextStyle(fontSize: 16.0, color: Colors.white),
                       ),
               ),
@@ -293,7 +350,7 @@ class _RegistrationDoctorState extends State<RegistrationDoctor> {
       padding: const EdgeInsets.symmetric(horizontal: 12.0),
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(8.0),
+        borderRadius: BorderRadius.circular(8.0),
       ),
       child: TextFormField(
         controller: controller,

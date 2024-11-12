@@ -59,7 +59,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
         child: Padding(
-          
+
           padding: const EdgeInsets.all(20.0),
           child: _buildForm(),
         ),
@@ -177,70 +177,86 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-Future<void> _login() async {
+
+  Future<void> _login() async {
     try {
         print("Attempting to sign in with email: ${emailController.text}");
+
+        // Sign in the user with Firebase Authentication
         UserCredential userCredential = await _auth.signInWithEmailAndPassword(
             email: emailController.text.trim(),
             password: passwordController.text.trim(),
         );
 
-        print("User signed in: ${userCredential.user?.uid}");
+        // Retrieve the user's UID from Firebase Authentication
+        final String? userId = userCredential.user?.uid;
+        if (userId == null) {
+            print("Error: User ID not found after login.");
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('User ID not found.')),
+            );
+            return;
+        }
 
-        // Fetch the user document from the 'User' collection
+        print("Logged in with UID: $userId");
+
+        // Fetch the user document from Firestore
         DocumentSnapshot userDoc = await _firestore
             .collection('User')
-            .doc(userCredential.user!.uid)
+            .doc(userId)
             .get();
 
-        if (userDoc.exists) {
-            // Log the entire document data for debugging
-            print("User document data: ${userDoc.data()}");
-
-            // Cast data to Map<String, dynamic> for reliable access
-            Map<String, dynamic>? userData = userDoc.data() as Map<String, dynamic>?;
-
-            // Retrieve the user's role from the user data map
-            String? role = userData?['Role'];
-            if (role == null) {
-                print("Error: 'Role' field is missing in user document.");
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('User role not found.')),
-                );
-                return;
-            }
-
-            print("Role found: $role");
-
-            // Redirect based on role
-            if (role == 'Admin') {
-                Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const AdminHomePage()),
-                );
-                print("Navigating to AdminDashboard");
-            } else if (role == 'Student' || role == 'Lecturer') {
-                Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const Homepage()),
-                );
-                print("Navigating to Homepage");
-            } else if (role == 'Doctor') {
-                Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const Doctorhomepage()),
-                );
-                print("Navigating to Doctorhomepage");
-            } else {
-                print("Unknown role: $role");
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Unknown role, cannot proceed.')),
-                );
-            }
-        } else {
-            print("User document not found in Firestore");
+        // Check if the user document exists in Firestore
+        if (!userDoc.exists) {
+            print("Error: User document not found in Firestore for UID: $userId");
             ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('User role not found.')),
+                const SnackBar(content: Text('User document not found.')),
+            );
+            return;
+        }
+
+        // Print the user document data for debugging
+        print("User document data: ${userDoc.data()}");
+
+        // Cast the document data to a Map for reliable access
+        Map<String, dynamic>? userData = userDoc.data() as Map<String, dynamic>?;
+
+        // Verify that User_Type exists in the document data
+        if (userData == null || !userData.containsKey('User_Type')) {
+            print("Error: 'User_Type' field is missing in user document.");
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('User type not found.')),
+            );
+            return;
+        }
+
+        // Retrieve the User_Type field
+        String? userType = userData['User_Type'];
+        print("User_Type found: $userType");
+
+        // Redirect based on User_Type
+        if (userType == 'Admin') {
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const AdminHomePage()),
+            );
+            print("Navigating to AdminHomePage");
+        } else if (userType == 'Student' || userType == 'Lecturer') {
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const Homepage()),
+            );
+            print("Navigating to Homepage");
+        } else if (userType == 'Doctor') {
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const Doctorhomepage()),
+            );
+            print("Navigating to Doctorhomepage");
+        } else {
+            print("Unknown user type: $userType");
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Unknown user type, cannot proceed.')),
             );
         }
     } catch (e) {
@@ -252,3 +268,5 @@ Future<void> _login() async {
 }
 
 }
+
+
