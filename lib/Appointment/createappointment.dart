@@ -31,7 +31,7 @@ class _CreateAppointmentState extends State<CreateAppointment> {
       filteredAppointments = appointments.where((appointment) {
         return (selectedService == 'Services' ||
                 appointment['service'] == selectedService) &&
-            (selectedCampus == 'Pekan'); // Assuming all are in 'Pekan' for this example
+            (selectedCampus == 'Pekan');
       }).toList();
     });
   }
@@ -40,142 +40,237 @@ class _CreateAppointmentState extends State<CreateAppointment> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Appointment'),
-        backgroundColor: Colors.teal,
+        elevation: 0,
+        backgroundColor: Colors.teal.shade600,
+        title: const Text(
+          'Create Appointment',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: selectedCampus,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedCampus = value;
-                      });
-                    },
-                    items: const [
-                      DropdownMenuItem(value: 'Pekan', child: Text('Pekan')),
-                      DropdownMenuItem(value: 'Gambang', child: Text('Gambang')),
-                    ],
-                    decoration: const InputDecoration(
-                      labelText: 'Campus',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: selectedService,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedService = value!;
-                      });
-                    },
-                    items: const [
-                      DropdownMenuItem(value: 'Services', child: Text('Services')),
-                      DropdownMenuItem(value: 'Dental', child: Text('Dental')),
-                      DropdownMenuItem(value: 'Physiotherapy', child: Text('Physiotherapy')),
-                      DropdownMenuItem(value: 'Diabetes', child: Text('Diabetes')),
-                      DropdownMenuItem(value: 'Obesity', child: Text('Obesity')),
-                      DropdownMenuItem(value: 'Stress Consultation', child: Text('Stress Consultation')),
-                      DropdownMenuItem(value: 'Checkup', child: Text('Checkup')),
-                    ],
-                    decoration: const InputDecoration(
-                      labelText: 'Services',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: filterAppointments,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
-                  child: const Text(
-                    'Search',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
+      body: Column(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.teal.shade600,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
+              ),
             ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  columnSpacing: 10,
-                  headingRowHeight: 40,
-                  dataRowHeight: 60,
-                  columns: const [
-                    DataColumn(label: Text('No', style: TextStyle(fontSize: 12))),
-                    DataColumn(label: Text('Services', style: TextStyle(fontSize: 12))),
-                    DataColumn(label: Text('Total Appointment Per Day', style: TextStyle(fontSize: 12))),
-                    DataColumn(label: Text('Action', style: TextStyle(fontSize: 12))),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+            child: Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: selectedCampus,
+                      decoration: InputDecoration(
+                        labelText: 'Campus',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          selectedCampus = value;
+                        });
+                      },
+                      items: const [
+                        DropdownMenuItem(value: 'Pekan', child: Text('Pekan')),
+                        DropdownMenuItem(value: 'Gambang', child: Text('Gambang')),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: selectedService,
+                      decoration: InputDecoration(
+                        labelText: 'Services',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          selectedService = value;
+                        });
+                      },
+                      items: const [
+                        DropdownMenuItem(value: 'Services', child: Text('Services')),
+                        DropdownMenuItem(value: 'Dental', child: Text('Dental')),
+                        DropdownMenuItem(value: 'Physiotherapy', child: Text('Physiotherapy')),
+                        DropdownMenuItem(value: 'Diabetes', child: Text('Diabetes')),
+                        DropdownMenuItem(value: 'Obesity', child: Text('Obesity')),
+                        DropdownMenuItem(
+                            value: 'Stress Consultation', child: Text('Stress Consultation')),
+                        DropdownMenuItem(value: 'Checkup', child: Text('Checkup')),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: filterAppointments,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal.shade600,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          'Search',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
-                  rows: filteredAppointments.map((appointment) {
-                    return DataRow(cells: [
-                      DataCell(Text(appointment['no'].toString(), style: const TextStyle(fontSize: 12))),
-                      DataCell(Text(appointment['service'], style: const TextStyle(fontSize: 12))),
-                      DataCell(
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.remove, size: 18),
-                              onPressed: () {
-                                setState(() {
-                                  if (appointment['appointmentsPerDay'] > 0) {
-                                    appointment['appointmentsPerDay']--;
-                                  }
-                                });
-                              },
-                            ),
-                            Text(
-                              appointment['appointmentsPerDay'].toString(),
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.add, size: 18),
-                              onPressed: () {
-                                setState(() {
-                                  appointment['appointmentsPerDay']++;
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      DataCell(
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const AppointmentList()),
-                            );
-                          },
-                          child: const Text(
-                            'Submit',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ),
-                    ]);
-                  }).toList(),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: filteredAppointments.length,
+              itemBuilder: (context, index) {
+                final appointment = filteredAppointments[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              appointment['service'],
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'No. ${appointment['no']}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              'Appointments Per Day:',
+                              style: TextStyle(
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.teal.shade200),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.remove),
+                                    onPressed: () {
+                                      setState(() {
+                                        if (appointment['appointmentsPerDay'] > 0) {
+                                          appointment['appointmentsPerDay']--;
+                                        }
+                                      });
+                                    },
+                                    color: Colors.teal,
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    child: Text(
+                                      appointment['appointmentsPerDay'].toString(),
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.add),
+                                    onPressed: () {
+                                      setState(() {
+                                        appointment['appointmentsPerDay']++;
+                                      });
+                                    },
+                                    color: Colors.teal,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.teal.shade600,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const AppointmentList()),
+                              );
+                            },
+                            child: const Text(
+                              'Submit',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+        
       ),
     );
   }

@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class RegistrationUser extends StatefulWidget {
-  const RegistrationUser({super.key});
+
+class UpdateUser extends StatefulWidget {
+  const UpdateUser({super.key});
 
   @override
-  State<RegistrationUser> createState() => _RegistrationUserState();
+  State<UpdateUser> createState() => _UpdateUserState();
 }
 
-class _RegistrationUserState extends State<RegistrationUser> {
-  final _formKey = GlobalKey<FormState>();
+class _UpdateUserState extends State<UpdateUser> {
+ final _formKey = GlobalKey<FormState>();
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
   
@@ -372,7 +373,7 @@ class _RegistrationUserState extends State<RegistrationUser> {
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text(
-                        'Register',
+                        'Update',
                         style: TextStyle(fontSize: 16.0, color: Colors.white),
                       ),
               ),

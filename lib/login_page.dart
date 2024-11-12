@@ -1,7 +1,12 @@
-import 'package:appointmentpractice/forgotpass.dart';
+
 import 'package:appointmentpractice/UserHomepage/admindashboard.dart';
+import 'package:appointmentpractice/UserHomepage/homepage.dart';
+import 'package:appointmentpractice/UserHomepage/doctorhomepage.dart';
+import 'package:appointmentpractice/Password/forgotpass.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-// import 'UserHomepage/homepage.dart'; // Import the Homepage class
+
 
 
 class LoginPage extends StatefulWidget {
@@ -17,10 +22,12 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool rememberUser = false;
-  bool isPasswordVisible = false; // Variable to track password visibility
+  bool isPasswordVisible = false;
 
-  // Define the turquoise color
+
   final Color turquoiseColor = const Color(0xFF009FA0);
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -28,13 +35,13 @@ class _LoginPageState extends State<LoginPage> {
     mediaSize = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: Colors.white, // Set a plain white background
+      backgroundColor: Colors.white,
       body: SingleChildScrollView(
-        // Allow scrolling for smaller screens
+
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildBottom(), // Call _buildBottom here for the form content
+            _buildBottom(),
           ],
         ),
       ),
@@ -52,7 +59,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
         child: Padding(
-          // Add padding to the card
+          
           padding: const EdgeInsets.all(20.0),
           child: _buildForm(),
         ),
@@ -67,15 +74,15 @@ class _LoginPageState extends State<LoginPage> {
         const Text(
           "Welcome",
           style: TextStyle(
-              color: Colors.blueGrey, // Set text color to black
+              color: Colors.blueGrey,
               fontSize: 30,
               fontWeight: FontWeight.w500),
         ),
         _buildGreyText("Please login with your information"),
-        const SizedBox(height: 30), // Adjusted spacing
+        const SizedBox(height: 30),
         _buildGreyText("Email address"),
         _buildInputField(emailController),
-        const SizedBox(height: 20), // Adjusted spacing
+        const SizedBox(height: 20),
         _buildGreyText("Password"),
         _buildInputField(passwordController, isPassword: true),
         const SizedBox(height: 20),
@@ -98,7 +105,7 @@ class _LoginPageState extends State<LoginPage> {
       {bool isPassword = false}) {
     return TextField(
       controller: controller,
-      obscureText: isPassword ? !isPasswordVisible : false, // Toggle visibility
+      obscureText: isPassword ? !isPasswordVisible : false,
       decoration: InputDecoration(
         border: const OutlineInputBorder(),
         hintText: isPassword ? 'Enter your password' : 'Enter your email',
@@ -110,8 +117,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 onPressed: () {
                   setState(() {
-                    isPasswordVisible =
-                        !isPasswordVisible; // Toggle password visibility
+                    isPasswordVisible = !isPasswordVisible;
                   });
                 },
               )
@@ -130,7 +136,7 @@ class _LoginPageState extends State<LoginPage> {
               value: rememberUser,
               onChanged: (value) {
                 setState(() {
-                  rememberUser = value ?? false; // Handle null case
+                  rememberUser = value ?? false;
                 });
               },
             ),
@@ -139,7 +145,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
         TextButton(
           onPressed: () {
-            // Navigate to the ForgotPassword page
+
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const Forgotpass()),
@@ -154,27 +160,95 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _buildLoginButton() {
     return ElevatedButton(
-      onPressed: () {
-        // Navigate to the Homepage when the login button is pressed
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const AdminHomePage()),
-        );
-      },
+      onPressed: _login,
       style: ElevatedButton.styleFrom(
         shape: const StadiumBorder(),
         elevation: 10,
-        shadowColor: turquoiseColor, // Set to the specified turquoise color
+        shadowColor: turquoiseColor,
         minimumSize: const Size.fromHeight(60),
-        backgroundColor: turquoiseColor, // Set to the specified turquoise color
+        backgroundColor: turquoiseColor,
       ),
       child: const Text(
         "LOGIN",
         style: TextStyle(
-          color: Colors.white, // Set text color to black
-          fontWeight: FontWeight.bold, // Make the text bold
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
   }
+Future<void> _login() async {
+    try {
+        print("Attempting to sign in with email: ${emailController.text}");
+        UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+            email: emailController.text.trim(),
+            password: passwordController.text.trim(),
+        );
+
+        print("User signed in: ${userCredential.user?.uid}");
+
+        // Fetch the user document from the 'User' collection
+        DocumentSnapshot userDoc = await _firestore
+            .collection('User')
+            .doc(userCredential.user!.uid)
+            .get();
+
+        if (userDoc.exists) {
+            // Log the entire document data for debugging
+            print("User document data: ${userDoc.data()}");
+
+            // Cast data to Map<String, dynamic> for reliable access
+            Map<String, dynamic>? userData = userDoc.data() as Map<String, dynamic>?;
+
+            // Retrieve the user's role from the user data map
+            String? role = userData?['Role'];
+            if (role == null) {
+                print("Error: 'Role' field is missing in user document.");
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('User role not found.')),
+                );
+                return;
+            }
+
+            print("Role found: $role");
+
+            // Redirect based on role
+            if (role == 'Admin') {
+                Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AdminHomePage()),
+                );
+                print("Navigating to AdminDashboard");
+            } else if (role == 'Student' || role == 'Lecturer') {
+                Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const Homepage()),
+                );
+                print("Navigating to Homepage");
+            } else if (role == 'Doctor') {
+                Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const Doctorhomepage()),
+                );
+                print("Navigating to Doctorhomepage");
+            } else {
+                print("Unknown role: $role");
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Unknown role, cannot proceed.')),
+                );
+            }
+        } else {
+            print("User document not found in Firestore");
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('User role not found.')),
+            );
+        }
+    } catch (e) {
+        print("Sign-in error: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${e.toString()}')),
+        );
+    }
+}
+
 }

@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:appointmentpractice/Appointment/appointmentlist.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class RegistrationDoctor extends StatefulWidget {
-  const RegistrationDoctor({Key? key}) : super(key: key);
+//update doctor can retrieve data
+
+class UpdateDoctor extends StatefulWidget {
+  const UpdateDoctor({super.key});
 
   @override
-  State<RegistrationDoctor> createState() => _RegistrationDoctorState();
+  State<UpdateDoctor> createState() => _UpdateDoctorState();
 }
 
-class _RegistrationDoctorState extends State<RegistrationDoctor> {
+class _UpdateDoctorState extends State<UpdateDoctor> {
   final _formKey = GlobalKey<FormState>();
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
@@ -48,8 +51,6 @@ class _RegistrationDoctorState extends State<RegistrationDoctor> {
           'User_Email': _emailController.text.trim(),
           'User_Contact': _contactController.text.trim(),
           'User_Gender': _gender,
-          'User_Password': _passwordController.text,
-          'User_Confirm_Password' : _passwordController.text,
           'User_Type': _userType,
           'Campus': _campus,
           'Created_At': FieldValue.serverTimestamp(),
@@ -104,7 +105,6 @@ class _RegistrationDoctorState extends State<RegistrationDoctor> {
               ),
               const SizedBox(height: 10),
 
-              //Email Address
               _buildTextField(
                 controller: _emailController,
                 labelText: 'Email Address',
@@ -119,7 +119,6 @@ class _RegistrationDoctorState extends State<RegistrationDoctor> {
               ),
               const SizedBox(height: 10),
 
-              //Gender
               _buildDropdownField(
                 value: _gender,
                 labelText: 'Gender',
@@ -138,7 +137,6 @@ class _RegistrationDoctorState extends State<RegistrationDoctor> {
               ),
               const SizedBox(height: 10),
 
-              //Contact Number
               _buildTextField(
                 controller: _contactController,
                 labelText: 'Contact Number',
@@ -146,9 +144,7 @@ class _RegistrationDoctorState extends State<RegistrationDoctor> {
                 validatorMessage: 'Please enter your contact number',
               ),
               const SizedBox(height: 10),
-              
 
-             //Service
               _buildDropdownField(
                 value: _campus,
                 labelText: 'Type of Service',
@@ -170,7 +166,6 @@ class _RegistrationDoctorState extends State<RegistrationDoctor> {
               ),
               const SizedBox(height: 10),
 
-              //Password
               _buildPasswordField(
                 controller: _passwordController,
                 labelText: 'Password',
@@ -203,6 +198,7 @@ class _RegistrationDoctorState extends State<RegistrationDoctor> {
               ),
               const SizedBox(height: 20),
 
+              //Update button
               ElevatedButton(
                 onPressed: _isLoading ? null : _submitForm,
                 style: ElevatedButton.styleFrom(
@@ -215,7 +211,7 @@ class _RegistrationDoctorState extends State<RegistrationDoctor> {
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text(
-                        'Register',
+                        'Update',
                         style: TextStyle(fontSize: 16.0, color: Colors.white),
                       ),
               ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:appointmentpractice/changepassword.dart';
+import 'package:appointmentpractice/Password/changepassword.dart';
 import 'package:appointmentpractice/login_page.dart';
-import 'editprofile.dart';  // Make sure you import the EditProfilePage
+// import 'editprofile.dart';  // Make sure you import the EditProfilePage
 
 class Profile extends StatefulWidget {
   const Profile({super.key});

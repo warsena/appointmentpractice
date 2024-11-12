@@ -1,4 +1,7 @@
+import 'package:appointmentpractice/Appointment/appointmentlist.dart';
 import 'package:appointmentpractice/Appointment/createappointment.dart';
+import 'package:appointmentpractice/HealthBulletin/bulletinlist.dart';
+import 'package:appointmentpractice/HealthBulletin/createbulletin.dart';
 import 'package:flutter/material.dart';
 import 'package:appointmentpractice/Registration/userlist.dart';
 import 'package:appointmentpractice/Registration/doctorlist.dart';
@@ -52,8 +55,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
           _buildUserPage(),
           _buildDoctorPage(),
           _buildAppointmentPage(),
-          _buildSchedulePage(),       // Add Schedule Page
-          _buildHealthBulletinPage(),  // Add Health Bulletin Page
+          _buildSchedulePage(), // Add Schedule Page
+          _buildHealthBulletinPage(), // Add Health Bulletin Page
         ],
       ),
       drawer: Drawer(
@@ -62,7 +65,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
             Container(
               color: Colors.teal,
               height: 60, // Adjust height to make the box smaller
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
               alignment: Alignment.centerLeft,
               child: const Text(
                 'Admin Menu',
@@ -95,7 +99,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     Navigator.of(context).pop(); // Close the drawer
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const RegistrationUser()),
+                      MaterialPageRoute(
+                          builder: (context) => const RegistrationUser()),
                     );
                   },
                 ),
@@ -124,7 +129,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     Navigator.of(context).pop(); // Close the drawer
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const RegistrationDoctor()),
+                      MaterialPageRoute(
+                          builder: (context) => const RegistrationDoctor()),
                     );
                   },
                 ),
@@ -137,14 +143,16 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     Navigator.of(context).pop(); // Close the drawer
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const DoctorList()),
+                      MaterialPageRoute(
+                          builder: (context) => const DoctorList()),
                     );
                   },
                 ),
               ],
             ),
 
-              ExpansionTile(
+            
+            ExpansionTile(
               leading: const Icon(Icons.calendar_today),
               title: const Text('Appointment'),
               children: [
@@ -154,7 +162,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     Navigator.of(context).pop(); // Close the drawer
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const CreateAppointment()),
+                      MaterialPageRoute(
+                          builder: (context) => const CreateAppointment()),
                     );
                   },
                 ),
@@ -162,12 +171,18 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   title: const Text('Appointment List'),
                   onTap: () {
                     Navigator.of(context).pop(); // Close the drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const AppointmentList()),
+                    );
                   },
                 ),
               ],
+
             ),
 
-          
+
             ListTile(
               leading: const Icon(Icons.schedule), // Schedule icon
               title: const Text('Schedule'),
@@ -179,16 +194,33 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 Navigator.of(context).pop(); // Close the drawer
               },
             ),
-            ListTile(
+            ExpansionTile(
               leading: const Icon(Icons.health_and_safety),
               title: const Text('Health Bulletin'),
-              selected: _selectedIndex == 5,
-              onTap: () {
-                setState(() {
-                  _selectedIndex = 5;
-                });
-                Navigator.of(context).pop(); // Close the drawer
-              },
+              children: [
+                ListTile(
+                  title: const Text('Create Health Bulletin'),
+                  onTap: () {
+                    Navigator.of(context).pop(); // Close the drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const CreateBulletin()),
+                    );
+                  },
+                ),
+                ListTile(
+                  title: const Text('Health Bulletin List'),
+                  onTap: () {
+                    Navigator.of(context).pop(); // Close the drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const BulletinList()),
+                    );
+                  },
+                ),
+              ],
             ),
           ],
         ),
