@@ -122,7 +122,7 @@ class _HomepageState extends State<Homepage> {
         ),
         const SizedBox(height: 20.0),
         buildCampusButton('UMPSA Gambang',
-            const Appointmentgambang()), // Navigate to Appointmentgambang
+            Appointmentgambang()), // Navigate to Appointmentgambang
         const SizedBox(height: 10.0),
         buildCampusButton(
             'UMPSA Pekan', const Appointmentpekan()), // Navigate to Appointmentpekan
