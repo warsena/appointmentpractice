@@ -36,7 +36,7 @@ class _CreateAppointmentState extends State<CreateAppointment> {
       color: Colors.teal.shade100,
     ),
     ServiceCategory(
-      title: 'Health Service',
+      title: 'Medical Health Service',
       services: ['Diabetes', 'Obesity', 'Hypertension', 'Physiotherapy'],
       color: Colors.teal.shade50,
     ),
