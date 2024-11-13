@@ -10,7 +10,7 @@ class AppointmentConfirm extends StatefulWidget {
     super.key,
     required this.selectedService,
     required this.selectedTimeslot,
-    required this.selectedDate,
+    required this.selectedDate, required String selectedSpecialization,
   });
 
   @override

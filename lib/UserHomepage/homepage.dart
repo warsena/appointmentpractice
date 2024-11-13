@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../appointmentgambang.dart';
-import '../appointmentpekan.dart';
+import '../Appointment/appointmentgambang.dart';
+import '../Appointment/appointmentpekan.dart';
 import '../profile.dart';
 
 class Homepage extends StatefulWidget {
