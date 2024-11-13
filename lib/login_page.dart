@@ -23,7 +23,9 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
   bool rememberUser = false;
   bool isPasswordVisible = false;
-
+  
+  // Add GlobalKey for ScaffoldMessenger
+  final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey<ScaffoldMessengerState>();
 
   final Color turquoiseColor = const Color(0xFF009FA0);
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -34,15 +36,17 @@ class _LoginPageState extends State<LoginPage> {
     myColor = Theme.of(context).primaryColor;
     mediaSize = MediaQuery.of(context).size;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildBottom(),
-          ],
+    return ScaffoldMessenger(
+      key: _scaffoldKey,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildBottom(),
+            ],
+          ),
         ),
       ),
     );
@@ -58,9 +62,10 @@ class _LoginPageState extends State<LoginPage> {
             topRight: Radius.circular(30),
           ),
         ),
-        child: Padding(
 
-          padding: const EdgeInsets.all(20.0),
+        child: Padding(
+          padding: const EdgeInsets.
+          all(20.0),
           child: _buildForm(),
         ),
       ),
@@ -178,95 +183,130 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  // Helper method to show errors
+  void _showError(String message) {
+    if (!mounted) return;
+    _scaffoldKey.currentState?.showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   Future<void> _login() async {
     try {
-        print("Attempting to sign in with email: ${emailController.text}");
+      print("Attempting to sign in with email: ${emailController.text}");
 
-        // Sign in the user with Firebase Authentication
-        UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-            email: emailController.text.trim(),
-            password: passwordController.text.trim(),
+      // Basic validation
+      if (emailController.text.trim().isEmpty || 
+          passwordController.text.trim().isEmpty) {
+        _showError('Please enter both email and password');
+        return;
+      }
+
+      // Sign in the user with Firebase Authentication
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      // Retrieve the user's UID from Firebase Authentication
+      final String? userId = userCredential.user?.uid;
+      if (userId == null) {
+        print("Error: User ID not found after login.");
+        _showError('User ID not found.');
+        return;
+      }
+
+      print("Logged in with UID: $userId");
+
+      // Fetch the user document from Firestore
+      DocumentSnapshot userDoc = await _firestore
+          .collection('User')
+          .doc(userId)
+          .get();
+
+      // Check if the user document exists in Firestore
+      if (!userDoc.exists) {
+        print("Error: User document not found in Firestore for UID: $userId");
+        _showError('User document not found.');
+        return;
+      }
+
+      // Print the user document data for debugging
+      print("User document data: ${userDoc.data()}");
+
+      // Cast the document data to a Map for reliable access
+      Map<String, dynamic>? userData = userDoc.data() as Map<String, dynamic>?;
+
+      // Verify that User_Type exists in the document data
+      if (userData == null || !userData.containsKey('User_Type')) {
+        print("Error: 'User_Type' field is missing in user document.");
+        _showError('User type not found.');
+        return;
+      }
+
+      // Retrieve the User_Type field
+      String? userType = userData['User_Type'];
+      print("User_Type found: $userType");
+
+      // Redirect based on User_Type
+      if (!mounted) return; // Check if widget is still mounted before navigation
+
+      if (userType == 'Admin') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AdminHomePage()),
         );
-
-        // Retrieve the user's UID from Firebase Authentication
-        final String? userId = userCredential.user?.uid;
-        if (userId == null) {
-            print("Error: User ID not found after login.");
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('User ID not found.')),
-            );
-            return;
-        }
-
-        print("Logged in with UID: $userId");
-
-        // Fetch the user document from Firestore
-        DocumentSnapshot userDoc = await _firestore
-            .collection('User')
-            .doc(userId)
-            .get();
-
-        // Check if the user document exists in Firestore
-        if (!userDoc.exists) {
-            print("Error: User document not found in Firestore for UID: $userId");
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('User document not found.')),
-            );
-            return;
-        }
-
-        // Print the user document data for debugging
-        print("User document data: ${userDoc.data()}");
-
-        // Cast the document data to a Map for reliable access
-        Map<String, dynamic>? userData = userDoc.data() as Map<String, dynamic>?;
-
-        // Verify that User_Type exists in the document data
-        if (userData == null || !userData.containsKey('User_Type')) {
-            print("Error: 'User_Type' field is missing in user document.");
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('User type not found.')),
-            );
-            return;
-        }
-
-        // Retrieve the User_Type field
-        String? userType = userData['User_Type'];
-        print("User_Type found: $userType");
-
-        // Redirect based on User_Type
-        if (userType == 'Admin') {
-            Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const AdminHomePage()),
-            );
-            print("Navigating to AdminHomePage");
-        } else if (userType == 'Student' || userType == 'Lecturer') {
-            Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const Homepage()),
-            );
-            print("Navigating to Homepage");
-        } else if (userType == 'Doctor') {
-            Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const Doctorhomepage()),
-            );
-            print("Navigating to Doctorhomepage");
-        } else {
-            print("Unknown user type: $userType");
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Unknown user type, cannot proceed.')),
-            );
-        }
+        print("Navigating to AdminHomePage");
+      } else if (userType == 'Student' || userType == 'Lecturer') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const Homepage()),
+        );
+        print("Navigating to Homepage");
+      } else if (userType == 'Doctor') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const Doctorhomepage()),
+        );
+        print("Navigating to Doctorhomepage");
+      } else {
+        print("Unknown user type: $userType");
+        _showError('Unknown user type, cannot proceed.');
+      }
+    } on FirebaseAuthException catch (e) {
+      print("Firebase Auth Error: $e");
+      String errorMessage;
+      
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = 'No user found with this email.';
+          break;
+        case 'wrong-password':
+          errorMessage = 'Wrong password provided.';
+          break;
+        case 'invalid-email':
+          errorMessage = 'The email address is invalid.';
+          break;
+        case 'user-disabled':
+          errorMessage = 'This user account has been disabled.';
+          break;
+        default:
+          errorMessage = 'An error occurred: ${e.message}';
+      }
+      
+      _showError(errorMessage);
     } catch (e) {
-        print("Sign-in error: $e");
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: ${e.toString()}')),
-        );
+      print("General Error: $e");
+      _showError('An unexpected error occurred. Please try again.');
     }
-}
+  }
 
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 }
 
 
