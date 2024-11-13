@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserList extends StatefulWidget {
-  const UserList({Key? key}) : super(key: key);
+  const UserList({super.key});
 
   @override
   State<UserList> createState() => _UserListState();
@@ -31,7 +31,7 @@ class _UserListState extends State<UserList> {
 
 
       final fetchedUsers = snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
+        final data = doc.data();
         return {
           'docId': doc.id,
           'name': data['User_Name'] ?? '',

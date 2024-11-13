@@ -179,7 +179,7 @@ class _BulletinListState extends State<BulletinList> {
                       ),
                     ],
                   );
-                }).toList(),
+                }),
               ],
             ),
           ],

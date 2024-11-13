@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DoctorList extends StatefulWidget {
-  const DoctorList({Key? key}) : super(key: key);
+  const DoctorList({super.key});
 
   @override
   State<DoctorList> createState() => _DoctorListState();
@@ -29,7 +29,7 @@ class _DoctorListState extends State<DoctorList> {
           .get();
 
       final fetchedUsers = snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
+        final data = doc.data();
         return {
           'docId': doc.id,
           'name': data['User_Name'] ?? '',

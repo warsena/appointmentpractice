@@ -15,48 +15,39 @@ class ServiceCategory {
 }
 
 class CreateAppointment extends StatefulWidget {
-  const CreateAppointment({Key? key}) : super(key: key);
+  const CreateAppointment({super.key});
 
   @override
   State<CreateAppointment> createState() => _CreateAppointmentState();
 }
 
 class _CreateAppointmentState extends State<CreateAppointment> {
-  String? selectedCampus = 'Pekan';
-  String? selectedService = 'Services';
+  String? selectedCampus;
+  String? selectedServiceCategory;
   bool isLoading = false;
 
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // Service categories definition
+  // Service categories and campuses definition
   final List<ServiceCategory> serviceCategories = [
     ServiceCategory(
-      title: 'Dental Services',
+      title: 'Dental Service',
       services: ['Dental'],
       color: Colors.teal.shade100,
     ),
     ServiceCategory(
-      title: 'Medical Services',
+      title: 'Health Service',
       services: ['Diabetes', 'Obesity', 'Hypertension', 'Physiotherapy'],
       color: Colors.teal.shade50,
     ),
     ServiceCategory(
-      title: 'Mental Health Services',
+      title: 'Mental Health Service',
       services: ['Stress Consultation'],
       color: Colors.teal.shade100,
     ),
   ];
 
-  // Map to store service limits
-  final Map<String, int> serviceLimits = {
-    'Dental': 0,
-    'Diabetes': 0,
-    'Obesity': 0,
-    'Hypertension': 0,
-    'Physiotherapy': 0,
-    'Stress Consultation': 0,
-  };
-
+  final Map<String, int> serviceLimits = {};
   final List<String> campuses = ['Pekan', 'Gambang'];
 
   @override
@@ -65,165 +56,159 @@ class _CreateAppointmentState extends State<CreateAppointment> {
     loadServiceLimits();
   }
 
-  Future<void> loadServiceLimits() async {
-    setState(() => isLoading = true);
-    try {
-      final snapshot = await _db
-          .collection('services')
-          .where('campusName', isEqualTo: selectedCampus)
-          .get();
+ Future<void> loadServiceLimits() async {
+  if (selectedCampus == null || selectedServiceCategory == null) return;
 
-      for (var doc in snapshot.docs) {
-        final data = doc.data();
-        if (serviceLimits.containsKey(data['serviceName'])) {
-          setState(() {
-            serviceLimits[data['serviceName']] = data['serviceLimit'] ?? 0;
-          });
-        }
-      }
-    } catch (e) {
-      print('Error loading service limits: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading service limits: $e')),
-        );
+  setState(() => isLoading = true);
+  try {
+    serviceLimits.clear();
+    final snapshot = await _db
+        .collection('Service')
+        .where('Campus_Name', isEqualTo: selectedCampus)
+        .where('Service_Category', isEqualTo: selectedServiceCategory)
+        .get();
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+      final serviceName = data['Service_Name'] as String?;
+      final serviceLimit = data['Service_Limit'] as int?;
+      if (serviceName != null && serviceLimit != null) {
+        serviceLimits[serviceName] = serviceLimit;
       }
     }
+  } catch (e) {
+    print('Error loading service limits: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error loading service limits: $e')),
+    );
+  } finally {
     setState(() => isLoading = false);
   }
+}
 
   Future<void> saveServiceLimits() async {
-    setState(() => isLoading = true);
-    try {
-      final batch = _db.batch();
-
-      final existingDocs = await _db
-          .collection('services')
-          .where('campusName', isEqualTo: selectedCampus)
-          .get();
-
-      for (var doc in existingDocs.docs) {
-        batch.delete(doc.reference);
-      }
-
-      // Save all services from all categories
-      for (var category in serviceCategories) {
-        for (var service in category.services) {
-          final docRef = _db.collection('services').doc();
-          batch.set(docRef, {
-            'Service_ID': '${selectedCampus!.substring(0, 3).toUpperCase()}_${service.substring(0, 3).toUpperCase()}_${DateTime.now().millisecondsSinceEpoch}',
-            'Service_Limit': serviceLimits[service],
-            'Service_Name': service,
-            'Campus_Name': selectedCampus,
-            'timestamp': FieldValue.serverTimestamp(),
-          });
-        }
-      }
-
-      await batch.commit();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Service limits saved successfully')),
-        );
-      }
-    } catch (e) {
-      print('Error saving service limits: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving service limits: $e')),
-        );
-      }
-    }
-    setState(() => isLoading = false);
+  if (selectedCampus == null || selectedServiceCategory == null || serviceLimits[selectedServiceCategory] == null) {
+    return;
   }
 
-  Widget buildServiceCategory(ServiceCategory category) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: category.color,
-          borderRadius: BorderRadius.circular(12),
+  setState(() => isLoading = true);
+  try {
+    // Create a new document reference
+    DocumentReference docRef = _db.collection('Service').doc();
+
+    // Set the service data in the new document
+    await docRef.set({
+      'Service_ID': docRef.id,
+      'Service_Limit': serviceLimits[selectedServiceCategory],
+      'Service_Name': selectedServiceCategory,
+      'Campus_Name': selectedCampus,
+      'Service_Category': selectedServiceCategory,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Service limits saved successfully')),
+    );
+  } catch (e) {
+    print('Error saving service limits: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error saving service limits: $e')),
+    );
+  } finally {
+    setState(() => isLoading = false);
+  }
+}
+
+  Widget buildServiceSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DropdownButtonFormField<String>(
+          value: selectedCampus,
+          decoration: const InputDecoration(labelText: 'Select Campus'),
+          items: campuses.map((campus) {
+            return DropdownMenuItem(value: campus, child: Text(campus));
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              selectedCampus = value;
+              selectedServiceCategory = null;
+              serviceLimits.clear();
+            });
+          },
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                category.title,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ...category.services.map((service) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      service,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(color: Colors.teal.shade200),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.remove),
-                            onPressed: () {
-                              setState(() {
-                                if (serviceLimits[service]! > 0) {
-                                  serviceLimits[service] = serviceLimits[service]! - 1;
-                                }
-                              });
-                            },
-                            color: Colors.teal,
-                          ),
-                          SizedBox(
-                            width: 40,
-                            child: Text(
-                              '${serviceLimits[service]}',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.add),
-                            onPressed: () {
-                              setState(() {
-                                serviceLimits[service] = serviceLimits[service]! + 1;
-                              });
-                            },
-                            color: Colors.teal,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              )).toList(),
-            ],
+        if (selectedCampus != null) ...[
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+            value: selectedServiceCategory,
+            decoration: const InputDecoration(labelText: 'Select Service Category'),
+            items: serviceCategories.map((category) {
+              return DropdownMenuItem(value: category.title, child: Text(category.title));
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                selectedServiceCategory = value;
+                serviceLimits.clear();
+                loadServiceLimits();
+              });
+            },
           ),
+        ],
+      ],
+    );
+  }
+
+ Widget buildServiceLimitControl() {
+    if (selectedServiceCategory == null) return Container();
+    serviceLimits[selectedServiceCategory!] ??= 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Set limit for $selectedServiceCategory',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
-      ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.remove),
+              onPressed: () {
+                setState(() {
+                  if (serviceLimits[selectedServiceCategory!]! > 0) {
+                    serviceLimits[selectedServiceCategory!] = serviceLimits[selectedServiceCategory!]! - 1;
+                  }
+                });
+              },
+            ),
+            SizedBox(
+              width: 40,
+              child: Text(
+                '${serviceLimits[selectedServiceCategory] ?? 0}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () {
+                setState(() {
+                  if (serviceLimits[selectedServiceCategory!]! < 4) {
+                    serviceLimits[selectedServiceCategory!] = serviceLimits[selectedServiceCategory!]! + 1;
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Maximum service limit is 4')),
+                    );
+                  }
+                });
+              },
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -233,135 +218,37 @@ class _CreateAppointmentState extends State<CreateAppointment> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.teal.shade600,
-        title: const Text(
-          'Create Appointment',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const Text('Create Appointment', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
       body: Stack(
         children: [
-          Column(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.teal.shade600,
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(20),
-                    bottomRight: Radius.circular(20),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: ListView(
+              children: [
+                buildServiceSelector(),
+                const SizedBox(height: 24),
+                buildServiceLimitControl(),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: saveServiceLimits,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal.shade600,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text(
+                    'Save',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ),
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                child: Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: DropdownButtonFormField<String>(
-                      value: selectedCampus,
-                      decoration: InputDecoration(
-                        labelText: 'Campus',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          selectedCampus = value;
-                        });
-                        loadServiceLimits();
-                      },
-                      items: campuses.map((campus) {
-                        return DropdownMenuItem(
-                          value: campus,
-                          child: Text(campus),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    ...serviceCategories.map((category) => buildServiceCategory(category)),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: saveServiceLimits,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.teal.shade600,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text(
-                          'Save',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const AppointmentList(),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.teal.shade600,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text(
-                          'View Appointments',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
           if (isLoading)
             Container(
               color: Colors.black.withOpacity(0.5),
-              child: const Center(
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                ),
-              ),
+              child: const Center(child: CircularProgressIndicator(color: Colors.white)),
             ),
         ],
       ),

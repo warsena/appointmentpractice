@@ -27,7 +27,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
 
   // Visibility toggles for password fields
   bool _isPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
+  final bool _isConfirmPasswordVisible = false;
 
 
   Future<void> _submitForm() async {

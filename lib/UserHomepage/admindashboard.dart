@@ -10,7 +10,7 @@ import 'package:appointmentpractice/Registration/registrationdoctor.dart';
 import 'package:appointmentpractice/login_page.dart'; // Import your login page
 
 class AdminHomePage extends StatefulWidget {
-  const AdminHomePage({Key? key}) : super(key: key);
+  const AdminHomePage({super.key});
 
   @override
   State<AdminHomePage> createState() => _AdminHomePageState();
@@ -144,7 +144,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => DoctorList()),
+                          builder: (context) => const DoctorList()),
                     );
                   },
                 ),
@@ -163,7 +163,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => CreateAppointment()),
+                          builder: (context) => const CreateAppointment()),
                     );
                   },
                 ),

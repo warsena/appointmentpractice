@@ -73,7 +73,7 @@ class _RegistrationUserState extends State<RegistrationUser> {
         context,
         MaterialPageRoute(builder: (context) => const AdminHomePage()),
       );
-    } on FirebaseAuthException catch (e) {
+    } on FirebaseAuthException {
       String errorMessage = 'An error occurred';
 
         // // Redirect user based on User_Type
