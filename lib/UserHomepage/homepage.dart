@@ -13,153 +13,144 @@ class Homepage extends StatefulWidget {
 class _HomepageState extends State<Homepage> {
   int _selectedIndex = 0;
 
-  // List of widgets for each page
-  final List<Widget> _pages = const [
-    Center(child: Text('Home Page')),
-    Center(
-        child:
-            Text('Calendar Page')), // This will be replaced by Campus Selection
-    Center(child: Text('Notifications Page')),
-    Center(child: Text('Settings Page')),
-  ];
-
+  // Define navigation logic for each bottom bar item
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
 
+  // Define widgets for each tab
+  Widget _getTabWidget(int index) {
+    switch (index) {
+      case 0:
+        return const Center(
+            child: Text('Homepage', style: TextStyle(fontSize: 24)));
+      case 1:
+        return const AppointmentPage();
+      case 2:
+        return const Center(
+            child: Text('Notification', style: TextStyle(fontSize: 24)));
+      case 3:
+        return const Profile(); // Navigate to the Profile page
+      default:
+        return const Center(child: Text('Unknown Page'));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Container(
-          alignment: Alignment.center,
-          child: const Text(
-            'Dual Campus',
-            style: TextStyle(
-              fontSize: 20.0, // Adjust font size as needed
-              fontWeight: FontWeight.bold, // Make the text bold
-            ),
+        title: const Text(
+          'Dual Campus',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
           ),
         ),
-        backgroundColor:
-            const Color(0xFF009FA0), // Turquoise color for the AppBar
-        toolbarHeight: 60.0, // Adjust the height if needed
+        centerTitle: true, // This centers the title
+        backgroundColor: Colors.teal,
       ),
-      body:
-          _selectedIndex == 1 ? buildCampusSelection() : _pages[_selectedIndex],
+      body: _getTabWidget(_selectedIndex),
       bottomNavigationBar: BottomNavigationBar(
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: GestureDetector(
-              onTap: () => _onItemTapped(0),
-              child: const SizedBox(
-                width: 24.0,
-                height: 24.0,
-                child: Icon(Icons.home),
-              ),
-            ),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: GestureDetector(
-              onTap: () => _onItemTapped(1),
-              child: const SizedBox(
-                width: 24.0,
-                height: 24.0,
-                child: Icon(Icons.calendar_today),
-              ),
-            ),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-            icon: GestureDetector(
-              onTap: () => _onItemTapped(2),
-              child: const SizedBox(
-                width: 24.0,
-                height: 24.0,
-                child: Icon(Icons.notifications),
-              ),
-            ),
-            label: '',
-          ),
-          BottomNavigationBarItem(
-  icon: GestureDetector(
-    onTap: () {
-      // Navigate to the Profile page when the settings icon is clicked
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const Profile()),
-      );
-    },
-    child: const SizedBox(
-      width: 24.0,
-      height: 24.0,
-      child: Icon(Icons.settings),
-    ),
-  ),
-  label: '',
-),
-        ],
         currentIndex: _selectedIndex,
-        selectedItemColor: const Color(0xFF009FA0),
-        unselectedItemColor: Colors.grey,
+        onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
+        selectedItemColor: Colors.teal,
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: 'Calendar',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.notifications),
+            label: 'Notification',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
       ),
     );
   }
+}
 
-  Widget buildCampusSelection() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Text(
-          'Select Campus',
-          style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 20.0),
-        buildCampusButton('UMPSA Gambang',
-            Appointmentgambang()), // Navigate to Appointmentgambang
-        const SizedBox(height: 10.0),
-        buildCampusButton(
-            'UMPSA Pekan', const Appointmentpekan()), // Navigate to Appointmentpekan
-      ],
-    );
-  }
+class AppointmentPage extends StatelessWidget {
+  const AppointmentPage({super.key});
 
-  Widget buildCampusButton(String campusName, Widget page) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
-          backgroundColor: Colors.teal[100], // Light turquoise background color
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.0),
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Appointment'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Appointment'),
+              Tab(text: 'History'),
+            ],
           ),
         ),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => page),
-          );
-        },
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        body: TabBarView(
           children: [
-            const Icon(Icons.school, color: Colors.teal),
-            const SizedBox(width: 10.0),
-            Text(
-              campusName,
-              style: const TextStyle(fontSize: 16.0, color: Colors.black),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Select Campus',
+                  style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20.0),
+                buildCampusButton(context, 'UMPSA Gambang', const Appointmentgambang()), //navigate to the Appointmentgambang page
+                const SizedBox(height: 10.0),
+                buildCampusButton(context, 'UMPSA Pekan', const Appointmentpekan()), //navigate to the Appointmentpekan page
+              ],
             ),
+            const Center(child: Text('History Tab', style: TextStyle(fontSize: 24))),
           ],
         ),
       ),
     );
   }
+}
+
+Widget buildCampusButton(BuildContext context, String campusName, Widget page) {
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 16.0),
+    child: ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 16.0),
+        backgroundColor: Colors.teal[100], // Light turquoise background color
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+      ),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => page),
+        );
+      },
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.school, color: Colors.teal),
+          const SizedBox(width: 10.0),
+          Text(
+            campusName,
+            style: const TextStyle(fontSize: 16.0, color: Colors.black),
+          ),
+        ],
+      ),
+    ),
+  );
 }

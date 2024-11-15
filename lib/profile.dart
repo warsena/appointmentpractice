@@ -92,7 +92,7 @@ class _ProfileState extends State<Profile> {
                   ListTile(
                     leading: const Icon(Icons.lock_outline, color: Colors.black),
                     title: const Text(
-                      'Change My Password',
+                      'Edit Profile',
                       style: TextStyle(color: Colors.black),
                     ),
                     trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey),
