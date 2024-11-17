@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart'; //
+import 'package:firebase_auth/firebase_auth.dart';
 import '../Appointment/appointmentgambang.dart';
 import '../Appointment/appointmentpekan.dart';
 import '../profile.dart';
@@ -9,6 +9,7 @@ class Homepage extends StatefulWidget {
   const Homepage({super.key});
 
   @override
+  // State<Homepage> createState() => _AppointmentPageState();
   State<Homepage> createState() => _HomepageState();
 }
 
@@ -21,18 +22,17 @@ class _HomepageState extends State<Homepage> {
       _selectedIndex = index;
     });
   }
+  
 
   // Define widgets for each tab
   Widget _getTabWidget(int index) {
     switch (index) {
       case 0:
-        return const Center(
-            child: Text('Homepage', style: TextStyle(fontSize: 24)));
+        return const Center(child: Text('Homepage', style: TextStyle(fontSize: 24)));
       case 1:
         return const AppointmentPage();
       case 2:
-        return const Center(
-            child: Text('Notification', style: TextStyle(fontSize: 24)));
+        return const Center(child: Text('Notification', style: TextStyle(fontSize: 24)));
       case 3:
         return const Profile(); // Navigate to the Profile page
       default:
@@ -51,7 +51,7 @@ class _HomepageState extends State<Homepage> {
             fontSize: 20,
           ),
         ),
-        centerTitle: true, // This centers the title
+        centerTitle: true,
         backgroundColor: Colors.teal,
       ),
       body: _getTabWidget(_selectedIndex),
@@ -111,9 +111,9 @@ class AppointmentPage extends StatelessWidget {
                   style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 20.0),
-                buildCampusButton(context, 'UMPSA Gambang', const Appointmentgambang()), //navigate to the Appointmentgambang page
+                buildCampusButton(context, 'UMPSA Gambang', const Appointmentgambang()),
                 const SizedBox(height: 10.0),
-                buildCampusButton(context, 'UMPSA Pekan', const Appointmentpekan()), //navigate to the Appointmentpekan page
+                buildCampusButton(context, 'UMPSA Pekan', const Appointmentpekan()),
               ],
             ),
             const HistoryTab(), // Add HistoryTab here
@@ -130,7 +130,7 @@ Widget buildCampusButton(BuildContext context, String campusName, Widget page) {
     child: ElevatedButton(
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 16.0),
-        backgroundColor: Colors.teal[100], // Light turquoise background color
+        backgroundColor: Colors.teal[100],
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8.0),
@@ -159,14 +159,13 @@ Widget buildCampusButton(BuildContext context, String campusName, Widget page) {
 
 // History Tab Widget to show appointment history
 class HistoryTab extends StatelessWidget {
-  const HistoryTab({super.key});
+  const HistoryTab({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Get the currently logged-in user's ID
-    final user = FirebaseAuth.instance.currentUser;
+    final User? currentUser = FirebaseAuth.instance.currentUser;
 
-    if (user == null) {
+    if (currentUser == null) {
       return const Center(
         child: Text('Please log in to view your appointment history.'),
       );
@@ -174,40 +173,69 @@ class HistoryTab extends StatelessWidget {
 
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('Appointment')
-          .where('User_ID', isEqualTo: user.uid) // Filter by User ID
-          .snapshots(),
+      .collection('Appointment')
+      .where('User_ID', isEqualTo: currentUser.uid)
+      .snapshots(),
       builder: (context, snapshot) {
+        // Show a loading indicator while waiting for data
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(child: Text('No appointment history found.'));
+
+        // Handle errors
+        if (snapshot.hasError) {
+          return Center(
+            child: Text('An error occurred: ${snapshot.error}'),
+          );
         }
 
+        // Handle the case where there is no data
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(
+            child: Text('No appointment history found.'),
+          );
+        }
+
+        // If data exists, display the list of appointments
         final appointments = snapshot.data!.docs;
 
         return ListView.builder(
+          padding: const EdgeInsets.all(8.0),
           itemCount: appointments.length,
           itemBuilder: (context, index) {
             final appointment =
                 appointments[index].data() as Map<String, dynamic>;
 
             return Card(
-              margin: const EdgeInsets.all(8.0),
+              margin: const EdgeInsets.only(bottom: 8.0),
               child: ListTile(
                 title: Text('Service: ${appointment['Appointment_Service']}'),
-                subtitle: Text(
-                  'Date: ${appointment['Appointment_Date']}\n'
-                  'Time: ${appointment['Appointment_Time']}\n'
-                  'Campus: ${appointment['Appointment_Campus']}',
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Date: ${appointment['Appointment_Date']}'),
+                    Text('Time: ${appointment['Appointment_Time']}'),
+                    Text('Campus: ${appointment['Appointment_Campus']}'),
+                  ],
                 ),
-                trailing: Text('ID: ${appointments[index].id}'),
+                // trailing: Text('ID: ${appointment['Appointment_ID']}'),
               ),
             );
           },
         );
       },
     );
+  }
+}
+
+
+// Add this debug function to check user authentication status
+void checkAuthStatus() {
+  final User? currentUser = FirebaseAuth.instance.currentUser;
+  if (currentUser != null) {
+    print('Current User_ID: ${currentUser.uid}');
+    print('Current User_Email: ${currentUser.email}');
+  } else {
+    print('No user currently logged in');
   }
 }
