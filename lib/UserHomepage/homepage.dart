@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; //
 import '../Appointment/appointmentgambang.dart';
 import '../Appointment/appointmentpekan.dart';
 import '../profile.dart';
@@ -114,7 +116,7 @@ class AppointmentPage extends StatelessWidget {
                 buildCampusButton(context, 'UMPSA Pekan', const Appointmentpekan()), //navigate to the Appointmentpekan page
               ],
             ),
-            const Center(child: Text('History Tab', style: TextStyle(fontSize: 24))),
+            const HistoryTab(), // Add HistoryTab here
           ],
         ),
       ),
@@ -153,4 +155,59 @@ Widget buildCampusButton(BuildContext context, String campusName, Widget page) {
       ),
     ),
   );
+}
+
+// History Tab Widget to show appointment history
+class HistoryTab extends StatelessWidget {
+  const HistoryTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // Get the currently logged-in user's ID
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return const Center(
+        child: Text('Please log in to view your appointment history.'),
+      );
+    }
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('Appointment')
+          .where('User_ID', isEqualTo: user.uid) // Filter by User ID
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(child: Text('No appointment history found.'));
+        }
+
+        final appointments = snapshot.data!.docs;
+
+        return ListView.builder(
+          itemCount: appointments.length,
+          itemBuilder: (context, index) {
+            final appointment =
+                appointments[index].data() as Map<String, dynamic>;
+
+            return Card(
+              margin: const EdgeInsets.all(8.0),
+              child: ListTile(
+                title: Text('Service: ${appointment['Appointment_Service']}'),
+                subtitle: Text(
+                  'Date: ${appointment['Appointment_Date']}\n'
+                  'Time: ${appointment['Appointment_Time']}\n'
+                  'Campus: ${appointment['Appointment_Campus']}',
+                ),
+                trailing: Text('ID: ${appointments[index].id}'),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 }

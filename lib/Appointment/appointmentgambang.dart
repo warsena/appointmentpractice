@@ -13,8 +13,9 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
   DateTime selectedDate = DateTime.now();
   String selectedService = 'Dental Service';
   String selectedSpecialization = '';
-  String selectedTimeslot = '8:00 AM';
+  String selectedTimeslot = '8.00 AM';
   String selectedCampus = 'Gambang';
+  List<String> availableTimeslots = [];
 
   final List<String> services = [
     'Dental Service',
@@ -23,7 +24,7 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
   ];
 
   final Map<String, List<String>> medicalSpecializations = {
-    'Medical Service': ['Diabetes', 'Obesity', 'Hypertension', 'Physiotherapy'],
+    'Medical Health Service': ['Diabetes', 'Obesity', 'Hypertension', 'Physiotherapy'],
   };
 
   final Map<String, List<String>> serviceTimeslots = {
@@ -32,15 +33,55 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
     'Mental Health Service': ['8:00 AM', '10:00 AM', '2:00 PM', '4:00 PM'],
   };
 
-  List<String> availableTimeslots = [];
-  List<String> availableSpecializations = [];
-
   @override
   void initState() {
     super.initState();
-    availableTimeslots = serviceTimeslots[selectedService]!;
-    if (selectedService == 'Medical Health Service') {
-      availableSpecializations = medicalSpecializations[selectedService]!;
+    availableTimeslots = serviceTimeslots[selectedService] ?? [];
+    _fetchAvailableTimeslots();
+  }
+
+// In _fetchAvailableTimeslots() - we want ALL booked slots for the day
+  Future<void> _fetchAvailableTimeslots() async {
+    try {
+      // Get all possible timeslots for the selected service
+      List<String> allTimeslots = serviceTimeslots[selectedService] ?? [];
+      
+      // Format the selected date to match Firestore storage format
+      String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+
+      // Query Firestore for booked appointments
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('Appointment')
+          .where('Appointment_Date', isEqualTo: formattedDate)
+          .where('Appointment_Service', isEqualTo: selectedService)
+          .where('Appointment_Campus', isEqualTo: selectedCampus)
+          .get();
+
+      // Get list of booked timeslots
+      List<String> bookedSlots = snapshot.docs
+          .map((doc) => doc.get('Appointment_Time') as String)
+          .toList();
+
+      // Filter out booked timeslots
+      List<String> available = allTimeslots
+          .where((timeslot) => !bookedSlots.contains(timeslot))
+          .toList();
+
+      // Update state with available timeslots
+      setState(() {
+        availableTimeslots = available;
+        // Clear selected timeslot if it's no longer available
+        if (!available.contains(selectedTimeslot)) {
+          selectedTimeslot = '';
+        }
+      });
+    } catch (e) {
+      print('Error fetching timeslots: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading available timeslots: $e')),
+        );
+      }
     }
   }
 
@@ -50,58 +91,77 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
       initialDate: selectedDate,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 90)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: const Color(0xFF009FA0),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
+        selectedTimeslot = ''; // Clear selected timeslot when date changes
       });
+      await _fetchAvailableTimeslots();
     }
   }
 
   Future<void> _bookAppointment() async {
     try {
-      // Generate a new document ID
-      String appointmentId =
-          FirebaseFirestore.instance.collection('Appointment').doc().id;
+      // Validate timeslot selection
+      if (selectedTimeslot.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a timeslot')),
+        );
+        return;
+      }
 
-      // Save the appointment to Firestore
+      // Format date for storage
+      String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+
+      // Check again if the timeslot is still available
+      QuerySnapshot existingBookings = await FirebaseFirestore.instance
+          .collection('Appointment')
+          .where('Appointment_Date', isEqualTo: formattedDate)
+          .where('Appointment_Time', isEqualTo: selectedTimeslot)
+          .where('Appointment_Service', isEqualTo: selectedService)
+          .where('Appointment_Campus', isEqualTo: selectedCampus)
+          .get();
+
+      if (existingBookings.docs.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('This timeslot has just been booked. Please select another timeslot.'),
+          ),
+        );
+        await _fetchAvailableTimeslots();
+        return;
+      }
+
+      // Generate unique appointment ID
+      String appointmentId = FirebaseFirestore.instance.collection('Appointment').doc().id;
+
+      // Create the appointment document
       await FirebaseFirestore.instance
           .collection('Appointment')
           .doc(appointmentId)
           .set({
         'Appointment_ID': appointmentId,
-        'Appointment_Date': DateFormat('yyyy-MM-dd').format(selectedDate),
+        'Appointment_Date': formattedDate,
         'Appointment_Time': selectedTimeslot,
-        'Appointment_Status': '',
         'Appointment_Campus': selectedCampus,
         'Appointment_Service': selectedService,
+        'Created_At': FieldValue.serverTimestamp(),
       });
 
-      // Show a success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Your booking is successfully confirmed.')),
-      );
-
-      // Navigate to the home page
-      Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Your booking is successfully confirmed.')),
+        );
+        Navigator.pop(context);
+      }
     } catch (e) {
       print('Error booking appointment: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error booking appointment: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error booking appointment: $e')),
+        );
+      }
     }
   }
 
@@ -118,24 +178,20 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
         actions: [
           IconButton(
             icon: const Icon(Icons.close),
-            onPressed: () {
-              // Navigate to the home page
-              Navigator.pop(context);
-            },
+            onPressed: () => Navigator.pop(context),
           ),
         ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _buildDateSelection(context),
                 _buildServiceDropdown(),
-                if (selectedService == 'Medical Service')
+                if (selectedService == 'Medical Health Service')
                   _buildSpecializationDropdown(),
                 _buildTimeSlotsGrid(),
                 const SizedBox(height: 32.0),
@@ -152,9 +208,10 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
                     child: const Text(
                       'Book Appointment',
                       style: TextStyle(
-                          fontSize: 18.0,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white),
+                        fontSize: 18.0,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white
+                      ),
                     ),
                   ),
                 ),
@@ -179,16 +236,19 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
             const Text(
               'Select Date',
               style: TextStyle(
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF009FA0)),
+                fontSize: 18.0,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF009FA0),
+              ),
             ),
             const SizedBox(height: 12.0),
             InkWell(
               onTap: () => _selectDate(context),
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    vertical: 12.0, horizontal: 16.0),
+                  vertical: 12.0,
+                  horizontal: 16.0,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.teal.shade50,
                   borderRadius: BorderRadius.circular(12.0),
@@ -200,7 +260,9 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
                     Text(
                       DateFormat('EEE, d MMMM yyyy').format(selectedDate),
                       style: const TextStyle(
-                          fontSize: 16.0, fontWeight: FontWeight.w500),
+                        fontSize: 16.0,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     Icon(Icons.calendar_today, color: Colors.teal.shade700),
                   ],
@@ -225,22 +287,21 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
             const Text(
               'Select Service',
               style: TextStyle(
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF009FA0)),
+                fontSize: 18.0,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF009FA0),
+              ),
             ),
             const SizedBox(height: 12.0),
             DropdownButtonFormField<String>(
               value: selectedService,
-              icon:
-                  Icon(Icons.keyboard_arrow_down, color: Colors.teal.shade700),
+              icon: Icon(Icons.keyboard_arrow_down, color: Colors.teal.shade700),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.teal.shade50,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.0),
-                  borderSide:
-                      BorderSide(color: Colors.teal.shade100, width: 1.5),
+                  borderSide: BorderSide(color: Colors.teal.shade100, width: 1.5),
                 ),
               ),
               items: services.map((String service) {
@@ -249,19 +310,12 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
                   child: Text(service),
                 );
               }).toList(),
-              onChanged: (newValue) {
+              onChanged: (newValue) async {
                 setState(() {
                   selectedService = newValue!;
-                  availableTimeslots = serviceTimeslots[selectedService]!;
-                  if (selectedService != 'Medical Service') {
-                    selectedSpecialization = '';
-                    availableSpecializations = [];
-                  } else {
-                    availableSpecializations =
-                        medicalSpecializations[selectedService]!;
-                    selectedSpecialization = availableSpecializations.first;
-                  }
+                  selectedTimeslot = ''; // Clear selected timeslot when service changes
                 });
+                await _fetchAvailableTimeslots(); // Fetch new available timeslots
               },
             ),
           ],
@@ -271,6 +325,10 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
   }
 
   Widget _buildSpecializationDropdown() {
+    // Initialize selectedSpecialization if it's empty
+  if (selectedSpecialization.isEmpty && medicalSpecializations['Medical Health Service']?.isNotEmpty == true) {
+    selectedSpecialization = medicalSpecializations['Medical Health Service']!.first;
+  }
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -282,30 +340,29 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
             const Text(
               'Select Specialization',
               style: TextStyle(
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF009FA0)),
+                fontSize: 18.0,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF009FA0),
+              ),
             ),
             const SizedBox(height: 12.0),
             DropdownButtonFormField<String>(
               value: selectedSpecialization,
-              icon:
-                  Icon(Icons.keyboard_arrow_down, color: Colors.teal.shade700),
+              icon: Icon(Icons.keyboard_arrow_down, color: Colors.teal.shade700),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.teal.shade50,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.0),
-                  borderSide:
-                      BorderSide(color: Colors.teal.shade100, width: 1.5),
+                  borderSide: BorderSide(color: Colors.teal.shade100, width: 1.5),
                 ),
               ),
-              items: availableSpecializations.map((String specialization) {
+              items: medicalSpecializations['Medical Health Service']?.map((String specialization) {
                 return DropdownMenuItem<String>(
                   value: specialization,
                   child: Text(specialization),
                 );
-              }).toList(),
+              }).toList() ?? [],
               onChanged: (newValue) {
                 setState(() {
                   selectedSpecialization = newValue!;
@@ -330,9 +387,10 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
             const Text(
               'Select Time',
               style: TextStyle(
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF009FA0)),
+                fontSize: 18.0,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF009FA0),
+              ),
             ),
             const SizedBox(height: 16.0),
             GridView.count(

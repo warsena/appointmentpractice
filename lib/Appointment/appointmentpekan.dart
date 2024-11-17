@@ -6,14 +6,14 @@ class Appointmentpekan extends StatefulWidget {
   const Appointmentpekan({super.key});
 
   @override
-  State<Appointmentpekan> createState() => _AppointmentgambangState();
+  State<Appointmentpekan> createState() => _AppointmentpekanState();
 }
 
-class _AppointmentgambangState extends State<Appointmentpekan> {
+class _AppointmentpekanState extends State<Appointmentpekan> {
   DateTime selectedDate = DateTime.now();
   String selectedService = 'Dental Service';
   String selectedSpecialization = '';
-  String selectedTimeslot = '8:00 AM';
+  String selectedTimeslot = '';
   String selectedCampus = 'Pekan';
 
   final List<String> services = [
@@ -85,7 +85,6 @@ class _AppointmentgambangState extends State<Appointmentpekan> {
         'Appointment_ID': appointmentId,
         'Appointment_Date': DateFormat('yyyy-MM-dd').format(selectedDate),
         'Appointment_Time': selectedTimeslot,
-        'Appointment_Status': '',
         'Appointment_Campus': selectedCampus,
         'Appointment_Service': selectedService,
       });
