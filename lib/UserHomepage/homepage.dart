@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import '../Appointment/appointmentgambang.dart';
 import '../Appointment/appointmentpekan.dart';
 import '../profile.dart';
@@ -22,17 +23,18 @@ class _HomepageState extends State<Homepage> {
       _selectedIndex = index;
     });
   }
-  
 
   // Define widgets for each tab
   Widget _getTabWidget(int index) {
     switch (index) {
       case 0:
-        return const Center(child: Text('Homepage', style: TextStyle(fontSize: 24)));
+        return const Center(
+            child: Text('Homepage', style: TextStyle(fontSize: 24)));
       case 1:
         return const AppointmentPage();
       case 2:
-        return const Center(child: Text('Notification', style: TextStyle(fontSize: 24)));
+        return const Center(
+            child: Text('Notification', style: TextStyle(fontSize: 24)));
       case 3:
         return const Profile(); // Navigate to the Profile page
       default:
@@ -84,16 +86,18 @@ class _HomepageState extends State<Homepage> {
   }
 }
 
+//Widget for displaying the appointment page with campus selection
 class AppointmentPage extends StatelessWidget {
   const AppointmentPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 2, // Two tabs: Appointment and History
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Appointment'),
+          // Tab bar for switching between Appointment and History views
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Appointment'),
@@ -103,18 +107,55 @@ class AppointmentPage extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Select Campus',
-                  style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 20.0),
-                buildCampusButton(context, 'UMPSA Gambang', const Appointmentgambang()),
-                const SizedBox(height: 10.0),
-                buildCampusButton(context, 'UMPSA Pekan', const Appointmentpekan()),
-              ],
+            // StreamBuilder to listen to real-time updates from Firestore
+            StreamBuilder<DocumentSnapshot>(
+              // Get the current user's document from Firestore
+              // Uses the logged-in user's UID to fetch their data
+              stream: FirebaseFirestore.instance
+                  .collection('User')
+                  .doc(FirebaseAuth.instance.currentUser?.uid)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                // Show loading indicator while fetching data
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                // Show error message if data fetch fails
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+
+                // Show message if user data is not found
+                if (!snapshot.hasData || !snapshot.data!.exists) {
+                  return const Center(child: Text('User data not found'));
+                }
+
+                // Extract user data from the snapshot
+                final userData = snapshot.data!.data() as Map<String, dynamic>;
+                // Get the user's campus from the data
+                final userCampus = userData['Campus'] as String;
+
+                // Build the campus selection UI
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Select Campus',
+                      style: TextStyle(
+                          fontSize: 18.0, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 20.0),
+                    // Show campus button based on user's campus
+                    if (userCampus == 'Pekan')
+                      buildCampusButton(
+                          context, 'UMPSA Pekan', const Appointmentpekan())
+                    else if (userCampus == 'Gambang')
+                      buildCampusButton(
+                          context, 'UMPSA Gambang', const Appointmentgambang()),
+                  ],
+                );
+              },
             ),
             const HistoryTab(), // Add HistoryTab here
           ],
@@ -126,12 +167,16 @@ class AppointmentPage extends StatelessWidget {
 
 Widget buildCampusButton(BuildContext context, String campusName, Widget page) {
   return Container(
-    margin: const EdgeInsets.symmetric(horizontal: 16.0),
+    // Add horizontal margin to the button
+    margin: const EdgeInsets.symmetric(horizontal: 5.0),
     child: ElevatedButton(
       style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 16.0),
+        //Add vertical padding inside the button
+        padding: const EdgeInsets.symmetric(vertical: 5.0),
         backgroundColor: Colors.teal[100],
+        // Remove button shadow
         elevation: 0,
+        // Add rounded corners to the button
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8.0),
         ),
@@ -142,11 +187,12 @@ Widget buildCampusButton(BuildContext context, String campusName, Widget page) {
           MaterialPageRoute(builder: (context) => page),
         );
       },
+      // Button content layout
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(Icons.school, color: Colors.teal),
-          const SizedBox(width: 10.0),
+          const SizedBox(width: 10.0), // Space between icon and text
           Text(
             campusName,
             style: const TextStyle(fontSize: 16.0, color: Colors.black),
@@ -161,6 +207,58 @@ Widget buildCampusButton(BuildContext context, String campusName, Widget page) {
 class HistoryTab extends StatelessWidget {
   const HistoryTab({Key? key}) : super(key: key);
 
+  Future<void> _rescheduleAppointment(
+      BuildContext context, Map appointment) async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reschedule Appointment'),
+        content:
+            const Text('Reschedule functionality will be implemented here.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _cancelAppointment(
+      BuildContext context, String appointmentId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('Appointment')
+          .doc(appointmentId)
+          .delete();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Appointment cancelled successfully')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error cancelling appointment: $e')),
+      );
+    }
+  }
+
+  Future<void> _setReminder(BuildContext context, Map appointment) async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Set Reminder'),
+        content: const Text('Reminder functionality will be implemented here.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final User? currentUser = FirebaseAuth.instance.currentUser;
@@ -173,9 +271,9 @@ class HistoryTab extends StatelessWidget {
 
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-      .collection('Appointment')
-      .where('User_ID', isEqualTo: currentUser.uid)
-      .snapshots(),
+          .collection('Appointment')
+          .where('User_ID', isEqualTo: currentUser.uid)
+          .snapshots(),
       builder: (context, snapshot) {
         // Show a loading indicator while waiting for data
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -200,25 +298,75 @@ class HistoryTab extends StatelessWidget {
         final appointments = snapshot.data!.docs;
 
         return ListView.builder(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(12.0),
           itemCount: appointments.length,
           itemBuilder: (context, index) {
-            final appointment =
-                appointments[index].data() as Map<String, dynamic>;
+            final appointment = appointments[index].data() as Map;
+            final appointmentId = appointments[index].id;
 
             return Card(
-              margin: const EdgeInsets.only(bottom: 8.0),
-              child: ListTile(
-                title: Text('Service: ${appointment['Appointment_Service']}'),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              elevation: 4,
+              margin: const EdgeInsets.only(bottom: 16.0),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.center, // Center all content
                   children: [
+                    Text(
+                      'Service: ${appointment['Appointment_Service']}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     Text('Date: ${appointment['Appointment_Date']}'),
                     Text('Time: ${appointment['Appointment_Time']}'),
                     Text('Campus: ${appointment['Appointment_Campus']}'),
+                    const SizedBox(height: 16),
+                    Container(
+                      alignment: Alignment.center,
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 8.0,
+                        runSpacing: 8.0,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: () =>
+                                _rescheduleAppointment(context, appointment),
+                            icon: const Icon(Icons.schedule, size: 16),
+                            label: const Text('Reschedule'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () =>
+                                _cancelAppointment(context, appointmentId),
+                            icon: const Icon(Icons.cancel, size: 16),
+                            label: const Text('Cancel'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () => _setReminder(context, appointment),
+                            icon: const Icon(Icons.alarm, size: 16),
+                            label: const Text('Reminder'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-                // trailing: Text('ID: ${appointment['Appointment_ID']}'),
               ),
             );
           },
@@ -227,7 +375,6 @@ class HistoryTab extends StatelessWidget {
     );
   }
 }
-
 
 // Add this debug function to check user authentication status
 void checkAuthStatus() {
