@@ -41,11 +41,15 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
     _fetchAvailableTimeslots();
   }
 
+  // In _fetchAvailableTimeslots() - we want ALL booked slots for the day
   Future<void> _fetchAvailableTimeslots() async {
     try {
+      // Format the selected date to match Firestore storage format
       String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+      // Get all possible timeslots for the selected service
       List<String> allTimeslots = serviceTimeslots[selectedService] ?? [];
 
+      // Query Firestore for booked appointments
       QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('Appointment')
           .where('Appointment_Date', isEqualTo: formattedDate)
@@ -53,15 +57,18 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
           .where('Appointment_Campus', isEqualTo: selectedCampus)
           .get();
 
+      // Get list of booked timeslots
       List<String> bookedSlots = snapshot.docs
           .map((doc) => doc.get('Appointment_Time') as String)
           .toList();
 
+      // Update state with available timeslots
       setState(() {
         availableTimeslots = allTimeslots
             .where((timeslot) => !bookedSlots.contains(timeslot))
             .toList();
 
+      // Clear selected timeslot if it's no longer available
         if (!availableTimeslots.contains(selectedTimeslot)) {
           selectedTimeslot = '';
         }

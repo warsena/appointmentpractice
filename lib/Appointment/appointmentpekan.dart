@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authentication
+
 
 class Appointmentpekan extends StatefulWidget {
   const Appointmentpekan({super.key});
@@ -43,11 +45,11 @@ class _AppointmentpekanState extends State<Appointmentpekan> {
   // In _fetchAvailableTimeslots() - we want ALL booked slots for the day
   Future<void> _fetchAvailableTimeslots() async {
     try {
+      // Format the selected date to match Firestore storage format
+      String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
       // Get all possible timeslots for the selected service
       List<String> allTimeslots = serviceTimeslots[selectedService] ?? [];
       
-      // Format the selected date to match Firestore storage format
-      String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
 
       // Query Firestore for booked appointments
       QuerySnapshot snapshot = await FirebaseFirestore.instance
@@ -62,16 +64,16 @@ class _AppointmentpekanState extends State<Appointmentpekan> {
           .map((doc) => doc.get('Appointment_Time') as String)
           .toList();
 
-      // Filter out booked timeslots
-      List<String> available = allTimeslots
-          .where((timeslot) => !bookedSlots.contains(timeslot))
-          .toList();
+     
 
       // Update state with available timeslots
       setState(() {
-        availableTimeslots = available;
+        availableTimeslots = allTimeslots
+            .where((timeslot) => !bookedSlots.contains(timeslot))
+            .toList();
+
         // Clear selected timeslot if it's no longer available
-        if (!available.contains(selectedTimeslot)) {
+       if (!availableTimeslots.contains(selectedTimeslot)) {
           selectedTimeslot = '';
         }
       });
@@ -103,18 +105,28 @@ class _AppointmentpekanState extends State<Appointmentpekan> {
 
 Future<void> _bookAppointment() async {
     try {
-      // Validate timeslot selection
-      if (selectedTimeslot.isEmpty) {
+       // 1. First check if user is logged in
+    final User? currentUser = FirebaseAuth.instance.currentUser;
+    
+    if (currentUser == null) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select a timeslot')),
+          const SnackBar(content: Text('Please log in to book an appointment')),
         );
-        return;
       }
+      return;
+    }
 
-      // Format date for storage
-      String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+    if (selectedTimeslot.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a timeslot')),
+      );
+      return;
+    }
 
-      // Check again if the timeslot is still available
+
+     String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+
       QuerySnapshot existingBookings = await FirebaseFirestore.instance
           .collection('Appointment')
           .where('Appointment_Date', isEqualTo: formattedDate)
@@ -133,39 +145,40 @@ Future<void> _bookAppointment() async {
         return;
       }
 
-      // Generate unique appointment ID
-      String appointmentId = FirebaseFirestore.instance.collection('Appointment').doc().id;
+      // 3. Create new appointment with consistent User_ID
+    final appointmentData = {
+      'Appointment_ID': FirebaseFirestore.instance.collection('Appointment').doc().id,
+      'Appointment_Date': formattedDate,
+      'Appointment_Time': selectedTimeslot,
+      'Appointment_Campus': selectedCampus,
+      'Appointment_Service': selectedService,
+      'Created_At': FieldValue.serverTimestamp(),
+      'User_ID': currentUser.uid,  // Use the current user's UID
+    };
 
-      // Create the appointment document
-      await FirebaseFirestore.instance
-          .collection('Appointment')
-          .doc(appointmentId)
-          .set({
-        'Appointment_ID': appointmentId,
-        'Appointment_Date': formattedDate,
-        'Appointment_Time': selectedTimeslot,
-        'Appointment_Campus': selectedCampus,
-        'Appointment_Service': selectedService,
-        'Created_At': FieldValue.serverTimestamp(),
-      });
+    // 4. Add to Firestore
+    await FirebaseFirestore.instance
+        .collection('Appointment')
+        .add(appointmentData);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Your booking is successfully confirmed.')),
-        );
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      print('Error booking appointment: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error booking appointment: $e')),
-        );
-      }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Your booking is successfully confirmed.')),
+      );
+      Navigator.pop(context);
+    }
+  } catch (e) {
+    print('Error booking appointment: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error booking appointment: $e')),
+      );
     }
   }
+}
 
-@override
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -210,7 +223,7 @@ Future<void> _bookAppointment() async {
                       style: TextStyle(
                         fontSize: 18.0,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white
+                        color: Colors.white,
                       ),
                     ),
                   ),
@@ -224,7 +237,7 @@ Future<void> _bookAppointment() async {
     );
   }
 
-Widget _buildDateSelection(BuildContext context) {
+  Widget _buildDateSelection(BuildContext context) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -375,7 +388,7 @@ Widget _buildDateSelection(BuildContext context) {
     );
   }
 
-Widget _buildTimeSlotsGrid() {
+  Widget _buildTimeSlotsGrid() {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
