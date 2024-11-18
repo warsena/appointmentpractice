@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../Appointment/appointmentgambang.dart';
 import '../Appointment/appointmentpekan.dart';
+import 'package:appointmentpractice/Appointment/rescheduleappointment.dart';
 import '../profile.dart';
 
 class Homepage extends StatefulWidget {
@@ -168,7 +169,7 @@ class AppointmentPage extends StatelessWidget {
 Widget buildCampusButton(BuildContext context, String campusName, Widget page) {
   return Container(
     // Add horizontal margin to the button
-    margin: const EdgeInsets.symmetric(horizontal: 5.0),
+    margin: const EdgeInsets.symmetric(horizontal: 16.0),
     child: ElevatedButton(
       style: ElevatedButton.styleFrom(
         //Add vertical padding inside the button
@@ -207,21 +208,95 @@ Widget buildCampusButton(BuildContext context, String campusName, Widget page) {
 class HistoryTab extends StatelessWidget {
   const HistoryTab({Key? key}) : super(key: key);
 
+  // Future<void> _rescheduleAppointment(
+  //     BuildContext context, Map appointment) async {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: const Text('Reschedule Appointment'),
+  //       content:
+  //           const Text('Reschedule functionality will be implemented here.'),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Navigator.pop(context),
+  //           child: const Text('Close'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+//reschedule appointment
+  // Function to reschedule the appointment
   Future<void> _rescheduleAppointment(
-      BuildContext context, Map appointment) async {
+      BuildContext context, Map<String, dynamic> appointment) async {
+    String campus = appointment['Appointment_Campus'];
+    String appointmentId = appointment['Appointment_ID'];
+
+    if (appointmentId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Appointment ID not found. Unable to reschedule.')),
+      );
+      return;
+    }
+
+    _navigateForReschedule(context, campus, appointmentId);
+  }
+
+// Navigation function to go to the appropriate appointment page based on campus
+  void _navigateForReschedule(
+      BuildContext context, String campus, String appointmentId) {
+    if (campus == 'Gambang') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              RescheduleAppointment(appointmentId: appointmentId),
+        ),
+      );
+    } else if (campus == 'Pekan') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              RescheduleAppointment(appointmentId: appointmentId),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid campus for rescheduling')),
+      );
+    }
+  }
+
+
+  // Function to show the cancel dialog (delete appointnment from db)
+  void _showCancelDialog(BuildContext context, String appointmentId) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reschedule Appointment'),
-        content:
-            const Text('Reschedule functionality will be implemented here.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Cancel Appointment'),
+          content: const Text(
+              'Are you sure you want to cancel this appointment?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(); // Close the dialog
+              },
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await _cancelAppointment(context, appointmentId);
+                Navigator.of(dialogContext).pop(); // Close the dialog
+              },
+              child: const Text('Yes'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -301,7 +376,8 @@ class HistoryTab extends StatelessWidget {
           padding: const EdgeInsets.all(12.0),
           itemCount: appointments.length,
           itemBuilder: (context, index) {
-            final appointment = appointments[index].data() as Map;
+            final appointment = appointments[index].data()
+                as Map<String, dynamic>; // Explicit cast
             final appointmentId = appointments[index].id;
 
             return Card(
@@ -373,16 +449,5 @@ class HistoryTab extends StatelessWidget {
         );
       },
     );
-  }
-}
-
-// Add this debug function to check user authentication status
-void checkAuthStatus() {
-  final User? currentUser = FirebaseAuth.instance.currentUser;
-  if (currentUser != null) {
-    print('Current User_ID: ${currentUser.uid}');
-    print('Current User_Email: ${currentUser.email}');
-  } else {
-    print('No user currently logged in');
   }
 }
