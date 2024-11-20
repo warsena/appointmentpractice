@@ -88,6 +88,10 @@ class HealthBulletinPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get the current date at the start of the day
+    final now = DateTime.now();
+    final currentDate = DateTime(now.year, now.month, now.day);
+
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('Health_Bulletin')
@@ -96,25 +100,61 @@ class HealthBulletinPage extends StatelessWidget {
       builder: (context, snapshot) {
         // Loading state
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: CircularProgressIndicator(color: Colors.teal),
+          );
         }
 
         // Error state
         if (snapshot.hasError) {
           return Center(
-            child: Text('Error loading health bulletins: ${snapshot.error}'),
+            child: Text(
+              'Error loading health bulletins: ${snapshot.error}',
+              style: const TextStyle(color: Colors.red),
+            ),
           );
         }
 
         // No bulletins
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const Center(
-            child: Text('No health bulletins available'),
+            child: Text(
+              'No health bulletins available',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
           );
         }
 
-        // Display bulletins
-        final bulletins = snapshot.data!.docs;
+        // Filter and display active bulletins
+        final bulletins = snapshot.data!.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          final endDateStr = data['Bulletin_End_Date'];
+          if (endDateStr == null) return false;
+
+          final endDate = DateTime.tryParse(endDateStr);
+          if (endDate == null) return false;
+
+          // Set end date to end of day for comparison
+          final endDateCompare = DateTime(
+            endDate.year,
+            endDate.month,
+            endDate.day,
+            23,
+            59,
+            59,
+          );
+
+          return endDateCompare.isAfter(currentDate);
+        }).toList();
+
+        if (bulletins.isEmpty) {
+          return const Center(
+            child: Text(
+              'No active health bulletins available',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          );
+        }
 
         return ListView.builder(
           padding: const EdgeInsets.all(16.0),
@@ -125,6 +165,9 @@ class HealthBulletinPage extends StatelessWidget {
             return Card(
               margin: const EdgeInsets.only(bottom: 16.0),
               elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -139,11 +182,11 @@ class HealthBulletinPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      bulletin['Bulletin_Description'] ??
-                          'No description available',
+                      bulletin['Bulletin_Description'] ?? 'No description available',
                       style: const TextStyle(fontSize: 16),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8),
                   ],
                 ),
               ),
@@ -152,17 +195,6 @@ class HealthBulletinPage extends StatelessWidget {
         );
       },
     );
-  }
-
-  // Helper method to format timestamp
-  String _formatDate(dynamic date) {
-    if (date is Timestamp) {
-      return DateFormat('dd MMM yyyy').format(date.toDate());
-    } else if (date is DateTime) {
-      return DateFormat('dd MMM yyyy').format(date);
-    } else {
-      return 'Invalid date';
-    }
   }
 }
 
