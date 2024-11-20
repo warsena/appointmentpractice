@@ -11,33 +11,29 @@ class Homepage extends StatefulWidget {
   const Homepage({super.key});
 
   @override
-  // State<Homepage> createState() => _AppointmentPageState();
   State<Homepage> createState() => _HomepageState();
 }
 
 class _HomepageState extends State<Homepage> {
   int _selectedIndex = 0;
 
-  // Define navigation logic for each bottom bar item
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
 
-  // Define widgets for each tab
   Widget _getTabWidget(int index) {
     switch (index) {
       case 0:
-        return const Center(
-            child: Text('Homepage', style: TextStyle(fontSize: 24)));
+        return const HealthBulletinPage();
       case 1:
         return const AppointmentPage();
       case 2:
         return const Center(
             child: Text('Notification', style: TextStyle(fontSize: 24)));
       case 3:
-        return const Profile(); // Navigate to the Profile page
+        return const Profile();
       default:
         return const Center(child: Text('Unknown Page'));
     }
@@ -84,6 +80,89 @@ class _HomepageState extends State<Homepage> {
         ],
       ),
     );
+  }
+}
+
+class HealthBulletinPage extends StatelessWidget {
+  const HealthBulletinPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('Health_Bulletin')
+          .orderBy('Bulletin_Start_Date', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        // Loading state
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        // Error state
+        if (snapshot.hasError) {
+          return Center(
+            child: Text('Error loading health bulletins: ${snapshot.error}'),
+          );
+        }
+
+        // No bulletins
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(
+            child: Text('No health bulletins available'),
+          );
+        }
+
+        // Display bulletins
+        final bulletins = snapshot.data!.docs;
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16.0),
+          itemCount: bulletins.length,
+          itemBuilder: (context, index) {
+            final bulletin = bulletins[index].data() as Map<String, dynamic>;
+
+            return Card(
+              margin: const EdgeInsets.only(bottom: 16.0),
+              elevation: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      bulletin['Bulletin_Title'] ?? 'Untitled Bulletin',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      bulletin['Bulletin_Description'] ??
+                          'No description available',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Helper method to format timestamp
+  String _formatDate(dynamic date) {
+    if (date is Timestamp) {
+      return DateFormat('dd MMM yyyy').format(date.toDate());
+    } else if (date is DateTime) {
+      return DateFormat('dd MMM yyyy').format(date);
+    } else {
+      return 'Invalid date';
+    }
   }
 }
 
@@ -208,24 +287,6 @@ Widget buildCampusButton(BuildContext context, String campusName, Widget page) {
 class HistoryTab extends StatelessWidget {
   const HistoryTab({Key? key}) : super(key: key);
 
-  // Future<void> _rescheduleAppointment(
-  //     BuildContext context, Map appointment) async {
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) => AlertDialog(
-  //       title: const Text('Reschedule Appointment'),
-  //       content:
-  //           const Text('Reschedule functionality will be implemented here.'),
-  //       actions: [
-  //         TextButton(
-  //           onPressed: () => Navigator.pop(context),
-  //           child: const Text('Close'),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
 //reschedule appointment
   // Function to reschedule the appointment
   Future<void> _rescheduleAppointment(
@@ -270,7 +331,6 @@ class HistoryTab extends StatelessWidget {
     }
   }
 
-
   // Function to show the cancel dialog (delete appointnment from db)
   void _showCancelDialog(BuildContext context, String appointmentId) {
     showDialog(
@@ -278,8 +338,8 @@ class HistoryTab extends StatelessWidget {
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Cancel Appointment'),
-          content: const Text(
-              'Are you sure you want to cancel this appointment?'),
+          content:
+              const Text('Are you sure you want to cancel this appointment?'),
           actions: [
             TextButton(
               onPressed: () {

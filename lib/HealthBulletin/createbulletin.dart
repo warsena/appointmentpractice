@@ -160,14 +160,14 @@ class _CreateBulletinState extends State<CreateBulletin> {
                       controller: _titleController,
                       decoration: InputDecoration(
                         labelText: 'Title',
-                        prefixIcon: Icon(Icons.title, color: Colors.teal),
+                        prefixIcon: const Icon(Icons.title, color: Colors.teal),
                         // Outlined border with rounded corners
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                         // Focused border with teal color
                         focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.teal, width: 2),
+                          borderSide: const BorderSide(color: Colors.teal, width: 2),
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
@@ -299,6 +299,7 @@ class _CreateBulletinState extends State<CreateBulletin> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          color: Colors.white, // Set text color to white
                         ),
                       ),
                     ),
