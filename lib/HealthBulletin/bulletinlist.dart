@@ -15,7 +15,8 @@ class BulletinList extends StatelessWidget {
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         title: const Text('Delete Bulletin'), // Dialog title
-        content: const Text('Are you sure you want to delete this bulletin?'), // Confirmation message
+        content: const Text(
+            'Are you sure you want to delete this bulletin?'), // Confirmation message
         actions: [
           // Cancel button
           TextButton(
@@ -42,9 +43,6 @@ class BulletinList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get the current date as a string in ISO 8601 format
-    final String currentDate = DateTime.now().toIso8601String();
-
     return Scaffold(
       // App bar with title and custom background color
       appBar: AppBar(
@@ -66,10 +64,9 @@ class BulletinList extends StatelessWidget {
           ),
         ),
         child: StreamBuilder<QuerySnapshot>(
-          // Firestore query to retrieve active bulletins
+          // Firestore query to retrieve all bulletins
           stream: FirebaseFirestore.instance
               .collection('Health_Bulletin') // Specify the Firestore collection
-              .where('Bulletin_End_Date', isGreaterThan: currentDate) // Filter by end date (show active bulletin to user that why not retrieve by Bulletin_ID)
               .orderBy('Bulletin_End_Date', descending: false) // Order by ascending end date
               .snapshots(), // Get real-time updates
           builder: (context, snapshot) {
@@ -90,7 +87,7 @@ class BulletinList extends StatelessWidget {
                         size: 60, color: Colors.grey[400]),
                     const SizedBox(height: 16),
                     Text(
-                      'No active bulletins',
+                      'No bulletins available',
                       style: TextStyle(
                         fontSize: 18,
                         color: Colors.grey[600],
@@ -111,10 +108,20 @@ class BulletinList extends StatelessWidget {
               itemCount: bulletins.length,
               itemBuilder: (context, index) {
                 // Extract bulletin data as a map
-                final bulletin =
-                    bulletins[index].data() as Map<String, dynamic>;
+                final bulletin = bulletins[index].data() as Map<String, dynamic>;
                 final docId = bulletins[index].id; // Document ID
-                final endDate = DateTime.parse(bulletin['Bulletin_End_Date']); // Parse end date
+
+                // Check the type of Bulletin_End_Date and parse accordingly
+                DateTime endDate;
+                if (bulletin['Bulletin_End_Date'] is Timestamp) {
+                  endDate =
+                      (bulletin['Bulletin_End_Date'] as Timestamp).toDate(); // Convert Timestamp to DateTime
+                } else if (bulletin['Bulletin_End_Date'] is String) {
+                  endDate = DateTime.parse(bulletin['Bulletin_End_Date']); // Parse String to DateTime
+                } else {
+                  // Handle the case where the end date is neither a Timestamp nor a String
+                  endDate = DateTime.now(); // Default to current date or handle as needed
+                }
 
                 return Card(
                   elevation: 3,
@@ -152,24 +159,20 @@ class BulletinList extends StatelessWidget {
                             Row(
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.edit,
-                                      color: Colors.teal),
+                                  icon: const Icon(Icons.edit, color: Colors.teal),
                                   onPressed: () {
                                     // Navigate to the update bulletin screen
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) =>
-                                            UpdateBulletin(bulletinId: docId),
+                                        builder: (context) => UpdateBulletin(bulletinId: docId),
                                       ),
                                     );
                                   },
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.delete,
-                                      color: Colors.red),
-                                  onPressed: () =>
-                                      _deleteBulletin(context, docId),
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () => _deleteBulletin(context, docId),
                                 ),
                               ],
                             ),
@@ -193,10 +196,7 @@ class BulletinList extends StatelessWidget {
                             const SizedBox(height: 8),
                             // End date
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
                                 color: Colors.teal.shade50,
                                 borderRadius: BorderRadius.circular(8),
