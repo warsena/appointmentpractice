@@ -64,10 +64,20 @@ class _CreateBulletinState extends State<CreateBulletin> {
   // Method to create and submit bulletin to Firestore
   Future<void> _createBulletin() async {
     // Validate form and ensure dates are selected
-    if (_formKey.currentState!.validate() && _startDate != null && _endDate != null) {
+    if (_formKey.currentState!.validate() &&
+        _startDate != null &&
+        _endDate != null) {
       try {
+        // Generate a unique ID for the bulletin
+        final bulletinId =
+            FirebaseFirestore.instance.collection('Health_Bulletin').doc().id;
+
         // Add bulletin data to Firestore collection
-        await FirebaseFirestore.instance.collection('Health_Bulletin').add({
+        await FirebaseFirestore.instance
+            .collection('Health_Bulletin')
+            .doc(bulletinId)
+            .set({
+          'Bulletin_ID': bulletinId, // Store the unique ID
           'Bulletin_Title': _titleController.text,
           'Bulletin_Description': _descriptionController.text,
           // Convert dates to ISO 8601 string format for storage
@@ -116,7 +126,7 @@ class _CreateBulletinState extends State<CreateBulletin> {
     return Scaffold(
       // Light background color for overall screen
       backgroundColor: Colors.grey[100],
-      
+
       // App bar with custom styling
       appBar: AppBar(
         title: const Text(
@@ -126,7 +136,7 @@ class _CreateBulletinState extends State<CreateBulletin> {
         backgroundColor: Colors.teal,
         elevation: 0,
       ),
-      
+
       // Scrollable body to handle smaller screen sizes
       body: SingleChildScrollView(
         child: Padding(
@@ -170,18 +180,20 @@ class _CreateBulletinState extends State<CreateBulletin> {
                       },
                     ),
                     const SizedBox(height: 16.0),
-                    
+
                     // Description input field with custom decoration
                     TextFormField(
                       controller: _descriptionController,
                       decoration: InputDecoration(
                         labelText: 'Description',
-                        prefixIcon: const Icon(Icons.description, color: Colors.teal),
+                        prefixIcon:
+                            const Icon(Icons.description, color: Colors.teal),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Colors.teal, width: 2),
+                          borderSide:
+                              const BorderSide(color: Colors.teal, width: 2),
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
@@ -195,7 +207,7 @@ class _CreateBulletinState extends State<CreateBulletin> {
                       },
                     ),
                     const SizedBox(height: 16.0),
-                    
+
                     // Start Date selection with custom styling
                     Row(
                       children: [
@@ -206,18 +218,25 @@ class _CreateBulletinState extends State<CreateBulletin> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: ListTile(
-                              leading: const Icon(Icons.calendar_today, color: Colors.teal),
+                              leading: const Icon(Icons.calendar_today,
+                                  color: Colors.teal),
                               title: Text(
                                 // Display selected start date or placeholder
                                 _startDate == null
                                     ? 'Start Date'
-                                    : _startDate!.toLocal().toString().split(' ')[0],
+                                    : _startDate!
+                                        .toLocal()
+                                        .toString()
+                                        .split(' ')[0],
                                 style: TextStyle(
-                                  color: _startDate == null ? Colors.grey : Colors.black,
+                                  color: _startDate == null
+                                      ? Colors.grey
+                                      : Colors.black,
                                 ),
                               ),
                               trailing: IconButton(
-                                icon: const Icon(Icons.edit_calendar, color: Colors.teal),
+                                icon: const Icon(Icons.edit_calendar,
+                                    color: Colors.teal),
                                 onPressed: () => _selectDate(context, true),
                               ),
                             ),
@@ -226,7 +245,7 @@ class _CreateBulletinState extends State<CreateBulletin> {
                       ],
                     ),
                     const SizedBox(height: 16.0),
-                    
+
                     // End Date selection with custom styling
                     Row(
                       children: [
@@ -237,18 +256,25 @@ class _CreateBulletinState extends State<CreateBulletin> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: ListTile(
-                              leading: const Icon(Icons.calendar_today, color: Colors.teal),
+                              leading: const Icon(Icons.calendar_today,
+                                  color: Colors.teal),
                               title: Text(
                                 // Display selected end date or placeholder
                                 _endDate == null
                                     ? 'End Date'
-                                    : _endDate!.toLocal().toString().split(' ')[0],
+                                    : _endDate!
+                                        .toLocal()
+                                        .toString()
+                                        .split(' ')[0],
                                 style: TextStyle(
-                                  color: _endDate == null ? Colors.grey : Colors.black,
+                                  color: _endDate == null
+                                      ? Colors.grey
+                                      : Colors.black,
                                 ),
                               ),
                               trailing: IconButton(
-                                icon: const Icon(Icons.edit_calendar, color: Colors.teal),
+                                icon: const Icon(Icons.edit_calendar,
+                                    color: Colors.teal),
                                 onPressed: () => _selectDate(context, false),
                               ),
                             ),
@@ -257,7 +283,7 @@ class _CreateBulletinState extends State<CreateBulletin> {
                       ],
                     ),
                     const SizedBox(height: 24.0),
-                    
+
                     // Create Bulletin button with custom styling
                     ElevatedButton(
                       onPressed: _createBulletin,

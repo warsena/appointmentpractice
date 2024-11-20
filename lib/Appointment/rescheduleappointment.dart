@@ -112,9 +112,6 @@ void initState() {
   }
 }
 
-
-
-
   // Fetch available timeslots
   Future<void> _fetchAvailableTimeslots() async {
   try {
