@@ -1,3 +1,5 @@
+import 'package:appointmentpractice/Profile/setting.dart';
+// import 'package:appointmentpractice/Profile/userprofile.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -5,7 +7,8 @@ import 'package:intl/intl.dart';
 import '../Appointment/appointmentgambang.dart';
 import '../Appointment/appointmentpekan.dart';
 import 'package:appointmentpractice/Appointment/rescheduleappointment.dart';
-import '../profile.dart';
+import 'package:appointmentpractice/Profile/setting.dart';
+
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -33,7 +36,7 @@ class _HomepageState extends State<Homepage> {
         return const Center(
             child: Text('Notification', style: TextStyle(fontSize: 24)));
       case 3:
-        return const Profile();
+        return const Setting(); //Navigate to the Setting
       default:
         return const Center(child: Text('Unknown Page'));
     }
@@ -182,7 +185,8 @@ class HealthBulletinPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      bulletin['Bulletin_Description'] ?? 'No description available',
+                      bulletin['Bulletin_Description'] ??
+                          'No description available',
                       style: const TextStyle(fontSize: 16),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

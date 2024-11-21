@@ -167,7 +167,8 @@ class _CreateBulletinState extends State<CreateBulletin> {
                         ),
                         // Focused border with teal color
                         focusedBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Colors.teal, width: 2),
+                          borderSide:
+                              const BorderSide(color: Colors.teal, width: 2),
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),

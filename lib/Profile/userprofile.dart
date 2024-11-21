@@ -1,7 +1,7 @@
-import 'package:appointmentpractice/Password/changepassword.dart';
-import 'package:appointmentpractice/Profile/usereditprofile.dart';
-import 'package:appointmentpractice/login_page.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:appointmentpractice/Profile/usereditprofile.dart';
 
 class UserProfile extends StatefulWidget {
   const UserProfile({super.key});
@@ -11,88 +11,143 @@ class UserProfile extends StatefulWidget {
 }
 
 class _UserProfileState extends State<UserProfile> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  Map<String, dynamic>? _userData;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    try {
+      User? currentUser = _auth.currentUser;
+      if (currentUser != null) {
+        DocumentSnapshot userSnapshot =
+            await _firestore.collection('User').doc(currentUser.uid).get();
+
+        if (userSnapshot.exists) {
+          setState(() {
+            _userData = userSnapshot.data() as Map<String, dynamic>;
+          });
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching user data: $e')),
+      );
+    }
+  }
+
+  Widget _buildInfoCard(String label, String value, IconData icon) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.teal.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: Colors.teal, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w500,
+                  color: Colors.teal,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: const Text(
+          'User Profile',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.teal,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
-        titleTextStyle: const TextStyle(
-            color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-           
-            const SizedBox(height: 16.0),
-            // Settings Options
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.teal[50],
-                borderRadius: BorderRadius.circular(8.0),
-              ),
+      body: _userData == null
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  //Edit profile
-                  ListTile(
-                    leading: const Icon(Icons.person, color: Colors.black),
-                    title: const Text(
-                      'Change My Password',
-                      style: TextStyle(color: Colors.black),
-                    ),
-                    trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey),
-                    onTap: () {
-                      // Handle edit profile
-                      Navigator.pushReplacement(
+                  const SizedBox(height: 8),
+                  _buildInfoCard('Name', _userData!['User_Name'], Icons.person),
+                  _buildInfoCard('Email', _userData!['User_Email'], Icons.email),
+                  _buildInfoCard('Contact', _userData!['User_Contact'], Icons.phone),
+                  _buildInfoCard('Gender', _userData!['User_Gender'], Icons.people),
+                  _buildInfoCard('User Type', _userData!['User_Type'], Icons.school),
+                  _buildInfoCard('Campus', _userData!['Campus'], Icons.location_city),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const UserEditProfile()),
+                        MaterialPageRoute(
+                          builder: (context) => const UserEditProfile(),
+                        ),
                       );
                     },
-                  ),
-                  
-      
-                  // Change Password Option
-                  ListTile(
-                    leading: const Icon(Icons.lock_outline, color: Colors.black),
-                    title: const Text(
-                      'Change My Password',
-                      style: TextStyle(color: Colors.black),
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Edit Profile'),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.teal,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
-                    trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey),
-                    onTap: () {
-                      // Handle Change Password tap, navigate to the change password page
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => const Changepassword()),
-                      );
-                    },
-                  ),
-                  const Divider(height: 1, color: Colors.grey),
-                  // Log Out Option
-                  ListTile(
-                    leading: const Icon(Icons.logout, color: Colors.black),
-                    title: const Text(
-                      'Log Out',
-                      style: TextStyle(color: Colors.black),
-                    ),
-                    trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey),
-                    onTap: () {
-                      // Handle Log Out tap, navigate to the login page
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => const LoginPage()),
-                      );
-                    },
                   ),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
     );
   }
 }
