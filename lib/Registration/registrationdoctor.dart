@@ -20,11 +20,11 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
   final TextEditingController _contactController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _selectedServiceController = TextEditingController(); // Changed to TextEditingController
 
   String? _gender;
   String? _userType;
   String? _campus;
-  String? _selectedService; // New state variable for "Select Service"
   bool _isLoading = false;
 
   // Visibility toggles for password fields
@@ -56,7 +56,7 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
           'User_Gender': _gender,
           'User_Type': _userType,
           'Campus': _campus,
-          'Selected_Service': _selectedService, // Save selected service
+          'Selected_Service': _selectedServiceController.text, // Save selected service text from controller
           'User_Password': _passwordController.text, // Note: Storing password in Firestore is not recommended for security
           'User_Confirm_Password' : _passwordController.text,
           'Created_At': FieldValue.serverTimestamp(),
@@ -199,15 +199,15 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
 
               // Select Service
               _buildDropdown(
-                value: _selectedService,
+                value: _selectedServiceController.text.isEmpty ? null : _selectedServiceController.text,
                 label: 'Select Service',
                 items: const [
                   DropdownMenuItem(value: 'Dental Service', child: Text('Dental Service')),
                   DropdownMenuItem(value: 'Medical Health Service', child: Text('Medical Health Service')),
                   DropdownMenuItem(value: 'Mental Health Service', child: Text('Mental Health Service')),
                 ],
-                onChanged: (value) => setState(() => _selectedService = value),
-                validator: (value) => value == null ? 'Please select a service' : null,
+                onChanged: (value) => setState(() => _selectedServiceController.text = value ?? ''),
+                validator: (value) => value == null || value.isEmpty ? 'Please select a service' : null,
               ),
               const SizedBox(height: 10),
 
