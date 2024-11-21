@@ -1,5 +1,5 @@
 import 'package:appointmentpractice/Profile/setting.dart';
-// import 'package:appointmentpractice/Profile/userprofile.dart';
+import 'package:appointmentpractice/Profile/userprofile.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,7 +8,7 @@ import '../Appointment/appointmentgambang.dart';
 import '../Appointment/appointmentpekan.dart';
 import 'package:appointmentpractice/Appointment/rescheduleappointment.dart';
 import 'package:appointmentpractice/Profile/setting.dart';
-
+import 'package:appointmentpractice/Reminder/setreminder.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -415,17 +415,10 @@ class HistoryTab extends StatelessWidget {
   }
 
   Future<void> _setReminder(BuildContext context, Map appointment) async {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Set Reminder'),
-        content: const Text('Reminder functionality will be implemented here.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SetReminder(appointment: appointment),
       ),
     );
   }

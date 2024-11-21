@@ -104,10 +104,10 @@ class _AppointmentpekanState extends State<Appointmentpekan> {
   }
 
 Future<void> _bookAppointment() async {
-    try {
-       // 1. First check if user is logged in
+  try {
+    // Check if the user is logged in
     final User? currentUser = FirebaseAuth.instance.currentUser;
-    
+
     if (currentUser == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -124,42 +124,43 @@ Future<void> _bookAppointment() async {
       return;
     }
 
+    String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
 
-     String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+    // Check for existing bookings
+    QuerySnapshot existingBookings = await FirebaseFirestore.instance
+        .collection('Appointment')
+        .where('Appointment_Date', isEqualTo: formattedDate)
+        .where('Appointment_Time', isEqualTo: selectedTimeslot)
+        .where('Appointment_Service', isEqualTo: selectedService)
+        .where('Appointment_Campus', isEqualTo: selectedCampus)
+        .get();
 
-      QuerySnapshot existingBookings = await FirebaseFirestore.instance
-          .collection('Appointment')
-          .where('Appointment_Date', isEqualTo: formattedDate)
-          .where('Appointment_Time', isEqualTo: selectedTimeslot)
-          .where('Appointment_Service', isEqualTo: selectedService)
-          .where('Appointment_Campus', isEqualTo: selectedCampus)
-          .get();
+    if (existingBookings.docs.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This timeslot has just been booked. Please select another timeslot.'),
+        ),
+      );
+      await _fetchAvailableTimeslots();
+      return;
+    }
 
-      if (existingBookings.docs.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('This timeslot has just been booked. Please select another timeslot.'),
-          ),
-        );
-        await _fetchAvailableTimeslots();
-        return;
-      }
+    // Add a new appointment to Firestore
+    final newAppointmentRef = FirebaseFirestore.instance.collection('Appointment').doc();
 
-      // 3. Create new appointment with consistent User_ID
+    // Create the appointment data
     final appointmentData = {
-      'Appointment_ID': FirebaseFirestore.instance.collection('Appointment').doc().id,
+      'Appointment_ID': newAppointmentRef.id, // Use the document ID as Appointment_ID
       'Appointment_Date': formattedDate,
       'Appointment_Time': selectedTimeslot,
       'Appointment_Campus': selectedCampus,
       'Appointment_Service': selectedService,
       'Created_At': FieldValue.serverTimestamp(),
-      'User_ID': currentUser.uid,  // Use the current user's UID
+      'User_ID': currentUser.uid, // Use the current user's UID
     };
 
-    // 4. Add to Firestore
-    await FirebaseFirestore.instance
-        .collection('Appointment')
-        .add(appointmentData);
+    // Add the appointment to Firestore
+    await newAppointmentRef.set(appointmentData); // Use set() with the document reference
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -176,6 +177,7 @@ Future<void> _bookAppointment() async {
     }
   }
 }
+
 
 
   @override

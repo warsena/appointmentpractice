@@ -141,9 +141,12 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
         return;
       }
 
+    // Add a new appointment to Firestore
+    final newAppointmentRef = FirebaseFirestore.instance.collection('Appointment').doc();
+
       // 3. Create new appointment with consistent User_ID
     final appointmentData = {
-      'Appointment_ID': FirebaseFirestore.instance.collection('Appointment').doc().id,
+      'Appointment_ID': newAppointmentRef.id, // Use the document ID as Appointment_ID
       'Appointment_Date': formattedDate,
       'Appointment_Time': selectedTimeslot,
       'Appointment_Campus': selectedCampus,
@@ -152,10 +155,8 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
       'User_ID': currentUser.uid,  // Use the current user's UID
     };
 
-    // 4. Add to Firestore
-    await FirebaseFirestore.instance
-        .collection('Appointment')
-        .add(appointmentData);
+  // Add the appointment to Firestore
+    await newAppointmentRef.set(appointmentData); // Use set() with the document reference
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -163,6 +164,7 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
       );
       Navigator.pop(context);
     }
+    
   } catch (e) {
     print('Error booking appointment: $e');
     if (mounted) {
