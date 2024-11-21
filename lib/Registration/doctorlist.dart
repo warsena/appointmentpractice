@@ -38,7 +38,7 @@ class _DoctorListState extends State<DoctorList> {
           'contact': data['User_Contact'] ?? '',
           'userType': data['User_Type'] ?? '',
           'campus': data['Campus'] ?? '',
-          'service': data['Type_of_Service']??'',
+          'service': data['Selected_Service']??'',
           'password': data['User_Password'] ?? '',
         };
       }).toList();
@@ -63,7 +63,7 @@ class _DoctorListState extends State<DoctorList> {
       }).toList();
     });
   }
-
+  
   Future<void> deleteUser(int index) async {
     try {
       String? docId = filteredUsers[index]['docId'] as String?;
@@ -81,7 +81,7 @@ class _DoctorListState extends State<DoctorList> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Doctor deleted successfully'),
-          backgroundColor: Colors.green,
+          backgroundColor: Colors.grey,
         ),
       );
     } catch (e) {
@@ -173,13 +173,9 @@ class _DoctorListState extends State<DoctorList> {
                         });
                       },
                       items: const [
-                        DropdownMenuItem(value: 'Checkup', child: Text('Checkup')),
-                        DropdownMenuItem(value: 'Dental', child: Text('Dental')),
-                        DropdownMenuItem(value: 'Diabetes', child: Text('Diabetes')),
-                        DropdownMenuItem(value: 'Hypertension', child: Text('Hypertension')),
-                        DropdownMenuItem(value: 'Obesity', child: Text('Obesity')),
-                        DropdownMenuItem(value: 'Physiotheraphy', child: Text('Physiotheraphy')),
-                        DropdownMenuItem(value: 'Stress Consultation', child: Text('Stress Consultation')),
+                        DropdownMenuItem(value: 'Dental Service', child: Text('Dental Service')),
+                        DropdownMenuItem(value: 'Medical Health Service', child: Text('Medical Health Service')),
+                        DropdownMenuItem(value: 'Mental Health Service', child: Text('Mental Health Service')),
                       ],
                     ),
 
@@ -227,6 +223,7 @@ class _DoctorListState extends State<DoctorList> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            _buildInfoRow('Email', user['email'] ?? 'N/A'),
                             _buildInfoRow('Gender', user['gender'] ?? 'N/A'),
                             _buildInfoRow('Contact', user['contact'] ?? 'N/A'),
                             _buildInfoRow('Service', user['service'] ?? 'N/A'),

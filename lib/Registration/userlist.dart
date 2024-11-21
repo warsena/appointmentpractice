@@ -29,7 +29,6 @@ class _UserListState extends State<UserList> {
           .where('User_Type', whereIn: ['Student', 'Lecturer'])
           .get();
 
-
       final fetchedUsers = snapshot.docs.map((doc) {
         final data = doc.data();
         return {
@@ -90,7 +89,7 @@ class _UserListState extends State<UserList> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('User deleted successfully'),
-          backgroundColor: Colors.green,
+          backgroundColor: Colors.grey,
         ),
       );
     } catch (e) {

@@ -1,6 +1,4 @@
 import 'package:appointmentpractice/UserHomepage/admindashboard.dart';
-import 'package:appointmentpractice/UserHomepage/doctorhomepage.dart';
-import 'package:appointmentpractice/UserHomepage/homepage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,7 +14,7 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
   final _formKey = GlobalKey<FormState>();
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
-  
+
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
@@ -26,12 +24,12 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
   String? _gender;
   String? _userType;
   String? _campus;
+  String? _selectedService; // New state variable for "Select Service"
   bool _isLoading = false;
 
   // Visibility toggles for password fields
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
-
 
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
@@ -56,10 +54,11 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
           'User_Email': _emailController.text.trim(),
           'User_Contact': _contactController.text.trim(),
           'User_Gender': _gender,
-          'User_Password': _passwordController.text, // Note: Storing password in Firestore is not recommended for security
-          'User_Confirm_Password' : _passwordController.text,
           'User_Type': _userType,
           'Campus': _campus,
+          'Selected_Service': _selectedService, // Save selected service
+          'User_Password': _passwordController.text, // Note: Storing password in Firestore is not recommended for security
+          'User_Confirm_Password' : _passwordController.text,
           'Created_At': FieldValue.serverTimestamp(),
         });
 
@@ -68,54 +67,21 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
           const SnackBar(content: Text('Registration successful')),
         );
 
-       // After registration, navigate back to AdminHomePage
+        // Navigate to Admin Dashboard
         Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const AdminHomePage()),
-      );
-    } on FirebaseAuthException {
-      String errorMessage = 'An error occurred';
+          context,
+          MaterialPageRoute(builder: (context) => const AdminHomePage()),
+        );
+      } on FirebaseAuthException catch (e) {
+        String errorMessage = 'An error occurred';
 
-        // // Redirect user based on User_Type
-        // if (_userType == 'Admin') {
-        //   Navigator.pushReplacement(
-        //     context,
-        //     MaterialPageRoute(builder: (context) => const AdminHomePage()),
-        //   );
-        // } else if (_userType == 'Student' || _userType == 'Lecturer') {
-        //   Navigator.pushReplacement(
-        //     context,
-        //     MaterialPageRoute(builder: (context) => const Homepage()),
-        //   );
-        // } else if (_userType == 'Doctor') {
-        //   Navigator.pushReplacement(
-        //     context,
-        //     MaterialPageRoute(builder: (context) => const Doctorhomepage()),
-        //   );
-        // } else {
-        //   // If User_Type is unexpected, show a warning
-        //   ScaffoldMessenger.of(context).showSnackBar(
-        //     const SnackBar(content: Text('Unknown user type, please contact support.')),
-        //   );
-        // }
-
-
-        // Navigate to login or home screen
-        // Navigator.pushReplacement(
-        //   context,
-        //   MaterialPageRoute(builder: (context) => LoginScreen()),
-        // );
-
-    //   } on FirebaseAuthException catch (e) {
-    //     String errorMessage = 'An error occurred';
-        
-    //     if (e.code == 'weak-password') {
-    //       errorMessage = 'The password provided is too weak';
-    //     } else if (e.code == 'email-already-in-use') {
-    //       errorMessage = 'An account already exists for this email';
-    //     } else if (e.code == 'invalid-email') {
-    //       errorMessage = 'Please enter a valid email address';
-    //     }
+        if (e.code == 'weak-password') {
+          errorMessage = 'The password provided is too weak';
+        } else if (e.code == 'email-already-in-use') {
+          errorMessage = 'An account already exists for this email';
+        } else if (e.code == 'invalid-email') {
+          errorMessage = 'Please enter a valid email address';
+        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMessage)),
@@ -147,289 +113,133 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
           child: ListView(
             children: [
               // Name
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Name',
-                    border: InputBorder.none,
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your name';
-                    }
-                    return null;
-                  },
-                ),
+              _buildTextField(
+                controller: _nameController,
+                label: 'Name',
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your name';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 10),
 
               // Email Address
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email Address',
-                    border: InputBorder.none,
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    }
-                    if (!RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
-                        .hasMatch(value)) {
-                      return 'Please enter a valid email address';
-                    }
-                    return null;
-                  },
-                ),
+              _buildTextField(
+                controller: _emailController,
+                label: 'Email Address',
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your email';
+                  }
+                  if (!RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").hasMatch(value)) {
+                    return 'Please enter a valid email address';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 10),
 
               // Gender
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: DropdownButtonFormField<String>(
-                  value: _gender,
-                  onChanged: (value) {
-                    setState(() {
-                      _gender = value;
-                    });
-                  },
-                  decoration: const InputDecoration(
-                    labelText: 'Gender',
-                    border: InputBorder.none,
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'Male', child: Text('Male')),
-                    DropdownMenuItem(value: 'Female', child: Text('Female')),
-                    DropdownMenuItem(value: 'Other', child: Text('Other')),
-                  ],
-                  validator: (value) {
-                    if (value == null) {
-                      return 'Please select your gender';
-                    }
-                    return null;
-                  },
-                ),
+              _buildDropdown(
+                value: _gender,
+                label: 'Gender',
+                items: const [
+                  DropdownMenuItem(value: 'Male', child: Text('Male')),
+                  DropdownMenuItem(value: 'Female', child: Text('Female')),
+                  DropdownMenuItem(value: 'Other', child: Text('Other')),
+                ],
+                onChanged: (value) => setState(() => _gender = value),
+                validator: (value) => value == null ? 'Please select your gender' : null,
               ),
               const SizedBox(height: 10),
 
               // Contact
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: TextFormField(
-                  controller: _contactController,
-                  decoration: const InputDecoration(
-                    labelText: 'Contact Number',
-                    border: InputBorder.none,
-                  ),
-                  keyboardType: TextInputType.phone,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your contact number';
-                    }
-                    return null;
-                  },
-                ),
+              _buildTextField(
+                controller: _contactController,
+                label: 'Contact Number',
+                keyboardType: TextInputType.phone,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your contact number';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 10),
 
               // User Type
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: DropdownButtonFormField<String>(
-                  value: _userType,
-                  onChanged: (value) {
-                    setState(() {
-                      _userType = value;
-                    });
-                  },
-                  decoration: const InputDecoration(
-                    labelText: 'User Type',
-                    border: InputBorder.none,
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'Student', child: Text('Student')),
-                    DropdownMenuItem(value: 'Lecturer', child: Text('Lecturer')),
-                    DropdownMenuItem(value: 'Doctor', child: Text('Doctor')),
-                  ],
-                  validator: (value) {
-                    if (value == null) {
-                      return 'Please select your user type';
-                    }
-                    return null;
-                  },
-                ),
+              _buildDropdown(
+                value: _userType,
+                label: 'User Type',
+                items: const [
+                  DropdownMenuItem(value: 'Student', child: Text('Student')),
+                  DropdownMenuItem(value: 'Lecturer', child: Text('Lecturer')),
+                  DropdownMenuItem(value: 'Doctor', child: Text('Doctor')),
+                ],
+                onChanged: (value) => setState(() => _userType = value),
+                validator: (value) => value == null ? 'Please select your user type' : null,
               ),
               const SizedBox(height: 10),
 
               // Campus
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: DropdownButtonFormField<String>(
-                  value: _campus,
-                  onChanged: (value) {
-                    setState(() {
-                      _campus = value;
-                    });
-                  },
-                  decoration: const InputDecoration(
-                    labelText: 'Campus',
-                    border: InputBorder.none,
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'Gambang', child: Text('Gambang')),
-                    DropdownMenuItem(value: 'Pekan', child: Text('Pekan')),
-                  ],
-                  validator: (value) {
-                    if (value == null) {
-                      return 'Please select your campus';
-                    }
-                    return null;
-                  },
-                ),
+              _buildDropdown(
+                value: _campus,
+                label: 'Campus',
+                items: const [
+                  DropdownMenuItem(value: 'Gambang', child: Text('Gambang')),
+                  DropdownMenuItem(value: 'Pekan', child: Text('Pekan')),
+                ],
+                onChanged: (value) => setState(() => _campus = value),
+                validator: (value) => value == null ? 'Please select your campus' : null,
               ),
               const SizedBox(height: 10),
 
-              // Type of service
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: DropdownButtonFormField<String>(
-                  value: _userType,
-                  onChanged: (value) {
-                    setState(() {
-                      _userType = value;
-                    });
-                  },
-                  decoration: const InputDecoration(
-                    labelText: 'Select Service',
-                    border: InputBorder.none,
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'Checkup', child: Text('Checkup')),
-                    DropdownMenuItem(value: 'Dental', child: Text('Dental')),
-                    DropdownMenuItem(value: 'Diabetes', child: Text('Doctor')),
-                    DropdownMenuItem(value: 'Hypertension', child: Text('Hypertension')),
-                    DropdownMenuItem(value: 'Obesity', child: Text('Obesity')),
-                    DropdownMenuItem(value: 'Physiotheraphy', child: Text('Physiotheraphy')),
-                    DropdownMenuItem(value: 'Stress Consultation', child: Text('Stress Consultation')),
-                  ],
-                  validator: (value) {
-                    if (value == null) {
-                      return 'Please select your user type';
-                    }
-                    return null;
-                  },
-                ),
+              // Select Service
+              _buildDropdown(
+                value: _selectedService,
+                label: 'Select Service',
+                items: const [
+                  DropdownMenuItem(value: 'Dental Service', child: Text('Dental Service')),
+                  DropdownMenuItem(value: 'Medical Health Service', child: Text('Medical Health Service')),
+                  DropdownMenuItem(value: 'Mental Health Service', child: Text('Mental Health Service')),
+                ],
+                onChanged: (value) => setState(() => _selectedService = value),
+                validator: (value) => value == null ? 'Please select a service' : null,
               ),
               const SizedBox(height: 10),
 
               // Password
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: TextFormField(
-                  controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    border: InputBorder.none,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
-                    }
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
-                    return null;
-                  },
-                ),
+              _buildPasswordField(
+                controller: _passwordController,
+                label: 'Password',
+                isVisible: _isPasswordVisible,
+                onVisibilityToggle: () {
+                  setState(() => _isPasswordVisible = !_isPasswordVisible);
+                },
               ),
-              
               const SizedBox(height: 10),
 
               // Confirm Password
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: TextFormField(
-                  controller: _confirmPasswordController,
-                  obscureText: !_isConfirmPasswordVisible,
-                  decoration: InputDecoration(
-                    labelText: 'Confirm Password',
-                    border: InputBorder.none,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-                        });
-                      },
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please confirm your password';
-                    }
-                    if (value != _passwordController.text) {
-                      return 'Passwords do not match';
-                    }
-                    return null;
-                  },
-                ),
+              _buildPasswordField(
+                controller: _confirmPasswordController,
+                label: 'Confirm Password',
+                isVisible: _isConfirmPasswordVisible,
+                onVisibilityToggle: () {
+                  setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible);
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please confirm your password';
+                  }
+                  if (value != _passwordController.text) {
+                    return 'Passwords do not match';
+                  }
+                  return null;
+                },
               ),
-
               const SizedBox(height: 20),
 
               // Register Button
@@ -456,14 +266,85 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
     );
   }
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _contactController.dispose();
-    _passwordController.dispose(); 
-    _confirmPasswordController.dispose();
-    super.dispose();
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey),
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          border: InputBorder.none,
+        ),
+        keyboardType: keyboardType,
+        validator: validator,
+      ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required String? value,
+    required String label,
+    required List<DropdownMenuItem<String>> items,
+    required ValueChanged<String?> onChanged,
+    String? Function(String?)? validator,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey),
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: DropdownButtonFormField<String>(
+        value: value,
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          labelText: label,
+          border: InputBorder.none,
+        ),
+        items: items,
+        validator: validator,
+      ),
+    );
+  }
+
+  Widget _buildPasswordField({
+    required TextEditingController controller,
+    required String label,
+    required bool isVisible,
+    required VoidCallback onVisibilityToggle,
+    String? Function(String?)? validator,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey),
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: TextFormField(
+        controller: controller,
+        obscureText: !isVisible,
+        decoration: InputDecoration(
+          labelText: label,
+          suffixIcon: IconButton(
+            icon: Icon(
+              isVisible ? Icons.visibility : Icons.visibility_off,
+              color: Colors.grey,
+            ),
+            onPressed: onVisibilityToggle,
+          ),
+          border: InputBorder.none,
+        ),
+        validator: validator,
+      ),
+    );
   }
 }
-
