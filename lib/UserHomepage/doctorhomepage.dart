@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:appointmentpractice/login_page.dart';
+import 'package:appointmentpractice/Profile/doctorprofile.dart';  // Import the DoctorProfile screen
 
 class Doctorhomepage extends StatefulWidget {
   const Doctorhomepage({super.key});
@@ -20,7 +21,11 @@ class _DoctorhomepageState extends State<Doctorhomepage> {
           PopupMenuButton<int>(
             onSelected: (value) {
               if (value == 1) {
-                // Handle Edit Profile action
+                // Navigate to DoctorProfile page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const DoctorProfile()),
+                );
               } else if (value == 2) {
                 // Log Out action: Navigate to the login page
                 Navigator.pushReplacement(
@@ -34,7 +39,7 @@ class _DoctorhomepageState extends State<Doctorhomepage> {
                 value: 1,
                 child: ListTile(
                   leading: Icon(Icons.edit),
-                  title: Text('Edit Profile'),
+                  title: Text('Profile'),
                 ),
               ),
               const PopupMenuItem(
@@ -143,5 +148,3 @@ class _DoctorhomepageState extends State<Doctorhomepage> {
     );
   }
 }
-
-
