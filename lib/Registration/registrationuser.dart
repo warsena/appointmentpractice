@@ -218,7 +218,6 @@ class _RegistrationUserState extends State<RegistrationUser> {
                   items: const [
                     DropdownMenuItem(value: 'Male', child: Text('Male')),
                     DropdownMenuItem(value: 'Female', child: Text('Female')),
-                    DropdownMenuItem(value: 'Other', child: Text('Other')),
                   ],
                   validator: (value) {
                     if (value == null) {

@@ -149,7 +149,6 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
                 items: const [
                   DropdownMenuItem(value: 'Male', child: Text('Male')),
                   DropdownMenuItem(value: 'Female', child: Text('Female')),
-                  DropdownMenuItem(value: 'Other', child: Text('Other')),
                 ],
                 onChanged: (value) => setState(() => _gender = value),
                 validator: (value) => value == null ? 'Please select your gender' : null,

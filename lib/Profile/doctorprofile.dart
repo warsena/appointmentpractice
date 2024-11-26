@@ -19,9 +19,10 @@ class _DoctorProfileState extends State<DoctorProfile> {
   @override
   void initState() {
     super.initState();
-    _fetchUserData();
+    _fetchUserData(); // Calls the method to fetch user data when the widget initializes.
   }
 
+  // Fetches user data from Firestore
    Future<void> _fetchUserData() async {
     try {
       User? currentUser = _auth.currentUser;

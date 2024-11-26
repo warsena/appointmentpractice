@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:appointmentpractice/login_page.dart';
-import 'package:appointmentpractice/Profile/doctorprofile.dart';  // Import the DoctorProfile screen
+import 'package:appointmentpractice/Profile/doctorprofile.dart';
+import 'package:appointmentpractice/Schedule/doctorschedule.dart'; // Import the DoctorSchedule screen
 
 class Doctorhomepage extends StatefulWidget {
   const Doctorhomepage({super.key});
@@ -58,7 +59,7 @@ class _DoctorhomepageState extends State<Doctorhomepage> {
         children: [
           _buildHomePage(),
           _buildAppointmentPage(),
-          _buildSchedulePage(),
+          _buildSchedulePage(), // This triggers the navigation
         ],
       ),
       drawer: Drawer(
@@ -140,10 +141,16 @@ class _DoctorhomepageState extends State<Doctorhomepage> {
   }
 
   Widget _buildSchedulePage() {
-    return const Center(
-      child: Text(
-        'Schedule Management Page',
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    // Trigger navigation to the DoctorSchedule page
+    return Center(
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const DoctorSchedule()),
+          );
+        },
+        child: const Text('Go to Schedule Management'),
       ),
     );
   }
