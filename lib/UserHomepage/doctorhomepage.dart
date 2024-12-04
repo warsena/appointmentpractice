@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:appointmentpractice/login_page.dart';
 import 'package:appointmentpractice/Profile/doctorprofile.dart';
-import 'package:appointmentpractice/Schedule/doctorschedule.dart'; // Import the DoctorSchedule screen
+import 'package:appointmentpractice/Schedule/doctorschedule.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Doctorhomepage extends StatefulWidget {
   const Doctorhomepage({super.key});
@@ -17,7 +19,14 @@ class _DoctorhomepageState extends State<Doctorhomepage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Doctor Dashboard'),
+        title: const Text(
+          'Doctor Dashboard', 
+          style: TextStyle(
+            color: Colors.black, 
+            fontWeight: FontWeight.bold
+          )
+        ),
+        backgroundColor:const Color.fromRGBO(37, 163, 255, 1), // Set AppBar background color to blue
         actions: [
           PopupMenuButton<int>(
             onSelected: (value) {
@@ -59,23 +68,21 @@ class _DoctorhomepageState extends State<Doctorhomepage> {
         children: [
           _buildHomePage(),
           _buildAppointmentPage(),
-          _buildSchedulePage(), // This triggers the navigation
         ],
       ),
       drawer: Drawer(
         child: ListView(
           children: [
             Container(
-              color: Colors.teal,
+              color: const Color.fromRGBO(37, 163, 255, 1),
               height: 60,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
               alignment: Alignment.centerLeft,
               child: const Text(
                 'Doctor Menu',
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
+                  color: Colors.black,
+                  fontSize: 20,
                 ),
               ),
             ),
@@ -104,12 +111,54 @@ class _DoctorhomepageState extends State<Doctorhomepage> {
             ListTile(
               leading: const Icon(Icons.schedule),
               title: const Text('Schedule'),
-              selected: _selectedIndex == 2,
-              onTap: () {
-                setState(() {
-                  _selectedIndex = 2;
-                });
-                Navigator.of(context).pop();
+              onTap: () async {
+                try {
+                  // Get the current authenticated user
+                  User? currentUser = FirebaseAuth.instance.currentUser;
+
+                  if (currentUser != null) {
+                    // Retrieve the User_ID (UID) of the current user
+                    String userId = currentUser.uid;
+
+                    // Retrieve data from Firebase based on User_ID
+                    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+                        .collection('User') // Collection name in your Firebase
+                        .doc(userId)
+                        .get();
+
+                    if (userDoc.exists) {
+                      // Extract 'Campus' and 'Selected_Service' fields from the document
+                      String campus = userDoc['Campus'] ?? 'Default Campus';
+                      String service = userDoc['Selected_Service'] ?? 'Default Service';
+
+                      // Navigate to the DoctorSchedule page with retrieved data
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DoctorSchedule(
+                            campus: campus,
+                            service: service,
+                          ),
+                        ),
+                      );
+                    } else {
+                      // Handle the case where the document doesn't exist
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('User not found in Firebase')),
+                      );
+                    }
+                  } else {
+                    // Handle the case where the user is not authenticated
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('User is not logged in')),
+                    );
+                  }
+                } catch (e) {
+                  // Handle errors (e.g., network issues, permission issues)
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: ${e.toString()}')),
+                  );
+                }
               },
             ),
           ],
@@ -136,21 +185,6 @@ class _DoctorhomepageState extends State<Doctorhomepage> {
       child: Text(
         'Appointment Management Page',
         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  Widget _buildSchedulePage() {
-    // Trigger navigation to the DoctorSchedule page
-    return Center(
-      child: ElevatedButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const DoctorSchedule()),
-          );
-        },
-        child: const Text('Go to Schedule Management'),
       ),
     );
   }

@@ -2,7 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DoctorSchedule extends StatefulWidget {
-  const DoctorSchedule({super.key});
+  final String campus;
+  final String service;
+
+  const DoctorSchedule({
+    super.key,
+    required this.campus,
+    required this.service,
+  });
 
   @override
   State<DoctorSchedule> createState() => _DoctorScheduleState();
@@ -10,261 +17,541 @@ class DoctorSchedule extends StatefulWidget {
 
 class _DoctorScheduleState extends State<DoctorSchedule> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  String selectedCampus = 'Gambang'; // Default campus
-  String selectedService = 'Dental Service'; // Default service
-  String doctorName = ''; // Doctor's name
-  Map<int, bool> markedDates = {}; // Dates with appointments
-  DateTime selectedMonth = DateTime.now(); // Default to current month
-
-  final List<String> months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-  ];
-
-  // Generate years for the dropdown (adjust the range as needed)
-  final List<int> years = List.generate(20, (index) => DateTime.now().year - 10 + index);
-
-  // Doctor assignment
-  final Map<String, Map<String, String>> doctorSchedule = {
-    'Gambang': {
-      'Medical Health Service': 'Dr. Syed Anas Bin Syed Ismail',
-      'Dental Service': 'Dr. Ainun Mardhiah Binti Fauzi',
-      'Mental Health Service': 'Dr. Najihah Binti Mohd Azman',
-    },
-    'Pekan': {
-      'Medical Health Service': 'Dr. Erwina Nursyaheera Binti Sulaiman',
-      'Dental Service': 'Dr. Mohammad Syarbini Bin Saudi',
-      'Mental Health Service': 'Dr. Norhilda Binti Abdul Karim',
-    },
-  };
+  Map<String, Map<String, String>> doctorMapping = {};
+  Map<DateTime, List<String>> availableSlots = {};
+  bool isLoading = true;
+  DateTime selectedDate = DateTime.now();
+  List<DateTime> currentMonthDays = [];
+  String? currentDoctorId;
 
   @override
   void initState() {
     super.initState();
-    updateDoctorName();
-    fetchAppointments(); // Load appointments from Firebase
+    fetchDoctorMapping().then((_) => fetchDoctorSchedule());
+    _generateCurrentMonthDays();
   }
 
-  void updateDoctorName() {
-    setState(() {
-      doctorName = doctorSchedule[selectedCampus]?[selectedService] ?? 'Unknown';
-    });
+  void _generateCurrentMonthDays() {
+    DateTime firstDayOfMonth = DateTime(selectedDate.year, selectedDate.month, 1);
+    int daysInMonth = DateTime(selectedDate.year, selectedDate.month + 1, 0).day;
+    
+    currentMonthDays = List.generate(daysInMonth, 
+      (index) => DateTime(selectedDate.year, selectedDate.month, index + 1)
+    );
   }
 
-  Future<void> fetchAppointments() async {
+  String _getMonthName(int month) {
+    switch (month) {
+      case 1:
+        return 'Jan';
+      case 2:
+        return 'Feb';
+      case 3:
+        return 'Mar';
+      case 4:
+        return 'Apr';
+      case 5:
+        return 'May';
+      case 6:
+        return 'Jun';
+      case 7:
+        return 'Jul';
+      case 8:
+        return 'Aug';
+      case 9:
+        return 'Sep';
+      case 10:
+        return 'Oct';
+      case 11:
+        return 'Nov';
+      case 12:
+        return 'Dec';
+      default:
+        return '';
+    }
+  }
+
+  void _showMonthYearPicker() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        int selectedYear = selectedDate.year;
+        int selectedMonth = selectedDate.month;
+        
+        return AlertDialog(
+          contentPadding: EdgeInsets.zero,
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Container(
+                width: 280,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF48b0fe),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(4),
+                          topRight: Radius.circular(4),
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Select Date',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Year Selection
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.chevron_left),
+                            onPressed: () {
+                              setState(() {
+                                selectedYear--;
+                              });
+                            },
+                            color: const Color(0xFF48b0fe),
+                          ),
+                          Text(
+                            selectedYear.toString(),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.chevron_right),
+                            onPressed: () {
+                              setState(() {
+                                selectedYear++;
+                              });
+                            },
+                            color: const Color(0xFF48b0fe),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Month Grid
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          childAspectRatio: 1.2,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                        ),
+                        itemCount: 12,
+                        itemBuilder: (context, index) {
+                          final month = index + 1;
+                          final isSelected = month == selectedMonth;
+                          
+                          return InkWell(
+                            onTap: () {
+                              setState(() {
+                                selectedMonth = month;
+                              });
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: isSelected ? const Color(0xFF48b0fe) : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isSelected ? const Color(0xFF48b0fe) : Colors.grey[300]!,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  _getMonthName(month),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isSelected ? Colors.white : Colors.black,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    // Buttons
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(4),
+                          bottomRight: Radius.circular(4),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                selectedDate = DateTime(selectedYear, selectedMonth);
+                                _generateCurrentMonthDays();
+                                fetchDoctorSchedule();
+                              });
+                              Navigator.of(context).pop();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF48b0fe),
+                            ),
+                            child: const Text(
+                              'OK',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> fetchDoctorMapping() async {
     try {
       QuerySnapshot snapshot = await _firestore
-          .collection('Appointment')
-          .where('Appointment_Campus', isEqualTo: selectedCampus)
-          .where('Appointment_Service', isEqualTo: selectedService)
+          .collection('User')
+          .where('User_Type', isEqualTo: 'Doctor')
           .get();
 
-      Map<int, bool> tempMarkedDates = {};
+      Map<String, Map<String, String>> tempMapping = {};
 
       for (var doc in snapshot.docs) {
-        String dateStr = doc['Appointment_Date']; // e.g., "2024-05-25"
-        DateTime date = DateTime.parse(dateStr);
-        if (date.year == selectedMonth.year && date.month == selectedMonth.month) {
-          tempMarkedDates[date.day] = true;
+        final data = doc.data() as Map<String, dynamic>;
+        final campus = data['Campus'] as String? ?? 'Unknown Campus';
+        final service = data['Selected_Service'] as String? ?? 'Unknown Service';
+        final name = data['User_Name'] as String? ?? 'Unknown Doctor';
+
+        if (!tempMapping.containsKey(campus)) {
+          tempMapping[campus] = {};
+        }
+        tempMapping[campus]![service] = name;
+
+        if (campus == widget.campus && service == widget.service) {
+          currentDoctorId = doc.id;
         }
       }
 
       setState(() {
-        markedDates = tempMarkedDates;
+        doctorMapping = tempMapping;
       });
     } catch (e) {
-      print('Error fetching appointments: $e');
+      print('Error fetching doctor mapping: $e');
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Doctor Schedule'),
+  Future<void> fetchDoctorSchedule() async {
+    if (currentDoctorId == null) {
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      QuerySnapshot scheduleSnapshot = await _firestore
+          .collection('DoctorSchedule')
+          .where('doctorId', isEqualTo: currentDoctorId)
+          .where('month', isEqualTo: selectedDate.month)
+          .where('year', isEqualTo: selectedDate.year)
+          .get();
+
+      Map<DateTime, List<String>> tempSlots = {};
+
+      for (var doc in scheduleSnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final day = data['day'] as int;
+        final slots = List<String>.from(data['timeSlots'] ?? []);
+        
+        final dateKey = DateTime(selectedDate.year, selectedDate.month, day);
+        tempSlots[dateKey] = slots;
+      }
+
+      setState(() {
+        availableSlots = tempSlots;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching doctor schedule: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Widget _buildCalendarHeader() {
+    final weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return Row(
+      children: weekDays.map((day) => Expanded(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: const BoxDecoration(
+            color: Color(0xFF48b0fe),
+          ),
+          child: Text(
+            day,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      )).toList(),
+    );
+  }
+
+  Widget _buildCalendarGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 7,
+        childAspectRatio: 1,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      itemCount: currentMonthDays.length,
+      itemBuilder: (context, index) {
+        final day = currentMonthDays[index];
+        final hasSlots = availableSlots.containsKey(day);
+        
+        return GestureDetector(
+          onTap: () {
+            if (hasSlots) {
+              setState(() {
+                selectedDate = day;
+              });
+            }
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey[300]!),
+              color: hasSlots ? const Color(0xFFE3F2FD) : Colors.white,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '${day.day}',
+                  style: TextStyle(
+                    fontWeight: hasSlots ? FontWeight.bold : FontWeight.normal,
+                    color: hasSlots ? const Color(0xFF48b0fe) : Colors.black,
+                  ),
+                ),
+                if (hasSlots)
+                  const Icon(
+                    Icons.circle,
+                    size: 8,
+                    color: Color(0xFF48b0fe),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTimeSlots() {
+    final slots = availableSlots[selectedDate] ?? [];
+    if (slots.isEmpty) return const SizedBox.shrink();
+
+    return Card(
+      elevation: 4,
+      margin: const EdgeInsets.only(top: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Dropdown for campus selection
-            Row(
-              children: [
-                const Text('Campus:', style: TextStyle(fontSize: 16)),
-                const SizedBox(width: 8),
-                DropdownButton<String>(
-                  value: selectedCampus,
-                  items: doctorSchedule.keys
-                      .map((campus) => DropdownMenuItem(
-                            value: campus,
-                            child: Text(campus),
-                          ))
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedCampus = value!;
-                      updateDoctorName();
-                      fetchAppointments(); // Update appointments
-                    });
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Dropdown for service selection
-            Row(
-              children: [
-                const Text('Service:', style: TextStyle(fontSize: 16)),
-                const SizedBox(width: 8),
-                DropdownButton<String>(
-                  value: selectedService,
-                  items: doctorSchedule[selectedCampus]!.keys
-                      .map((service) => DropdownMenuItem(
-                            value: service,
-                            child: Text(service),
-                          ))
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedService = value!;
-                      updateDoctorName();
-                      fetchAppointments(); // Update appointments
-                    });
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Display the doctor name
-            Text('Doctor in Charge: $doctorName',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            // Month and Year Selector
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                DropdownButton<int>(
-                  value: selectedMonth.year,
-                  items: years
-                      .map((year) => DropdownMenuItem(
-                            value: year,
-                            child: Text(year.toString()),
-                          ))
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedMonth = DateTime(
-                        value!,
-                        selectedMonth.month,
-                      );
-                      fetchAppointments(); // Update appointments
-                    });
-                  },
-                ),
-                DropdownButton<String>(
-                  value: months[selectedMonth.month - 1],
-                  items: months
-                      .map((month) => DropdownMenuItem(
-                            value: month,
-                            child: Text(month),
-                          ))
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      int monthIndex = months.indexOf(value!) + 1;
-                      selectedMonth = DateTime(
-                        selectedMonth.year,
-                        monthIndex,
-                      );
-                      fetchAppointments(); // Update appointments
-                    });
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Schedule Calendar
-            Expanded(
-              child: Table(
-                border: TableBorder.all(color: Colors.grey),
-                children: [
-                  // Days of the week
-                  TableRow(
-                    children: List.generate(
-                      7,
-                      (index) => Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index],
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Generate rows for the calendar
-                  ..._generateCalendarRows(),
-                ],
+            Text(
+              'Available Slots for ${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
             ),
+            const SizedBox(height: 8),
+            ...slots.map((slot) => Container(
+              margin: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE3F2FD),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF48b0fe)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    slot,
+                    style: const TextStyle(
+                      color: Color(0xFF48b0fe),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Icon(
+                    Icons.access_time,
+                    color: Color(0xFF48b0fe),
+                    size: 20,
+                  ),
+                ],
+              ),
+            )),
           ],
         ),
       ),
     );
   }
 
-  List<TableRow> _generateCalendarRows() {
-    List<TableRow> rows = [];
-    DateTime firstDayOfMonth =
-        DateTime(selectedMonth.year, selectedMonth.month, 1);
-    int daysInMonth = DateTime(selectedMonth.year, selectedMonth.month + 1, 0).day;
-    int startWeekday = firstDayOfMonth.weekday;
+  @override
+  Widget build(BuildContext context) {
+    final doctorName = doctorMapping[widget.campus]?[widget.service] ?? 'Unknown Doctor';
 
-    int day = 1 - (startWeekday - 1);
-
-    for (int i = 0; i < 6; i++) {
-      List<Widget> week = [];
-      for (int j = 0; j < 7; j++) {
-        if (day < 1 || day > daysInMonth) {
-          week.add(Container()); // Empty cell
-        } else {
-          bool hasAppointment = markedDates[day] ?? false;
-          week.add(
-            GestureDetector(
-              onTap: () {
-                if (hasAppointment) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                          'You have an appointment on ${months[selectedMonth.month - 1]} $day'),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Doctor Schedule'),
+        backgroundColor: const Color(0xFF48b0fe),
+      ),
+      body: isLoading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  );
-                }
-              },
-              child: Container(
-                height: 60,
-                alignment: Alignment.center,
-                color: hasAppointment
-                    ? Colors.blue.withOpacity(0.6)
-                    : Colors.white,
-                child: Text(
-                  day.toString(),
-                  style: TextStyle(
-                    color: hasAppointment ? Colors.white : Colors.black,
-                    fontWeight: hasAppointment ? FontWeight.bold : FontWeight.normal,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Doctor: $doctorName',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Service: ${widget.service}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Campus: ${widget.campus}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        children: [
+                          GestureDetector(
+                            onTap: _showMonthYearPicker,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFF48b0fe)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '${_getMonthName(selectedDate.month)} ${selectedDate.year}',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Icon(Icons.calendar_today, size: 20),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          _buildCalendarHeader(),
+                          _buildCalendarGrid(),
+                        ],
+                      ),
+                    ),
+                  ),
+                  _buildTimeSlots(),
+                ],
               ),
             ),
-          );
-        }
-        day++;
-      }
-      rows.add(TableRow(children: week));
-    }
-    return rows;
+    );
   }
 }
