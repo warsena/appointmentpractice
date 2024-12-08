@@ -9,30 +9,30 @@ class UserList extends StatefulWidget {
 }
 
 class _UserListState extends State<UserList> {
-  String? selectedCampus;
-  String? selectedUserType;
-  List<Map<String, dynamic>> users = [];
-  List<Map<String, dynamic>> filteredUsers = [];
+  String? selectedCampus; // Variable to store selected campus
+  String? selectedUserType; // Variable to store selected user type
+  List<Map<String, dynamic>> users = []; // List to store all users
+  List<Map<String, dynamic>> filteredUsers = []; // List to store filtered users
 
   @override
   void initState() {
     super.initState();
-    fetchUsers();
+    fetchUsers(); // Fetch users when the widget is initialized
   }
 
-
+  // Fetch users from Firebase Firestore
   Future<void> fetchUsers() async {
     try {
-
+      // Get users from the 'User' collection where the 'User_Type' is 'Student' or 'Lecturer'
       final snapshot = await FirebaseFirestore.instance
           .collection('User')
-          .where('User_Type', whereIn: ['Student', 'Lecturer'])
-          .get();
+          .where('User_Type', whereIn: ['Student', 'Lecturer']).get();
 
+      // Map the fetched documents into a list of users
       final fetchedUsers = snapshot.docs.map((doc) {
         final data = doc.data();
         return {
-          'docId': doc.id,
+          'docId': doc.id, // Store the document ID
           'name': data['User_Name'] ?? '',
           'email': data['User_Email'] ?? '',
           'gender': data['User_Gender'] ?? '',
@@ -44,48 +44,47 @@ class _UserListState extends State<UserList> {
       }).toList();
 
       setState(() {
-        users = fetchedUsers;
-        filteredUsers = users;
+        users = fetchedUsers; // Set the users list with fetched data
+        filteredUsers = users; // Initially, filtered users is the same as all users
       });
     } catch (e) {
-
+      // Show error if fetching users fails
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to fetch users: $e')),
       );
     }
   }
 
-
+  // Function to filter users based on selected campus and user type
   void filterUsers() {
     setState(() {
       filteredUsers = users.where((user) {
         return (selectedCampus == null || user['campus'] == selectedCampus) &&
-               (selectedUserType == null || user['userType'] == selectedUserType);
+            (selectedUserType == null || user['userType'] == selectedUserType);
       }).toList();
     });
   }
 
-
+  // Function to delete a user from Firestore
   Future<void> deleteUser(int index) async {
     try {
-
       String? docId = filteredUsers[index]['docId'] as String?;
 
-
+      // If document ID is null, throw an error
       if (docId == null) {
         throw Exception('Document ID is null. Unable to delete user.');
       }
 
-
+      // Delete the user from the Firestore collection
       await FirebaseFirestore.instance.collection('User').doc(docId).delete();
 
-
+      // Remove the user from the local list
       setState(() {
-        filteredUsers.removeAt(index);
-
-        users.removeWhere((user) => user['docId'] == docId);
+        filteredUsers.removeAt(index); // Remove from filtered list
+        users.removeWhere((user) => user['docId'] == docId); // Remove from all users list
       });
 
+      // Show success message after deletion
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('User deleted successfully'),
@@ -93,7 +92,7 @@ class _UserListState extends State<UserList> {
         ),
       );
     } catch (e) {
-
+      // Show error message if deletion fails
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to delete user: $e'),
@@ -103,6 +102,7 @@ class _UserListState extends State<UserList> {
     }
   }
 
+  // Function to mask the user's password (display only masked characters)
   String maskPassword(String password) {
     return '•' * password.length;
   }
@@ -115,18 +115,19 @@ class _UserListState extends State<UserList> {
           'User List',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.teal,
+        backgroundColor: const Color.fromARGB(255, 100, 200, 185), 
         elevation: 2,
       ),
       body: Column(
         children: [
+          // Filter options section
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.white,
                   spreadRadius: 1,
                   blurRadius: 2,
                   offset: const Offset(0, 1),
@@ -137,6 +138,7 @@ class _UserListState extends State<UserList> {
               children: [
                 Row(
                   children: [
+                    // Campus selection dropdown
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -152,18 +154,21 @@ class _UserListState extends State<UserList> {
                             onChanged: (value) {
                               setState(() {
                                 selectedCampus = value;
-                                filterUsers();
+                                filterUsers(); // Filter users after selection
                               });
                             },
                             items: const [
-                              DropdownMenuItem(value: 'Pekan', child: Text('Pekan')),
-                              DropdownMenuItem(value: 'Gambang', child: Text('Gambang')),
+                              DropdownMenuItem(
+                                  value: 'Pekan', child: Text('Pekan')),
+                              DropdownMenuItem(
+                                  value: 'Gambang', child: Text('Gambang')),
                             ],
                           ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
+                    // User type selection dropdown
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -179,12 +184,14 @@ class _UserListState extends State<UserList> {
                             onChanged: (value) {
                               setState(() {
                                 selectedUserType = value;
-                                filterUsers();
+                                filterUsers(); // Filter users after selection
                               });
                             },
                             items: const [
-                              DropdownMenuItem(value: 'Student', child: Text('Student')),
-                              DropdownMenuItem(value: 'Lecturer', child: Text('Lecturer')),
+                              DropdownMenuItem(
+                                  value: 'Student', child: Text('Student')),
+                              DropdownMenuItem(
+                                  value: 'Lecturer', child: Text('Lecturer')),
                             ],
                           ),
                         ),
@@ -195,10 +202,11 @@ class _UserListState extends State<UserList> {
               ],
             ),
           ),
+          // Display filtered user list
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(8),
-              itemCount: filteredUsers.length,
+              itemCount: filteredUsers.length, // Display filtered users count
               itemBuilder: (context, index) {
                 final user = filteredUsers[index];
                 return Card(
@@ -222,7 +230,7 @@ class _UserListState extends State<UserList> {
                     leading: CircleAvatar(
                       backgroundColor: Colors.teal,
                       child: Text(
-                        (user['name'] as String).isNotEmpty 
+                        (user['name'] as String).isNotEmpty
                             ? (user['name'] as String)[0].toUpperCase()
                             : '?',
                         style: const TextStyle(color: Colors.white),
@@ -238,16 +246,28 @@ class _UserListState extends State<UserList> {
                             _buildInfoRow('Gender', user['gender'] ?? 'N/A'),
                             _buildInfoRow('Contact', user['contact'] ?? 'N/A'),
                             _buildInfoRow('Campus', user['campus'] ?? 'N/A'),
-                            _buildInfoRow('Password', maskPassword(user['password'] ?? '')),
+                            _buildInfoRow('Password',
+                                maskPassword(user['password'] ?? '')),
                             const SizedBox(height: 8),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 const SizedBox(width: 8),
+                                // Delete button with confirmation
                                 TextButton.icon(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
-                                  label: const Text('Delete', style: TextStyle(color: Colors.red)),
-                                  onPressed: () => deleteUser(index),
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.red),
+                                  label: const Text('Delete',
+                                      style: TextStyle(color: Colors.red)),
+                                  onPressed: () async {
+                                    bool confirmDeletion =
+                                        await _showDeleteConfirmationDialog(
+                                            context);
+
+                                    if (confirmDeletion) {
+                                      deleteUser(index); // Delete the user
+                                    }
+                                  },
                                 ),
                               ],
                             ),
@@ -265,6 +285,7 @@ class _UserListState extends State<UserList> {
     );
   }
 
+  // Helper widget to build information rows for user details
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -284,13 +305,53 @@ class _UserListState extends State<UserList> {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontSize: 14),
+              style: const TextStyle(color: Colors.black87),
             ),
           ),
         ],
-
       ),
     );
   }
-}
 
+  // Show delete confirmation dialog
+  Future<bool> _showDeleteConfirmationDialog(BuildContext context) async {
+    return await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20), // Rounded corners
+          ),
+          surfaceTintColor: Colors.white, // Prevent unintended color tinting
+          title: const Row(
+            children: [
+              Icon(
+                Icons.warning_rounded, 
+                color: Colors.red, 
+                size: 24,
+              ),
+              SizedBox(width: 8),
+              Text('Delete Doctor'),
+            ],
+          ),
+          content: const Text(
+            'Are you sure you want to delete this doctor? This action cannot be undone.',
+            style: TextStyle(fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    ) ??
+    false;
+  }
+}

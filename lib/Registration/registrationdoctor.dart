@@ -2,6 +2,7 @@ import 'package:appointmentpractice/UserHomepage/admindashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 
 class RegistrationDoctor extends StatefulWidget {
   const RegistrationDoctor({super.key});
@@ -19,8 +20,10 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
-  final TextEditingController _selectedServiceController = TextEditingController(); // Changed to TextEditingController
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+  final TextEditingController _selectedServiceController =
+      TextEditingController(); // Changed to TextEditingController
 
   String? _gender;
   String? _userType;
@@ -39,7 +42,8 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
 
       try {
         // Create user with email and password
-        UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        UserCredential userCredential =
+            await _auth.createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
@@ -56,9 +60,11 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
           'User_Gender': _gender,
           'User_Type': _userType,
           'Campus': _campus,
-          'Selected_Service': _selectedServiceController.text, // Save selected service text from controller
-          'User_Password': _passwordController.text, // Note: Storing password in Firestore is not recommended for security
-          'User_Confirm_Password' : _passwordController.text,
+          'Selected_Service': _selectedServiceController
+              .text, // Save selected service text from controller
+          'User_Password': _passwordController
+              .text, // Note: Storing password in Firestore is not recommended for security
+          'User_Confirm_Password': _passwordController.text,
           'Created_At': FieldValue.serverTimestamp(),
         });
 
@@ -102,8 +108,13 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Registration Doctor Form'),
-        backgroundColor: Colors.teal,
+        title: const Text(
+          'Registration Doctor Form',
+          style: TextStyle(
+            fontWeight: FontWeight.bold, // Make the text bold
+          ),
+        ),
+        backgroundColor: const Color.fromARGB(255, 100, 200, 185),
         elevation: 0,
       ),
       body: Padding(
@@ -134,7 +145,9 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your email';
                   }
-                  if (!RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").hasMatch(value)) {
+                  if (!RegExp(
+                          r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+                      .hasMatch(value)) {
                     return 'Please enter a valid email address';
                   }
                   return null;
@@ -151,21 +164,50 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
                   DropdownMenuItem(value: 'Female', child: Text('Female')),
                 ],
                 onChanged: (value) => setState(() => _gender = value),
-                validator: (value) => value == null ? 'Please select your gender' : null,
+                validator: (value) =>
+                    value == null ? 'Please select your gender' : null,
               ),
               const SizedBox(height: 10),
 
               // Contact
-              _buildTextField(
-                controller: _contactController,
-                label: 'Contact Number',
-                keyboardType: TextInputType.phone,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your contact number';
-                  }
-                  return null;
-                },
+             Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: TextFormField(
+                  controller: _contactController,
+                  decoration: const InputDecoration(
+                    labelText: 'Contact Number',
+                    border: InputBorder.none,
+                  ),
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(11), // Allow up to 11 digits
+                    FilteringTextInputFormatter.digitsOnly, // Only allow digits
+                  ],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your contact number';
+                    }
+
+                    // Remove hyphen for validation
+                    final cleanedValue = value.replaceAll('-', '');
+
+                    // Check if the number starts with 01x
+                    if (!RegExp(r'^01[0-9]').hasMatch(cleanedValue)) {
+                      return 'Contact number must start with 01x';
+                    }
+
+                    // Check total number of digits (10 or 11 digits allowed)
+                    if (cleanedValue.length < 10 || cleanedValue.length > 11) {
+                      return 'Contact number must be 10 or 11 digits long';
+                    }
+
+                    return null;
+                  },
+                ),
               ),
               const SizedBox(height: 10),
 
@@ -179,7 +221,8 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
                   DropdownMenuItem(value: 'Doctor', child: Text('Doctor')),
                 ],
                 onChanged: (value) => setState(() => _userType = value),
-                validator: (value) => value == null ? 'Please select your user type' : null,
+                validator: (value) =>
+                    value == null ? 'Please select your user type' : null,
               ),
               const SizedBox(height: 10),
 
@@ -192,21 +235,32 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
                   DropdownMenuItem(value: 'Pekan', child: Text('Pekan')),
                 ],
                 onChanged: (value) => setState(() => _campus = value),
-                validator: (value) => value == null ? 'Please select your campus' : null,
+                validator: (value) =>
+                    value == null ? 'Please select your campus' : null,
               ),
               const SizedBox(height: 10),
 
               // Select Service
               _buildDropdown(
-                value: _selectedServiceController.text.isEmpty ? null : _selectedServiceController.text,
+                value: _selectedServiceController.text.isEmpty
+                    ? null
+                    : _selectedServiceController.text,
                 label: 'Select Service',
                 items: const [
-                  DropdownMenuItem(value: 'Dental Service', child: Text('Dental Service')),
-                  DropdownMenuItem(value: 'Medical Health Service', child: Text('Medical Health Service')),
-                  DropdownMenuItem(value: 'Mental Health Service', child: Text('Mental Health Service')),
+                  DropdownMenuItem(
+                      value: 'Dental Service', child: Text('Dental Service')),
+                  DropdownMenuItem(
+                      value: 'Medical Health Service',
+                      child: Text('Medical Health Service')),
+                  DropdownMenuItem(
+                      value: 'Mental Health Service',
+                      child: Text('Mental Health Service')),
                 ],
-                onChanged: (value) => setState(() => _selectedServiceController.text = value ?? ''),
-                validator: (value) => value == null || value.isEmpty ? 'Please select a service' : null,
+                onChanged: (value) => setState(
+                    () => _selectedServiceController.text = value ?? ''),
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please select a service'
+                    : null,
               ),
               const SizedBox(height: 10),
 
@@ -227,7 +281,8 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
                 label: 'Confirm Password',
                 isVisible: _isConfirmPasswordVisible,
                 onVisibilityToggle: () {
-                  setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible);
+                  setState(() =>
+                      _isConfirmPasswordVisible = !_isConfirmPasswordVisible);
                 },
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -245,7 +300,7 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _submitForm,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
+                  backgroundColor: const Color.fromARGB(255, 100, 200, 185),
                   padding: const EdgeInsets.symmetric(vertical: 12.0),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8.0),
@@ -255,7 +310,7 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text(
                         'Register',
-                        style: TextStyle(fontSize: 16.0, color: Colors.white),
+                        style: TextStyle(fontSize: 16.0, color: Colors.black),
                       ),
               ),
             ],

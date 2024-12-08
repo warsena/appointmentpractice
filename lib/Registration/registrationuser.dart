@@ -4,6 +4,7 @@ import 'package:appointmentpractice/UserHomepage/homepage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 
 class RegistrationUser extends StatefulWidget {
   const RegistrationUser({super.key});
@@ -16,12 +17,13 @@ class _RegistrationUserState extends State<RegistrationUser> {
   final _formKey = GlobalKey<FormState>();
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
-  
+
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   String? _gender;
   String? _userType;
@@ -32,7 +34,6 @@ class _RegistrationUserState extends State<RegistrationUser> {
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
-
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
@@ -41,7 +42,8 @@ class _RegistrationUserState extends State<RegistrationUser> {
 
       try {
         // Create user with email and password
-        UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        UserCredential userCredential =
+            await _auth.createUserWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
@@ -56,8 +58,9 @@ class _RegistrationUserState extends State<RegistrationUser> {
           'User_Email': _emailController.text.trim(),
           'User_Contact': _contactController.text.trim(),
           'User_Gender': _gender,
-          'User_Password': _passwordController.text, // Note: Storing password in Firestore is not recommended for security
-          'User_Confirm_Password' : _passwordController.text,
+          'User_Password':
+              _passwordController.text, // Not recommended for real-world apps
+          'User_Confirm_Password': _passwordController.text,
           'User_Type': _userType,
           'Campus': _campus,
           'Created_At': FieldValue.serverTimestamp(),
@@ -68,54 +71,22 @@ class _RegistrationUserState extends State<RegistrationUser> {
           const SnackBar(content: Text('Registration successful')),
         );
 
-       // After registration, navigate back to AdminHomePage
+        // After registration, navigate back to AdminHomePage
         Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const AdminHomePage()),
-      );
-    } on FirebaseAuthException {
-      String errorMessage = 'An error occurred';
+          context,
+          MaterialPageRoute(builder: (context) => const AdminHomePage()),
+        );
+      } on FirebaseAuthException catch (e) {
+        String errorMessage = 'An error occurred';
 
-        // // Redirect user based on User_Type
-        // if (_userType == 'Admin') {
-        //   Navigator.pushReplacement(
-        //     context,
-        //     MaterialPageRoute(builder: (context) => const AdminHomePage()),
-        //   );
-        // } else if (_userType == 'Student' || _userType == 'Lecturer') {
-        //   Navigator.pushReplacement(
-        //     context,
-        //     MaterialPageRoute(builder: (context) => const Homepage()),
-        //   );
-        // } else if (_userType == 'Doctor') {
-        //   Navigator.pushReplacement(
-        //     context,
-        //     MaterialPageRoute(builder: (context) => const Doctorhomepage()),
-        //   );
-        // } else {
-        //   // If User_Type is unexpected, show a warning
-        //   ScaffoldMessenger.of(context).showSnackBar(
-        //     const SnackBar(content: Text('Unknown user type, please contact support.')),
-        //   );
-        // }
-
-
-        // Navigate to login or home screen
-        // Navigator.pushReplacement(
-        //   context,
-        //   MaterialPageRoute(builder: (context) => LoginScreen()),
-        // );
-
-    //   } on FirebaseAuthException catch (e) {
-    //     String errorMessage = 'An error occurred';
-        
-    //     if (e.code == 'weak-password') {
-    //       errorMessage = 'The password provided is too weak';
-    //     } else if (e.code == 'email-already-in-use') {
-    //       errorMessage = 'An account already exists for this email';
-    //     } else if (e.code == 'invalid-email') {
-    //       errorMessage = 'Please enter a valid email address';
-    //     }
+        // Handle Firebase errors
+        if (e.code == 'weak-password') {
+          errorMessage = 'The password provided is too weak';
+        } else if (e.code == 'email-already-in-use') {
+          errorMessage = 'An account already exists for this email';
+        } else if (e.code == 'invalid-email') {
+          errorMessage = 'Please enter a valid email address';
+        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMessage)),
@@ -136,8 +107,13 @@ class _RegistrationUserState extends State<RegistrationUser> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Registration User Form'),
-        backgroundColor: Colors.teal,
+        title: const Text(
+          'Registration User Form',
+          style: TextStyle(
+            fontWeight: FontWeight.bold, // Make the text bold
+          ),
+        ),
+        backgroundColor: const Color.fromARGB(255, 100, 200, 185),
         elevation: 0,
       ),
       body: Padding(
@@ -187,9 +163,10 @@ class _RegistrationUserState extends State<RegistrationUser> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your email';
                     }
-                    if (!RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+                    if (!RegExp(
+                            r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
                         .hasMatch(value)) {
-                      return 'Please enter a valid email address';
+                      return 'Invalid email address';
                     }
                     return null;
                   },
@@ -243,10 +220,28 @@ class _RegistrationUserState extends State<RegistrationUser> {
                     border: InputBorder.none,
                   ),
                   keyboardType: TextInputType.phone,
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(11), // Allow up to 11 digits
+                    FilteringTextInputFormatter.digitsOnly, // Only allow digits
+                  ],
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your contact number';
                     }
+
+                    // Remove hyphen for validation
+                    final cleanedValue = value.replaceAll('-', '');
+
+                    // Check if the number starts with 01x
+                    if (!RegExp(r'^01[0-9]').hasMatch(cleanedValue)) {
+                      return 'Contact number must start with 01x';
+                    }
+
+                    // Check total number of digits (10 or 11 digits allowed)
+                    if (cleanedValue.length < 10 || cleanedValue.length > 11) {
+                      return 'Contact number must be 10 or 11 digits long';
+                    }
+
                     return null;
                   },
                 ),
@@ -273,7 +268,8 @@ class _RegistrationUserState extends State<RegistrationUser> {
                   ),
                   items: const [
                     DropdownMenuItem(value: 'Student', child: Text('Student')),
-                    DropdownMenuItem(value: 'Lecturer', child: Text('Lecturer')),
+                    DropdownMenuItem(
+                        value: 'Lecturer', child: Text('Lecturer')),
                     DropdownMenuItem(value: 'Doctor', child: Text('Doctor')),
                   ],
                   validator: (value) {
@@ -333,7 +329,9 @@ class _RegistrationUserState extends State<RegistrationUser> {
                     border: InputBorder.none,
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        _isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
                       onPressed: () {
                         setState(() {
@@ -353,7 +351,6 @@ class _RegistrationUserState extends State<RegistrationUser> {
                   },
                 ),
               ),
-              
               const SizedBox(height: 10),
 
               // Confirm Password
@@ -371,11 +368,14 @@ class _RegistrationUserState extends State<RegistrationUser> {
                     border: InputBorder.none,
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        _isConfirmPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
                       onPressed: () {
                         setState(() {
-                          _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                          _isConfirmPasswordVisible =
+                              !_isConfirmPasswordVisible;
                         });
                       },
                     ),
@@ -391,14 +391,13 @@ class _RegistrationUserState extends State<RegistrationUser> {
                   },
                 ),
               ),
-
               const SizedBox(height: 20),
 
               // Register Button
               ElevatedButton(
                 onPressed: _isLoading ? null : _submitForm,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
+                  backgroundColor: const Color.fromARGB(255, 100, 200, 185),
                   padding: const EdgeInsets.symmetric(vertical: 12.0),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8.0),
@@ -408,7 +407,7 @@ class _RegistrationUserState extends State<RegistrationUser> {
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text(
                         'Register',
-                        style: TextStyle(fontSize: 16.0, color: Colors.white),
+                        style: TextStyle(fontSize: 16.0, color: Colors.black),
                       ),
               ),
             ],
@@ -417,14 +416,28 @@ class _RegistrationUserState extends State<RegistrationUser> {
       ),
     );
   }
+}
 
+// Custom Formatter for Contact Number
+class _ContactNumberFormatter extends TextInputFormatter {
   @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _contactController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    // Remove all non-digit characters
+    String newText = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+
+    // Format with hyphens
+    if (newText.length >= 4 && newText.length <= 6) {
+      newText = '${newText.substring(0, 3)}-${newText.substring(3)}';
+    } else if (newText.length > 6) {
+      newText =
+          '${newText.substring(0, 3)}-${newText.substring(3, 6)}-${newText.substring(6, 10)}';
+    }
+
+    // Return the new formatted value
+    return TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newText.length),
+    );
   }
 }
