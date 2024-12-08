@@ -29,7 +29,7 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   flutter:
-    sdk: flutter
+    # sdk: flutter
     # file_picker: ^5.2.4
     # intl: ^0.17.0  # Add this line
     # image_picker:^1.1.2

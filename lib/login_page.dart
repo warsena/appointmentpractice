@@ -1,4 +1,3 @@
-
 import 'package:appointmentpractice/UserHomepage/admindashboard.dart';
 import 'package:appointmentpractice/UserHomepage/homepage.dart';
 import 'package:appointmentpractice/UserHomepage/doctorhomepage.dart';
@@ -6,8 +5,6 @@ import 'package:appointmentpractice/Password/forgotpass.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
-
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -17,214 +14,323 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  late Color myColor;
-  late Size mediaSize;
+  // Controller for email and password input
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+
+  // State variables for login form
   bool rememberUser = false;
   bool isPasswordVisible = false;
-  
-  // Add GlobalKey for ScaffoldMessenger
+
+  // ScaffoldMessenger key for showing snackbar notifications
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey = GlobalKey<ScaffoldMessengerState>();
 
-  final Color turquoiseColor = const Color(0xFF009FA0);
+  // Color palette for the login page
+  final Color primaryColor = const Color(0xFF009FA0);
+  final Color backgroundColor = const Color(0xFFF5F5F5);
+
+  // Firebase authentication and firestore instances
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
+  void initState() {
+    super.initState();
+    _checkRememberMe();
+  }
+
+  // Check if "Remember Me" flag is set in Firestore and automatically fill in email
+  _checkRememberMe() async {
+  User? user = _auth.currentUser;
+  if (user != null) {
+    DocumentSnapshot userDoc =
+        await _firestore.collection('User').doc(user.uid).get();
+    if (userDoc.exists) {
+      setState(() {
+        rememberUser = userDoc['rememberUser'] ?? false;
+        if (rememberUser) {
+          emailController.text = userDoc['email'] ?? '';
+          passwordController.text = userDoc['password'] ?? ''; // Retrieve password
+        }
+      });
+    }
+  }
+}
+
+
+  // Save credentials if remember me is enabled
+ _saveCredentials() async {
+  User? user = _auth.currentUser;
+  if (user != null) {
+    print('Saving credentials: ${emailController.text}, ${passwordController.text}');
+    if (rememberUser) {
+      await _firestore.collection('User').doc(user.uid).set({
+        'rememberUser': rememberUser,
+        'email': emailController.text,
+        'password': passwordController.text, // Save the password
+      }, SetOptions(merge: true));
+    } else {
+      await _firestore.collection('User').doc(user.uid).set({
+        'rememberUser': false,
+        'password': '', // Clear password
+      }, SetOptions(merge: true));
+    }
+  }
+}
+
+
+  @override
   Widget build(BuildContext context) {
-    myColor = Theme.of(context).primaryColor;
-    mediaSize = MediaQuery.of(context).size;
-
-    return ScaffoldMessenger(
-      key: _scaffoldKey,
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildBottom(),
-            ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return ScaffoldMessenger(
+          key: _scaffoldKey,
+          child: Scaffold(
+            backgroundColor: backgroundColor,
+            body: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: constraints.maxWidth > 600
+                          ? 400
+                          : constraints.maxWidth - 40,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _buildHeader(),
+                        const SizedBox(height: 30),
+                        _buildLoginCard(),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildBottom() {
-    return SizedBox(
-      width: mediaSize.width,
-      child: Card(
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(30),
-            topRight: Radius.circular(30),
-          ),
-        ),
-
-        child: Padding(
-          padding: const EdgeInsets.
-          all(20.0),
-          child: _buildForm(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildForm() {
+  Widget _buildHeader() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "Welcome",
-          style: TextStyle(
-              color: Colors.blueGrey,
-              fontSize: 30,
-              fontWeight: FontWeight.w500),
+        Image.asset(
+          'assets/images/umplogo.png',
+          height: 80,
+          width: 80,
+          fit: BoxFit.contain,
         ),
-        _buildGreyText("Please login with your information"),
-        const SizedBox(height: 30),
-        _buildGreyText("Email address"),
-        _buildInputField(emailController),
-        const SizedBox(height: 20),
-        _buildGreyText("Password"),
-        _buildInputField(passwordController, isPassword: true),
-        const SizedBox(height: 20),
-        _buildRememberForgot(),
-        const SizedBox(height: 20),
-        _buildLoginButton(),
-        const SizedBox(height: 260),
+        const SizedBox(height: 15),
+        Text(
+          'Welcome Back',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: primaryColor,
+          ),
+        ),
+        const SizedBox(height: 15),
+        Text(
+          'Login to continue',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
+          ),
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }
 
-  Widget _buildGreyText(String text) {
-    return Text(
-      text,
-      style: const TextStyle(color: Colors.grey),
-    );
-  }
-
-  Widget _buildInputField(TextEditingController controller,
-      {bool isPassword = false}) {
-    return TextField(
-      controller: controller,
-      obscureText: isPassword ? !isPasswordVisible : false,
-      decoration: InputDecoration(
-        border: const OutlineInputBorder(),
-        hintText: isPassword ? 'Enter your password' : 'Enter your email',
-        suffixIcon: isPassword
-            ? IconButton(
-                icon: Icon(
-                  isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                  color: Colors.grey,
-                ),
-                onPressed: () {
-                  setState(() {
-                    isPasswordVisible = !isPasswordVisible;
-                  });
-                },
-              )
-            : null,
+  Widget _buildLoginCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 2,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildEmailField(),
+          const SizedBox(height: 15),
+          _buildPasswordField(),
+          const SizedBox(height: 10),
+          _buildRememberAndForgot(),
+          const SizedBox(height: 15),
+          _buildLoginButton(),
+        ],
       ),
     );
   }
 
-  Widget _buildRememberForgot() {
+  Widget _buildEmailField() {
+    return TextField(
+      controller: emailController,
+      decoration: InputDecoration(
+        labelText: 'Email Address',
+        labelStyle: TextStyle(color: primaryColor),
+        prefixIcon: Icon(Icons.email, color: primaryColor),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: primaryColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: primaryColor, width: 2),
+        ),
+      ),
+      keyboardType: TextInputType.emailAddress,
+    );
+  }
+
+  Widget _buildPasswordField() {
+    return TextField(
+      controller: passwordController,
+      obscureText: !isPasswordVisible,
+      decoration: InputDecoration(
+        labelText: 'Password',
+        labelStyle: TextStyle(color: primaryColor),
+        prefixIcon: Icon(Icons.lock, color: primaryColor),
+        suffixIcon: IconButton(
+          icon: Icon(
+            isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+            color: primaryColor,
+          ),
+          onPressed: () {
+            setState(() {
+              isPasswordVisible = !isPasswordVisible;
+            });
+          },
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: primaryColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: primaryColor, width: 2),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRememberAndForgot() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Checkbox(
-              value: rememberUser,
-              onChanged: (value) {
-                setState(() {
-                  rememberUser = value ?? false;
-                });
-              },
-            ),
-            _buildGreyText("Remember me"),
-          ],
+        Flexible(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Checkbox(
+                activeColor: primaryColor,
+                value: rememberUser,
+                onChanged: (value) {
+                  setState(() {
+                    rememberUser = value ?? false;
+                  });
+                },
+              ),
+              Flexible(
+                child: Text(
+                  'Remember me',
+                  style: TextStyle(color: Colors.grey[700], fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
         TextButton(
           onPressed: () {
-
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const Forgotpass()),
             );
           },
-          child: _buildGreyText("Forgot password"),
+          child: Text(
+            'Forgot Password?',
+            style: TextStyle(color: primaryColor, fontSize: 12),
+          ),
         ),
       ],
     );
   }
 
-
   Widget _buildLoginButton() {
     return ElevatedButton(
       onPressed: _login,
       style: ElevatedButton.styleFrom(
-        shape: const StadiumBorder(),
-        elevation: 10,
-        shadowColor: turquoiseColor,
-        minimumSize: const Size.fromHeight(60),
-        backgroundColor: turquoiseColor,
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        elevation: 3,
       ),
       child: const Text(
-        "LOGIN",
+        'LOGIN',
         style: TextStyle(
-          color: Colors.white,
+          fontSize: 16,
           fontWeight: FontWeight.bold,
         ),
       ),
     );
   }
 
-  // Helper method to show errors
-  void _showError(String message) {
-    if (!mounted) return;
-    _scaffoldKey.currentState?.showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
-
+  // Login authentication method
   Future<void> _login() async {
-    try {
-      print("Attempting to sign in with email: ${emailController.text}");
+  try {
+    print("Attempting to sign in with email: ${emailController.text}");
 
-      // Basic validation
-      if (emailController.text.trim().isEmpty || 
-          passwordController.text.trim().isEmpty) {
-        _showError('Please enter both email and password');
-        return;
-      }
+    // Basic validation
+    if (emailController.text.trim().isEmpty || 
+        passwordController.text.trim().isEmpty) {
+      _showError('Please enter both email and password');
+      return;
+    }
 
-      // Sign in the user with Firebase Authentication
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-      );
+    // Sign in the user with Firebase Authentication
+    UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+      email: emailController.text.trim(),
+      password: passwordController.text.trim(),
+    );
 
-      // Retrieve the user's UID from Firebase Authentication
-      final String? userId = userCredential.user?.uid;
-      if (userId == null) {
-        print("Error: User ID not found after login.");
-        _showError('User ID not found.');
-        return;
-      }
+    // Save credentials if remember me is enabled
+    _saveCredentials();
 
-      print("Logged in with UID: $userId");
+    // Retrieve the user's UID from Firebase Authentication
+    final String? userId = userCredential.user?.uid;
+    if (userId == null) {
+      print("Error: User ID not found after login.");
+      _showError('User ID not found.');
+      return;
+    }
 
-      // Fetch the user document from Firestore
-      DocumentSnapshot userDoc = await _firestore
-          .collection('User')
-          .doc(userId)
-          .get();
+    print("Logged in with UID: $userId");
 
-      // Check if the user document exists in Firestore
+    // Fetch the user document from Firestore
+    DocumentSnapshot userDoc = await _firestore
+        .collection('User')
+        .doc(userId)
+        .get();
+
+     // Check if the user document exists in Firestore
       if (!userDoc.exists) {
         print("Error: User document not found in Firestore for UID: $userId");
         _showError('User document not found.');
@@ -293,20 +399,20 @@ class _LoginPageState extends State<LoginPage> {
         default:
           errorMessage = 'An error occurred: ${e.message}';
       }
-      
-      _showError(errorMessage);
+
+          _showError(errorMessage); // Show the error message in Snackbar
     } catch (e) {
       print("General Error: $e");
-      _showError('An unexpected error occurred. Please try again.');
+      _showError('An unexpected error occurred.');
     }
   }
+    
 
-  @override
-  void dispose() {
-    emailController.dispose();
-    passwordController.dispose();
-    super.dispose();
+
+  // Helper method to show error messages
+  void _showError(String message) {
+    _scaffoldKey.currentState?.showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 }
-
-
