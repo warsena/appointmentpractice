@@ -19,10 +19,11 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   Map<String, Map<String, String>> doctorMapping = {};
   Map<DateTime, List<String>> availableSlots = {};
+  Map<DateTime, List<Map<String, dynamic>>> bookedAppointments = {};
   bool isLoading = true;
   DateTime selectedDate = DateTime.now();
   List<DateTime> currentMonthDays = [];
-  String? currentDoctorId;
+  String? currentUserId;
 
   @override
   void initState() {
@@ -30,6 +31,7 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
     fetchDoctorMapping().then((_) => fetchDoctorSchedule());
     _generateCurrentMonthDays();
   }
+
 
   void _generateCurrentMonthDays() {
     DateTime firstDayOfMonth = DateTime(selectedDate.year, selectedDate.month, 1);
@@ -273,7 +275,7 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
         tempMapping[campus]![service] = name;
 
         if (campus == widget.campus && service == widget.service) {
-          currentDoctorId = doc.id;
+          currentUserId = doc.id;
         }
       }
 
@@ -289,7 +291,7 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
   }
 
   Future<void> fetchDoctorSchedule() async {
-    if (currentDoctorId == null) {
+    if (currentUserId == null) {
       setState(() {
         isLoading = false;
       });
@@ -297,34 +299,173 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
     }
 
     try {
-      QuerySnapshot scheduleSnapshot = await _firestore
-          .collection('DoctorSchedule')
-          .where('doctorId', isEqualTo: currentDoctorId)
-          .where('month', isEqualTo: selectedDate.month)
-          .where('year', isEqualTo: selectedDate.year)
+      // Query Firestore Appointment collection for specific doctor's booked and available appointments
+      QuerySnapshot appointmentSnapshot = await _firestore
+          .collection('Appointment')
+          .where('Appointment_Campus', isEqualTo: widget.campus)
+          .where('Appointment_Service', isEqualTo: widget.service)
           .get();
 
       Map<DateTime, List<String>> tempSlots = {};
+      Map<DateTime, List<Map<String, dynamic>>> tempBookedAppointments = {};
 
-      for (var doc in scheduleSnapshot.docs) {
+      for (var doc in appointmentSnapshot.docs) {
         final data = doc.data() as Map<String, dynamic>;
-        final day = data['day'] as int;
-        final slots = List<String>.from(data['timeSlots'] ?? []);
         
-        final dateKey = DateTime(selectedDate.year, selectedDate.month, day);
-        tempSlots[dateKey] = slots;
+        // Parse the appointment date
+        final appointmentDate = (data['Appointment_Date'] as Timestamp?)?.toDate();
+        final appointmentTime = data['Appointment_Time'] as String? ?? '';
+        
+        if (appointmentDate != null) {
+          // Check if the appointment is in the selected month and year
+          if (appointmentDate.year == selectedDate.year && 
+              appointmentDate.month == selectedDate.month) {
+            
+            // Check if the appointment is booked or available
+            if (data['User_ID'] == null) {
+              // Available slot
+              if (!tempSlots.containsKey(appointmentDate)) {
+                tempSlots[appointmentDate] = [];
+              }
+              
+              if (appointmentTime.isNotEmpty && 
+                  !tempSlots[appointmentDate]!.contains(appointmentTime)) {
+                tempSlots[appointmentDate]!.add(appointmentTime);
+              }
+            } else {
+              // Booked appointment
+              if (!tempBookedAppointments.containsKey(appointmentDate)) {
+                tempBookedAppointments[appointmentDate] = [];
+              }
+              
+              tempBookedAppointments[appointmentDate]!.add({
+                'Appointment_ID': doc.id,
+                'User_Name': data['User_Name'] ?? 'Unknown Patient',
+                'Appoinntment_Time': appointmentTime,
+                'Appointment_Service': data['Appointment_Service'] ?? 'Unknown Service',
+              });
+            }
+          }
+        }
       }
 
+      // Update state with available slots and booked appointments
       setState(() {
         availableSlots = tempSlots;
+        bookedAppointments = tempBookedAppointments;
         isLoading = false;
       });
     } catch (e) {
-      print('Error fetching doctor schedule: $e');
+      // Error handling for appointment fetch
+      print('Error fetching doctor appointments: $e');
       setState(() {
         isLoading = false;
       });
     }
+  }
+
+  void _showBookedAppointmentDetails(DateTime date) {
+    final appointments = bookedAppointments[date] ?? [];
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Booked Appointments on ${date.day}/${date.month}/${date.year}'),
+          content: appointments.isEmpty
+            ? Text('No booked appointments on this date.')
+            : SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: appointments.map((appointment) => 
+                    Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      child: ListTile(
+                        title: Text(
+                          'Patient: ${appointment['User_Name']}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Time: ${appointment['Appoinntment_Time']}'),
+                            Text('Service: ${appointment['Appointment_Service']}'),
+                          ],
+                        ),
+                      ),
+                    )
+                  ).toList(),
+                ),
+              ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildCalendarGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 7,
+        childAspectRatio: 1,
+      ),
+      itemCount: currentMonthDays.length,
+      itemBuilder: (context, index) {
+        final day = currentMonthDays[index];
+        final hasSlots = availableSlots.containsKey(day);
+        final hasBookedAppointments = bookedAppointments.containsKey(day);
+        
+        return GestureDetector(
+          onTap: () {
+            if (hasSlots) {
+              setState(() {
+                selectedDate = day;
+              });
+            }
+            if (hasBookedAppointments) {
+              _showBookedAppointmentDetails(day);
+            }
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey[300]!),
+              color: hasBookedAppointments 
+                ? const Color(0xFFFFD700)  // Golden color for booked appointments
+                : (hasSlots ? const Color(0xFFE3F2FD) : Colors.white),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '${day.day}',
+                  style: TextStyle(
+                    fontWeight: (hasSlots || hasBookedAppointments) ? FontWeight.bold : FontWeight.normal,
+                    color: (hasSlots || hasBookedAppointments) 
+                      ? (hasBookedAppointments ? Colors.black : const Color(0xFF48b0fe)) 
+                      : Colors.black,
+                  ),
+                ),
+                if (hasSlots || hasBookedAppointments)
+                  Icon(
+                    hasBookedAppointments ? Icons.calendar_today : Icons.circle,
+                    size: 8,
+                    color: hasBookedAppointments 
+                      ? Colors.black 
+                      : const Color(0xFF48b0fe),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildCalendarHeader() {
@@ -346,56 +487,6 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
           ),
         ),
       )).toList(),
-    );
-  }
-
-  Widget _buildCalendarGrid() {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 7,
-        childAspectRatio: 1,
-      ),
-      itemCount: currentMonthDays.length,
-      itemBuilder: (context, index) {
-        final day = currentMonthDays[index];
-        final hasSlots = availableSlots.containsKey(day);
-        
-        return GestureDetector(
-          onTap: () {
-            if (hasSlots) {
-              setState(() {
-                selectedDate = day;
-              });
-            }
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
-              color: hasSlots ? const Color(0xFFE3F2FD) : Colors.white,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '${day.day}',
-                  style: TextStyle(
-                    fontWeight: hasSlots ? FontWeight.bold : FontWeight.normal,
-                    color: hasSlots ? const Color(0xFF48b0fe) : Colors.black,
-                  ),
-                ),
-                if (hasSlots)
-                  const Icon(
-                    Icons.circle,
-                    size: 8,
-                    color: Color(0xFF48b0fe),
-                  ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 
