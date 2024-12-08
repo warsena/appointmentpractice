@@ -19,6 +19,7 @@ class Homepage extends StatefulWidget {
 
 class _HomepageState extends State<Homepage> {
   int _selectedIndex = 0;
+  String? notificationMessage;
 
   void _onItemTapped(int index) {
     setState(() {
@@ -33,10 +34,11 @@ class _HomepageState extends State<Homepage> {
       case 1:
         return const AppointmentPage();
       case 2:
-        return const Center(
-            child: Text('Notification', style: TextStyle(fontSize: 24)));
+        return NotificationPage(
+          message: notificationMessage,
+        );
       case 3:
-        return const Setting(); //Navigate to the Setting
+        return const Setting();
       default:
         return const Center(child: Text('Unknown Page'));
     }
@@ -55,6 +57,15 @@ class _HomepageState extends State<Homepage> {
         ),
         centerTitle: true,
         backgroundColor: Colors.teal,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            onPressed: () {
+              // Handle notification icon click
+              _getNotificationDetails();
+            },
+          ),
+        ],
       ),
       body: _getTabWidget(_selectedIndex),
       bottomNavigationBar: BottomNavigationBar(
@@ -81,6 +92,63 @@ class _HomepageState extends State<Homepage> {
             label: 'Settings',
           ),
         ],
+      ),
+    );
+  }
+
+  // Fetch appointment details and show in notification
+  Future<void> _getNotificationDetails() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('Appointment')
+          .where('User_ID', isEqualTo: currentUser.uid)
+          .where('Appointment_Date', isGreaterThanOrEqualTo: DateTime.now())
+          .orderBy('Appointment_Date')
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+      final appointment = snapshot.docs.first.data() as Map<String, dynamic>;
+
+      // Ensure Appointment_Date is a Timestamp and convert it to DateTime
+      final appointmentDate = appointment['Appointment_Date'];
+      final appointmentTime = appointment['Appointment_Time'];
+
+      // Check if date and time are available
+      if (appointmentDate != null && appointmentTime != null) {
+        // Format the date properly using DateFormat
+        final formattedDate = DateFormat('yyyy-MM-dd').format(appointmentDate.toDate());
+
+        // Update the notification message
+        setState(() {
+          notificationMessage =
+              'You have an appointment on $formattedDate at $appointmentTime';
+        });
+      } else {
+        setState(() {
+          notificationMessage = 'Appointment details are missing.';
+        });
+      }
+    } else {
+      setState(() {
+        notificationMessage = 'No upcoming appointments found.';
+      });
+      }
+    }
+  }
+}
+
+class NotificationPage extends StatelessWidget {
+  final String? message;
+
+  const NotificationPage({Key? key, this.message}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        message ?? 'No upcoming appointments.',
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       ),
     );
   }
