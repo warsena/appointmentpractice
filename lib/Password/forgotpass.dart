@@ -1,8 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'verification.dart';
+// import 'resetpassword.dart';
 
 class Forgotpass extends StatefulWidget {
-  const Forgotpass({super.key});
+  const Forgotpass({Key? key}) : super(key: key);
 
   @override
   _ForgotpassState createState() => _ForgotpassState();
@@ -10,69 +11,170 @@ class Forgotpass extends StatefulWidget {
 
 class _ForgotpassState extends State<Forgotpass> {
   final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.teal,
-        title: const Text(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: Colors.teal[600]),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
           'Forgot Password',
           style: TextStyle(
+            color: Colors.teal[700],
             fontWeight: FontWeight.bold,
+            fontSize: 20,
           ),
         ),
       ),
-      body: Form(
-        key: _formKey,
+      body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(24.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Email'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!value.contains('@')) {
-                    return 'Please enter a valid email';
-                  }
-                  return null;
-                },
+              // Illustrative icon
+              Icon(
+                Icons.lock_reset,
+                size: 100,
+                color: Colors.teal[300],
               ),
-              const SizedBox(height: 16.0), //spacing send button and email 
-              ElevatedButton(
-                onPressed: () {
-                  //Navigate to the verification page
-                  Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const Verification()));
-                  if (_formKey.currentState!.validate()) {
-                    // Process email to send reset link
-                  }
-                },
-                style: ElevatedButton.styleFrom(   //cantikkan button
-                  backgroundColor: Colors.teal, // Set button color to turquoise
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10), //Adjust padding (size send button)
-                  textStyle: const TextStyle(
-                    fontSize: 16,
+              const SizedBox(height: 20),
+              
+              // Descriptive text
+              Text(
+                'Reset Your Password',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.teal[700],
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Enter your email to receive a password reset link',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 30),
+
+              // Email Input Field
+              Form(
+                key: _formKey,
+                child: TextFormField(
+                  controller: _emailController,
+                  decoration: InputDecoration(
+                    labelText: 'Email Address',
+                    prefixIcon: Icon(Icons.email, color: Colors.teal[600]),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.teal[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.teal[600]!, width: 2),
+                    ),
+                    errorStyle: const TextStyle(color: Colors.redAccent),
                   ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your email';
+                    }
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                      return 'Please enter a valid email';
+                    }
+                    return null;
+                  },
+                  keyboardType: TextInputType.emailAddress,
+                ),
+              ),
+              const SizedBox(height: 30),
+
+              // Send Button
+              ElevatedButton(
+                onPressed: _resetPassword,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal[600],
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 5,
                 ),
                 child: const Text(
-                  'Send',
+                  'Send Reset Link',
                   style: TextStyle(
-                    color: Colors.white, // Set text color to white
-                    fontWeight: FontWeight.bold, // Make the text bold
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              )
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _resetPassword() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    try {
+      final email = _emailController.text.trim();
+
+      // Send password reset email via Firebase
+      await _auth.sendPasswordResetEmail(email: email);
+
+      // // Navigate to verification page
+      // Navigator.pushReplacement(
+      //   context,
+      //   MaterialPageRoute(builder: (context) => const ResetPassword())
+      // );
+    } on FirebaseAuthException catch (e) {
+      // Handle specific Firebase authentication errors
+      String errorMessage;
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = 'No user found with this email.';
+          break;
+        case 'invalid-email':
+          errorMessage = 'The email address is invalid.';
+          break;
+        case 'too-many-requests':
+          errorMessage = 'Too many reset requests. Please try again later.';
+          break;
+        default:
+          errorMessage = 'An error occurred. Please try again.';
+      }
+
+      // Show error message (you might want to replace this with a proper error handling method)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage), backgroundColor: Colors.red)
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('An unexpected error occurred.'), backgroundColor: Colors.red)
+      );
+    }
   }
 }
