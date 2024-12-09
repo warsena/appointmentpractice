@@ -101,7 +101,7 @@ class _ChangepasswordState extends State<Changepassword> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Password Requirements',
+            'Password Requirements',  
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
