@@ -125,10 +125,10 @@ packages:
     dependency: transitive
     description:
       name: firebase_core_platform_interface
-      sha256: e30da58198a6d4b49d5bce4e852f985c32cb10db329ebef9473db2b9f09ce810
+      sha256: b94b217e3ad745e784960603d33d99471621ecca151c99c670869b76e50ad2a6
       url: "https://pub.dev"
     source: hosted
-    version: "5.3.0"
+    version: "5.3.1"
   firebase_core_web:
     dependency: transitive
     description:
