@@ -1,3 +1,4 @@
+import 'package:appointmentpractice/Profile/doctoreditprofile.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -128,7 +129,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
                        Navigator.push(
                          context,
                          MaterialPageRoute(
-                           builder: (context) => const UserEditProfile(),
+                           builder: (context) => const DoctorEditProfile(),
                          ),
                        );
                      },

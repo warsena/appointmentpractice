@@ -25,6 +25,32 @@ class _ChangepasswordState extends State<Changepassword> {
   bool hasNumber = false;
   bool hasSpecialChar = false;
 
+  late Color appBarColor; // Variable to hold the AppBar background color
+
+  @override
+  void initState() {
+    super.initState();
+    _setAppBarColor();
+  }
+
+  // Set AppBar color based on role (Doctor or Student/Lecturer)
+  void _setAppBarColor() async {
+    String userId = FirebaseAuth.instance.currentUser!.uid;
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance
+        .collection('User')
+        .doc(userId)
+        .get();
+    String userRole = userDoc['User_Type'];
+
+    setState(() {
+      if (userRole == 'Doctor') {
+        appBarColor = const Color.fromRGBO(37, 163, 255, 1); // Blue for Doctor
+      } else {
+        appBarColor = Colors.teal; // Teal for Student/Lecturer
+      }
+    });
+  }
+
   @override
   void dispose() {
     _currentPasswordController.dispose();
@@ -44,50 +70,49 @@ class _ChangepasswordState extends State<Changepassword> {
   }
 
   Widget _buildPasswordField({
-  required TextEditingController controller,
-  required String labelText,
-  required bool showPassword,
-  required void Function() toggleVisibility,
-  required String? Function(String?)? validator,
-  void Function(String)? onChanged,
-}) {
-  return Container(
-    margin: const EdgeInsets.symmetric(vertical: 10),
-    child: TextFormField(
-      controller: controller,
-      obscureText: !showPassword,
-      onChanged: onChanged,
-      style: const TextStyle(fontSize: 16, color: Colors.black87),
-      decoration: InputDecoration(
-        labelText: labelText,
-        labelStyle: const TextStyle(color: Colors.teal),
-        filled: true,
-        fillColor: Colors.white, // Changed from Colors.teal[50] to Colors.white
-        suffixIcon: IconButton(
-          onPressed: toggleVisibility,
-          icon: Icon(
-            showPassword ? Icons.visibility : Icons.visibility_off,
-            color: Colors.teal[900],
+    required TextEditingController controller,
+    required String labelText,
+    required bool showPassword,
+    required void Function() toggleVisibility,
+    required String? Function(String?)? validator,
+    void Function(String)? onChanged,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      child: TextFormField(
+        controller: controller,
+        obscureText: !showPassword,
+        onChanged: onChanged,
+        style: const TextStyle(fontSize: 16, color: Colors.black87),
+        decoration: InputDecoration(
+          labelText: labelText,
+          labelStyle: const TextStyle(color: Colors.black),
+          filled: true,
+          fillColor: Colors.white,
+          suffixIcon: IconButton(
+            onPressed: toggleVisibility,
+            icon: Icon(
+              showPassword ? Icons.visibility : Icons.visibility_off,
+              color: const Color.fromARGB(255, 70, 82, 80),
+            ),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: Colors.teal[900]!),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: Colors.teal[900]!, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: const BorderSide(color: Colors.red, width: 2),
           ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: Colors.teal[900]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: Colors.teal[900]!, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
-        ),
+        validator: validator,
       ),
-      validator: validator,
-    ),
-  );
-}
-
+    );
+  }
 
   Widget _buildPasswordChecklist() {
     return Container(
@@ -101,11 +126,11 @@ class _ChangepasswordState extends State<Changepassword> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Password Requirements',  
+            'Password Requirements',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
-              color: Colors.teal,
+              color: Colors.black,
             ),
           ),
           const SizedBox(height: 8),
@@ -173,7 +198,6 @@ class _ChangepasswordState extends State<Changepassword> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           'Change Password',
@@ -182,109 +206,112 @@ class _ChangepasswordState extends State<Changepassword> {
             color: Colors.black,
           ),
         ),
-        backgroundColor: Colors.teal,
+        backgroundColor: appBarColor, // Use dynamic color here
         elevation: 0,
         centerTitle: false,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Current Password Field
-                _buildPasswordField(
-                  controller: _currentPasswordController,
-                  labelText: 'Current Password',
-                  showPassword: _showCurrentPassword,
-                  toggleVisibility: () {
-                    setState(() {
-                      _showCurrentPassword = !_showCurrentPassword;
-                    });
-                  },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your current password';
-                    }
-                    return null;
-                  },
-                ),
-
-                // New Password Field
-                _buildPasswordField(
-                  controller: _newPasswordController,
-                  labelText: 'New Password',
-                  showPassword: _showNewPassword,
-                  toggleVisibility: () {
-                    setState(() {
-                      _showNewPassword = !_showNewPassword;
-                    });
-                  },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a new password';
-                    }
-                    return null;
-                  },
-                  onChanged: _validatePasswordConditions,
-                ),
-
-                // Confirm Password Field
-                _buildPasswordField(
-                  controller: _confirmPasswordController,
-                  labelText: 'Confirm Password',
-                  showPassword: _showConfirmPassword,
-                  toggleVisibility: () {
-                    setState(() {
-                      _showConfirmPassword = !_showConfirmPassword;
-                    });
-                  },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please confirm your new password';
-                    }
-                    if (value != _newPasswordController.text) {
-                      return 'Passwords do not match';
-                    }
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 16),
-
-                // Password Checklist
-                _buildPasswordChecklist(),
-
-                const SizedBox(height: 24),
-
-                // Change Password Button
-                ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      _updatePassword();
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
+          child: Column(
+            children: [
+              Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Current Password Field
+                    _buildPasswordField(
+                      controller: _currentPasswordController,
+                      labelText: 'Current Password',
+                      showPassword: _showCurrentPassword,
+                      toggleVisibility: () {
+                        setState(() {
+                          _showCurrentPassword = !_showCurrentPassword;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your current password';
+                        }
+                        return null;
+                      },
                     ),
-                    elevation: 5,
-                  ),
-                  child: const Text(
-                    'Change Password',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+
+                    // New Password Field
+                    _buildPasswordField(
+                      controller: _newPasswordController,
+                      labelText: 'New Password',
+                      showPassword: _showNewPassword,
+                      toggleVisibility: () {
+                        setState(() {
+                          _showNewPassword = !_showNewPassword;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a new password';
+                        }
+                        return null;
+                      },
                     ),
-                  ),
+
+                    // Confirm Password Field
+                    _buildPasswordField(
+                      controller: _confirmPasswordController,
+                      labelText: 'Confirm Password',
+                      showPassword: _showConfirmPassword,
+                      toggleVisibility: () {
+                        setState(() {
+                          _showConfirmPassword = !_showConfirmPassword;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please confirm your new password';
+                        }
+                        if (value != _newPasswordController.text) {
+                          return 'Passwords do not match';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Password Checklist
+                    _buildPasswordChecklist(),
+
+                    const SizedBox(height: 24),
+
+                    // Change Password Button
+                    ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          _updatePassword();
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: appBarColor, // Use dynamic color here
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        elevation: 5,
+                      ),
+                      child: const Text(
+                        'Change Password',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
