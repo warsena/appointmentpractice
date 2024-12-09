@@ -178,8 +178,6 @@ Future<void> _bookAppointment() async {
   }
 }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -189,7 +187,7 @@ Future<void> _bookAppointment() async {
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF009FA0),
+        backgroundColor: Colors.teal,
         actions: [
           IconButton(
             icon: const Icon(Icons.close),
@@ -214,7 +212,7 @@ Future<void> _bookAppointment() async {
                   height: 54,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF009FA0),
+                      backgroundColor: Colors.teal,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.0),
                       ),

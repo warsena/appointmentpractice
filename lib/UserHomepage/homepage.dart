@@ -52,20 +52,11 @@ class _HomepageState extends State<Homepage> {
           'Dual Campus',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 20,
+            fontSize: 24,
           ),
         ),
         centerTitle: true,
         backgroundColor: Colors.teal,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: () {
-              // Handle notification icon click
-              _getNotificationDetails();
-            },
-          ),
-        ],
       ),
       body: _getTabWidget(_selectedIndex),
       bottomNavigationBar: BottomNavigationBar(
@@ -81,7 +72,7 @@ class _HomepageState extends State<Homepage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today),
-            label: 'Calendar',
+            label: 'Appointment',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.notifications),
@@ -277,114 +268,224 @@ class AppointmentPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2, // Two tabs: Appointment and History
+      length: 2,
       child: Scaffold(
+        backgroundColor: Colors.grey[100],
         appBar: AppBar(
-          title: const Text('Appointment'),
-          // Tab bar for switching between Appointment and History views
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Appointment'),
-              Tab(text: 'History'),
-            ],
+          backgroundColor: Colors.white,
+          elevation: 1,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(60),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: TabBar(
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicator: BoxDecoration(
+                  color: const Color(0xFF009FA0),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.blueGrey[600],
+                tabs: const [
+                  Tab(
+                    child: Text(
+                      'Upcoming',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  Tab(
+                    child: Text(
+                      'History',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
         body: TabBarView(
           children: [
-            // StreamBuilder to listen to real-time updates from Firestore
             StreamBuilder<DocumentSnapshot>(
-              // Get the current user's document from Firestore
-              // Uses the logged-in user's UID to fetch their data
               stream: FirebaseFirestore.instance
                   .collection('User')
                   .doc(FirebaseAuth.instance.currentUser?.uid)
                   .snapshots(),
               builder: (context, snapshot) {
-                // Show loading indicator while fetching data
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.blueGrey,
+                    ),
+                  );
                 }
 
-                // Show error message if data fetch fails
                 if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          color: Colors.red[300],
+                          size: 80,
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Oops! Something went wrong',
+                          style: TextStyle(
+                            color: Colors.blueGrey[700],
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Error: ${snapshot.error}',
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  );
                 }
 
-                // Show message if user data is not found
                 if (!snapshot.hasData || !snapshot.data!.exists) {
-                  return const Center(child: Text('User data not found'));
+                  return const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.assignment_late_outlined,
+                          color: Color(0xFF009FA0),
+                          size: 60,
+                        ),
+                        SizedBox(height: 20),
+                        Text(
+                          'No User Data Found',
+                          style: TextStyle(
+                            color: Color(0xFF009FA0),
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
                 }
 
-                // Extract user data from the snapshot
                 final userData = snapshot.data!.data() as Map<String, dynamic>;
-                // Get the user's campus from the data
                 final userCampus = userData['Campus'] as String;
 
-                // Build the campus selection UI
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Select Campus',
-                      style: TextStyle(
-                          fontSize: 18.0, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 20.0),
-                    // Show campus button based on user's campus
-                    if (userCampus == 'Pekan')
-                      buildCampusButton(
-                          context, 'UMPSA Pekan', const Appointmentpekan())
-                    else if (userCampus == 'Gambang')
-                      buildCampusButton(
-                          context, 'UMPSA Gambang', const Appointmentgambang()),
-                  ],
+                return Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Select Campus',
+                        style: TextStyle(
+                          fontSize: 20.0, 
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blueGrey[800],
+                        ),
+                      ),
+                      const SizedBox(height: 20.0), //spacing between select campus and button (UMPSA Campus)
+                      if (userCampus == 'Pekan')
+                        _buildCampusButton(
+                          context, 
+                          'UMPSA Pekan', 
+                          const Appointmentpekan(),
+                          Icons.location_city,
+                        )
+                      else if (userCampus == 'Gambang')
+                        _buildCampusButton(
+                          context, 
+                          'UMPSA Gambang', 
+                          const Appointmentgambang(),
+                          Icons.school,
+                        ),
+                    ],
+                  ),
                 );
               },
             ),
-            const HistoryTab(), // Add HistoryTab here
+            const HistoryTab(),
           ],
         ),
       ),
     );
   }
-}
 
-Widget buildCampusButton(BuildContext context, String campusName, Widget page) {
-  return Container(
-    // Add horizontal margin to the button
-    margin: const EdgeInsets.symmetric(horizontal: 16.0),
-    child: ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        //Add vertical padding inside the button
-        padding: const EdgeInsets.symmetric(vertical: 5.0),
-        backgroundColor: Colors.teal[100],
-        // Remove button shadow
-        elevation: 0,
-        // Add rounded corners to the button
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
+  Widget _buildCampusButton(
+    BuildContext context, 
+    String campusName, 
+    Widget page, 
+    IconData icon,
+  ) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 16.0),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF009FA0),
+            Color(0xFF009FA0),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-      ),
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => page),
-        );
-      },
-      // Button content layout
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.school, color: Colors.teal),
-          const SizedBox(width: 10.0), // Space between icon and text
-          Text(
-            campusName,
-            style: const TextStyle(fontSize: 16.0, color: Colors.black),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blueGrey[300]!.withOpacity(0.5),
+            spreadRadius: 2,
+            blurRadius: 10,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
-    ),
-  );
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          padding: const EdgeInsets.symmetric(vertical: 18.0),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+        ),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => page),
+          );
+        },
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon, 
+              color: Colors.white, 
+              size: 30,
+            ),
+            const SizedBox(width: 15.0),
+            Text(
+              campusName,
+              style: const TextStyle(
+                fontSize: 18.0, 
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // History Tab Widget to show appointment history
