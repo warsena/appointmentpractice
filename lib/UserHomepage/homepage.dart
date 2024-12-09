@@ -9,6 +9,7 @@ import '../Appointment/appointmentpekan.dart';
 import 'package:appointmentpractice/Appointment/rescheduleappointment.dart';
 import 'package:appointmentpractice/Profile/setting.dart';
 import 'package:appointmentpractice/Reminder/setreminder.dart';
+import 'dart:async';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -20,6 +21,7 @@ class Homepage extends StatefulWidget {
 class _HomepageState extends State<Homepage> {
   int _selectedIndex = 0;
   String? notificationMessage;
+  StreamSubscription? appointmentSubscription;
 
   void _onItemTapped(int index) {
     setState(() {
@@ -35,8 +37,7 @@ class _HomepageState extends State<Homepage> {
         return const AppointmentPage();
       case 2:
         return NotificationPage(
-          message: notificationMessage,
-        );
+            notificationMessage: notificationMessage ?? 'No Notifications Yet');
       case 3:
         return const Setting();
       default:
@@ -87,59 +88,145 @@ class _HomepageState extends State<Homepage> {
     );
   }
 
-  // Fetch appointment details and show in notification
-  Future<void> _getNotificationDetails() async {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser != null) {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('Appointment')
-          .where('User_ID', isEqualTo: currentUser.uid)
-          .where('Appointment_Date', isGreaterThanOrEqualTo: DateTime.now())
-          .orderBy('Appointment_Date')
-          .get();
+ void startAppointmentListener() {
+  final currentUser = FirebaseAuth.instance.currentUser;
 
-      if (snapshot.docs.isNotEmpty) {
-      final appointment = snapshot.docs.first.data() as Map<String, dynamic>;
+  if (currentUser != null) {
+    // Set up a real-time listener for the user's appointments
+    appointmentSubscription = FirebaseFirestore.instance
+        .collection('Appointment')
+        .where('User_ID', isEqualTo: currentUser.uid)
+        .snapshots()
+        .listen((querySnapshot) {
+      if (querySnapshot.docs.isNotEmpty) {
+        // Build a message for all appointments
+        String message = '';
+        for (var doc in querySnapshot.docs) {
+          final appointmentData = doc.data();
+          final appointmentDate = appointmentData['Appointment_Date'];
+          final appointmentTime = appointmentData['Appointment_Time'];
 
-      // Ensure Appointment_Date is a Timestamp and convert it to DateTime
-      final appointmentDate = appointment['Appointment_Date'];
-      final appointmentTime = appointment['Appointment_Time'];
+          if (appointmentDate != null && appointmentTime != null) {
+            final date = DateTime.parse(appointmentDate);
+            final formattedDate = DateFormat('d MMM yyyy').format(date);
+            message +=
+                "You have an appointment on $formattedDate at $appointmentTime.\n";
+          } else {
+            message += "An appointment has incomplete details.\n";
+          }
+        }
 
-      // Check if date and time are available
-      if (appointmentDate != null && appointmentTime != null) {
-        // Format the date properly using DateFormat
-        final formattedDate = DateFormat('yyyy-MM-dd').format(appointmentDate.toDate());
-
-        // Update the notification message
         setState(() {
-          notificationMessage =
-              'You have an appointment on $formattedDate at $appointmentTime';
+          notificationMessage = message.trim();
         });
       } else {
         setState(() {
-          notificationMessage = 'Appointment details are missing.';
+          notificationMessage = "No appointments found for this user.";
         });
       }
-    } else {
+    }, onError: (error) {
+      print("Error in listener: $error");
       setState(() {
-        notificationMessage = 'No upcoming appointments found.';
+        notificationMessage = "Error retrieving appointment details: $error";
       });
-      }
-    }
+    });
   }
 }
 
-class NotificationPage extends StatelessWidget {
-  final String? message;
 
-  const NotificationPage({Key? key, this.message}) : super(key: key);
+  @override
+  void initState() {
+    super.initState();
+    startAppointmentListener();
+  }
+}
+
+
+class NotificationPage extends StatefulWidget {
+  final String notificationMessage;
+
+  const NotificationPage({Key? key, required this.notificationMessage}) : super(key: key);
+
+  @override
+  _NotificationPageState createState() => _NotificationPageState();
+}
+
+class _NotificationPageState extends State<NotificationPage> {
+  List<String> _parseMessages() {
+    return widget.notificationMessage
+        .split('\n')
+        .where((message) => message.isNotEmpty)
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        message ?? 'No upcoming appointments.',
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    final messages = _parseMessages();
+
+        return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 16.0), // Space from top of screen
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: messages.isNotEmpty
+                    ? ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: messages.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Colors.teal[50],
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.teal.shade100),
+                            ),
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(Icons.notifications, color: Colors.teal[700]),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    messages[index],
+                                    style: TextStyle(
+                                      color: Colors.teal[900],
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      )
+                    : Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.notifications_off,
+                              size: 100,
+                              color: Colors.grey[300],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No Notifications',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 18,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -388,23 +475,25 @@ class AppointmentPage extends StatelessWidget {
                       Text(
                         'Select Campus',
                         style: TextStyle(
-                          fontSize: 20.0, 
+                          fontSize: 20.0,
                           fontWeight: FontWeight.w600,
                           color: Colors.blueGrey[800],
                         ),
                       ),
-                      const SizedBox(height: 20.0), //spacing between select campus and button (UMPSA Campus)
+                      const SizedBox(
+                          height:
+                              20.0), //spacing between select campus and button (UMPSA Campus)
                       if (userCampus == 'Pekan')
                         _buildCampusButton(
-                          context, 
-                          'UMPSA Pekan', 
+                          context,
+                          'UMPSA Pekan',
                           const Appointmentpekan(),
                           Icons.location_city,
                         )
                       else if (userCampus == 'Gambang')
                         _buildCampusButton(
-                          context, 
-                          'UMPSA Gambang', 
+                          context,
+                          'UMPSA Gambang',
                           const Appointmentgambang(),
                           Icons.school,
                         ),
@@ -421,9 +510,9 @@ class AppointmentPage extends StatelessWidget {
   }
 
   Widget _buildCampusButton(
-    BuildContext context, 
-    String campusName, 
-    Widget page, 
+    BuildContext context,
+    String campusName,
+    Widget page,
     IconData icon,
   ) {
     return Container(
@@ -452,7 +541,7 @@ class AppointmentPage extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: 18.0),
+          padding: const EdgeInsets.symmetric(vertical: 10.0),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -467,15 +556,15 @@ class AppointmentPage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              icon, 
-              color: Colors.white, 
-              size: 30,
+              icon,
+              color: Colors.white,
+              size: 28,
             ),
             const SizedBox(width: 15.0),
             Text(
               campusName,
               style: const TextStyle(
-                fontSize: 18.0, 
+                fontSize: 15.0,
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,

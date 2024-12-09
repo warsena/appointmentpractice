@@ -167,7 +167,7 @@ void _showLogoutConfirmationDialog(BuildContext context) {
             child: const Text(
               'Log Out',
               style: TextStyle(
-                color: Colors.white, // Black text color
+                color: Colors.black, // Black text color
               ),
             ),
           ),
