@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-// import 'resetpassword.dart';
 
 class Forgotpass extends StatefulWidget {
   const Forgotpass({Key? key}) : super(key: key);
@@ -109,7 +108,10 @@ class _ForgotpassState extends State<Forgotpass> {
 
               // Send Button
               ElevatedButton(
-                onPressed: _resetPassword,
+                onPressed: () {
+                  print("Button pressed");
+                  _resetPassword();
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.teal[600],
                   minimumSize: const Size(double.infinity, 50),
@@ -145,13 +147,17 @@ class _ForgotpassState extends State<Forgotpass> {
       // Send password reset email via Firebase
       await _auth.sendPasswordResetEmail(email: email);
 
-      // // Navigate to verification page
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password reset email sent!'), backgroundColor: Colors.green),
+      );
+
+      // Optionally, navigate to a different screen after successful reset
       // Navigator.pushReplacement(
       //   context,
-      //   MaterialPageRoute(builder: (context) => const ResetPassword())
+      //   MaterialPageRoute(builder: (context) => const ResetPassword()),
       // );
     } on FirebaseAuthException catch (e) {
-      // Handle specific Firebase authentication errors
       String errorMessage;
       switch (e.code) {
         case 'user-not-found':
@@ -167,13 +173,13 @@ class _ForgotpassState extends State<Forgotpass> {
           errorMessage = 'An error occurred. Please try again.';
       }
 
-      // Show error message (you might want to replace this with a proper error handling method)
+      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage), backgroundColor: Colors.red)
+        SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('An unexpected error occurred.'), backgroundColor: Colors.red)
+        const SnackBar(content: Text('An unexpected error occurred.'), backgroundColor: Colors.red),
       );
     }
   }
