@@ -20,10 +20,8 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
-  final TextEditingController _selectedServiceController =
-      TextEditingController(); // Changed to TextEditingController
+  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _selectedServiceController = TextEditingController(); // Changed to TextEditingController
 
   String? _gender;
   String? _userType;
@@ -60,10 +58,8 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
           'User_Gender': _gender,
           'User_Type': _userType,
           'Campus': _campus,
-          'Selected_Service': _selectedServiceController
-              .text, // Save selected service text from controller
-          'User_Password': _passwordController
-              .text, // Note: Storing password in Firestore is not recommended for security
+          'Selected_Service': _selectedServiceController.text, // Save selected service text from controller
+          'User_Password': _passwordController.text, // Note: Storing password in Firestore is not recommended for security
           'User_Confirm_Password': _passwordController.text,
           'Created_At': FieldValue.serverTimestamp(),
         });
