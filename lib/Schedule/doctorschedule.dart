@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 
 class DoctorSchedule extends StatefulWidget {
@@ -14,8 +15,17 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
   String doctorName = "";
   String doctorService = "";
   String doctorCampus = "";
-  List<Map<String, dynamic>> appointments = [];
+  Map<DateTime, List<Map<String, dynamic>>> appointments = {};
   bool isLoading = true;
+
+  DateTime focusedDay = DateTime.now();
+  DateTime? selectedDay;
+
+  // Color palette
+  final Color primaryColor = const Color(0xFF2196F3);
+  final Color accentColor = const Color(0xFF03A9F4);
+  final Color backgroundColor = const Color(0xFFF5F5F5);
+  final Color textColor = const Color(0xFF333333);
 
   @override
   void initState() {
@@ -29,45 +39,71 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
 
     if (user != null) {
       try {
-        DocumentSnapshot<Map<String, dynamic>> userDoc = 
+        // Fetch doctor details
+        DocumentSnapshot<Map<String, dynamic>> userDoc =
             await firestore.collection('User').doc(user.uid).get();
 
         if (userDoc.exists && userDoc.data()?['User_Type'] == 'Doctor') {
+          final userData = userDoc.data();
           setState(() {
-            doctorName = userDoc.data()?['User_Name'] ?? "Unknown";
-            doctorService = userDoc.data()?['Selected_Service'] ?? "Unknown";
-            doctorCampus = userDoc.data()?['Campus'] ?? "Unknown";
+            doctorName = userData?['User_Name'] ?? "Unknown";
+            doctorService = userData?['Selected_Service'] ?? "Unknown";
+            doctorCampus = userData?['Campus'] ?? "Unknown";
           });
 
-          QuerySnapshot<Map<String, dynamic>> appointmentDocs = 
-              await firestore
+          // Fetch appointments for this doctor
+          QuerySnapshot<Map<String, dynamic>> appointmentDocs = await firestore
               .collection('Appointment')
               .where('Appointment_Service', isEqualTo: doctorService)
               .where('Appointment_Campus', isEqualTo: doctorCampus)
               .get();
 
-          appointments = appointmentDocs.docs.map((doc) {
-            return {
-              'Appointment_Date': doc.data()['Appointment_Date'],
-              'Appointment_Time': doc.data()['Appointment_Time'],
-              'Appointment_Service': doc.data()['Appointment_Service'],
-              'Appointment_Campus': doc.data()['Appointment_Campus'],
-            };
-          }).toList();
+          Map<DateTime, List<Map<String, dynamic>>> tempAppointments = {};
+          for (var doc in appointmentDocs.docs) {
+            final data = doc.data();
+            print('Appointment Data: $data'); // Debugging log
 
-          // Sort appointments by date
-          appointments.sort((a, b) {
-            DateTime dateA = DateFormat('dd/MM/yyyy').parse(a['Appointment_Date']);
-            DateTime dateB = DateFormat('dd/MM/yyyy').parse(b['Appointment_Date']);
-            return dateA.compareTo(dateB);
+            DateTime? appointmentDate;
+            if (data['Appointment_Date'] is String) {
+              appointmentDate = DateTime.parse(data['Appointment_Date']);
+            }
+
+            if (appointmentDate != null) {
+              final dayKey = DateTime(appointmentDate.year,
+                  appointmentDate.month, appointmentDate.day);
+
+              String userName = "Unknown";
+              if (data['User_ID'] != null) {
+                DocumentSnapshot<Map<String, dynamic>> userDoc = await firestore
+                    .collection('User')
+                    .doc(data['User_ID'])
+                    .get();
+                if (userDoc.exists) {
+                  userName = userDoc.data()?['User_Name'] ?? "Unknown";
+                }
+              }
+
+              if (tempAppointments[dayKey] == null) {
+                tempAppointments[dayKey] = [];
+              }
+
+              tempAppointments[dayKey]?.add({
+                'User_Name': userName,
+                'Appointment_Name': data['Appointment_Service'] ?? "Unknown",
+                'Appointment_Date': data['Appointment_Date'] ?? "Unknown",
+                'Appointment_Time': data['Appointment_Time'] ?? "Unknown",
+                'Campus': data['Appointment_Campus'] ?? "Unknown",
+              });
+            }
+          }
+
+          setState(() {
+            appointments = tempAppointments;
           });
         }
-
-        setState(() {
-          isLoading = false;
-        });
       } catch (e) {
         print('Error fetching data: $e');
+      } finally {
         setState(() {
           isLoading = false;
         });
@@ -79,263 +115,299 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
     }
   }
 
-  void _showAppointmentDetailsDialog(Map<String, dynamic> appointment) {
-    showModalBottomSheet(
+  List<Map<String, dynamic>> _getAppointmentsForDay(DateTime date) {
+    // Ensure day precision (strip time)
+    final dayKey = DateTime(date.year, date.month, date.day);
+    return appointments[dayKey] ?? [];
+  }
+
+  // Improved Year Picker
+  Future<void> _selectYear() async {
+    final DateTime? selectedYear = await showDatePicker(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 50,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+      initialDate: focusedDay,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      initialEntryMode: DatePickerEntryMode.input,
+      currentDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData(
+            colorScheme: ColorScheme.light(
+              primary: primaryColor,        // Header background color
+              onPrimary: Colors.white,       // Header text color
+              surface: Colors.white,         // Background color of dialog
+              onSurface: textColor,          // Text color of dialog
+            ),
+            dialogTheme: DialogTheme(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: primaryColor,
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 20),
-              _buildDetailRow(
-                icon: Icons.calendar_today,
-                label: 'Date',
-                value: appointment['Appointment_Date'],
-              ),
-              _buildDetailRow(
-                icon: Icons.access_time,
-                label: 'Time',
-                value: appointment['Appointment_Time'],
-              ),
-              _buildDetailRow(
-                icon: Icons.medical_services,
-                label: 'Service',
-                value: appointment['Appointment_Service'],
-              ),
-              _buildDetailRow(
-                icon: Icons.location_on,
-                label: 'Campus',
-                value: appointment['Appointment_Campus'],
-              ),
-              const SizedBox(height: 20),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color.fromRGBO(37, 163, 255, 1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                  ),
-                  child: const Text('Close', style: TextStyle(color: Colors.white)),
-                ),
-              ),
-            ],
+            ),
           ),
+          child: child!,
         );
       },
     );
+    
+    if (selectedYear != null) {
+      setState(() {
+        focusedDay = DateTime(selectedYear.year, focusedDay.month, focusedDay.day);
+      });
+    }
   }
 
-  Widget _buildDetailRow({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color.fromRGBO(37, 163, 255, 1), size: 24),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+  // Show Day Appointments Method
+  void _showDayAppointments(DateTime day) {
+    final dayAppointments = _getAppointmentsForDay(day);
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5,
+          minChildSize: 0.25,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Text(
+                    'Appointments on ${DateFormat('dd MMM yyyy').format(day)}',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  dayAppointments.isEmpty
+                      ? const Text(
+                          'No appointments on this day',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                          ),
+                        )
+                      : Expanded(
+                          child: ListView.builder(
+                            controller: scrollController,
+                            itemCount: dayAppointments.length,
+                            itemBuilder: (context, index) {
+                              final appointment = dayAppointments[index];
+                              return Card(
+                                elevation: 3,
+                                margin: const EdgeInsets.symmetric(vertical: 8),
+                                child: ListTile(
+                                  title: Text(
+                                    'User: ${appointment['User_Name']}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                  subtitle: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Time: ${appointment['Appointment_Time']}',
+                                        style: TextStyle(color: Colors.grey[700]),
+                                      ),
+                                      Text(
+                                        'Service: ${appointment['Appointment_Name']}',
+                                        style: TextStyle(color: Colors.grey[700]),
+                                      ),
+                                      Text(
+                                        'Campus: ${appointment['Campus']}',
+                                        style: TextStyle(color: Colors.grey[700]),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         title: const Text(
-          'Doctor\'s Schedule',
+          'Doctor\'s Schedule', 
           style: TextStyle(
+            color: Colors.black, 
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            fontSize: 20,
           ),
         ),
-        backgroundColor: const Color.fromRGBO(37, 163, 255, 1),
+        backgroundColor: primaryColor,
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
       ),
       body: isLoading
-          ? const Center(
+          ? Center(
               child: CircularProgressIndicator(
-                color: Color.fromRGBO(37, 163, 255, 1),
+                color: primaryColor,
               ),
             )
-          : Column(
-              children: [
-                // Doctor Details Card
-                if (doctorName.isNotEmpty)
-                  Container(
-                    margin: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(15),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.all(12),
-                      leading: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color.fromRGBO(37, 163, 255, 1).withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(
-                          Icons.person,
-                          color: Color.fromRGBO(37, 163, 255, 1),
-                          size: 30,
-                        ),
-                      ),
-                      title: Text(
-                        doctorName,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 5),
-                          Text(
-                            "Service: $doctorService",
-                            style: TextStyle(color: Colors.grey[700]),
+          : SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Doctor Info Card
+                  if (doctorName.isNotEmpty)
+                    Container(
+                      margin: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 2,
+                            blurRadius: 5,
+                            offset: const Offset(0, 3),
                           ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
                           Text(
-                            "Campus: $doctorCampus",
-                            style: TextStyle(color: Colors.grey[700]),
+                            doctorName,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Service: $doctorService',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Campus: $doctorCampus',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[700],
+                            ),
                           ),
                         ],
                       ),
                     ),
+                  
+                  // Year Selection
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: ElevatedButton.icon(
+                      onPressed: _selectYear,
+                      icon: const Icon(Icons.calendar_month_outlined, color: Colors.white),
+                      label: const Text(
+                        'Select Year', 
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        elevation: 4,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
                   ),
-                
-                // Appointments List
-                Expanded(
-                  child: appointments.isEmpty
-                      ? const Center(
-                          child: Text(
-                            "No appointments scheduled",
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 16,
+                  
+                  // Calendar
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: TableCalendar(
+                          firstDay: DateTime.utc(2020, 1, 1),
+                          lastDay: DateTime.utc(2100, 12, 31),
+                          focusedDay: focusedDay,
+                          selectedDayPredicate: (day) => isSameDay(selectedDay, day),
+                          eventLoader: _getAppointmentsForDay,
+                          onDaySelected: (selectedDay, focusedDay) {
+                            setState(() {
+                              this.selectedDay = selectedDay;
+                              this.focusedDay = focusedDay;
+                            });
+                            // Show appointments for the selected day
+                            _showDayAppointments(selectedDay);
+                          },
+                          calendarStyle: CalendarStyle(
+                            todayDecoration: BoxDecoration(
+                              color: accentColor.withOpacity(0.5),
+                              shape: BoxShape.circle,
+                            ),
+                            selectedDecoration: BoxDecoration(
+                              color: primaryColor,
+                              shape: BoxShape.circle,
+                            ),
+                            markerDecoration: BoxDecoration(
+                              color: primaryColor,
+                              shape: BoxShape.circle,
                             ),
                           ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: appointments.length,
-                          itemBuilder: (context, index) {
-                            final appointment = appointments[index];
-                            return Container(
-                              margin: const EdgeInsets.symmetric(vertical: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(15),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey.withOpacity(0.1),
-                                    spreadRadius: 1,
-                                    blurRadius: 3,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                                border: Border.all(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  width: 1,
-                                ),
-                              ),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.all(12),
-                                leading: Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: const Color.fromRGBO(37, 163, 255, 1).withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Icon(
-                                    Icons.calendar_today,
-                                    color: Color.fromRGBO(37, 163, 255, 1),
-                                    size: 24,
-                                  ),
-                                ),
-                                title: Text(
-                                  appointment['Appointment_Date'],
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 5),
-                                    Text(
-                                      "Time: ${appointment['Appointment_Time']}",
-                                      style: TextStyle(color: Colors.grey[700]),
-                                    ),
-                                    Text(
-                                      "Service: ${appointment['Appointment_Service']}",
-                                      style: TextStyle(color: Colors.grey[700]),
-                                    ),
-                                  ],
-                                ),
-                                onTap: () => _showAppointmentDetailsDialog(appointment),
-                              ),
-                            );
-                          },
+                          headerStyle: HeaderStyle(
+                            formatButtonVisible: false,
+                            titleCentered: true,
+                            titleTextStyle: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                          ),
                         ),
-                ),
-              ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
     );
   }
