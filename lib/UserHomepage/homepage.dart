@@ -21,6 +21,7 @@ class Homepage extends StatefulWidget {
 class _HomepageState extends State<Homepage> {
   int _selectedIndex = 0;
   String? notificationMessage;
+  int appointmentCount = 0; // State variable for appointment count
   StreamSubscription? appointmentSubscription;
 
   void _onItemTapped(int index) {
@@ -45,6 +46,63 @@ class _HomepageState extends State<Homepage> {
     }
   }
 
+  void startAppointmentListener() {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser != null) {
+      // Set up a real-time listener for the user's appointments
+      appointmentSubscription = FirebaseFirestore.instance
+          .collection('Appointment')
+          .where('User_ID', isEqualTo: currentUser.uid)
+          .snapshots()
+          .listen((querySnapshot) {
+        if (querySnapshot.docs.isNotEmpty) {
+          // Update the appointment count
+          setState(() {
+            appointmentCount = querySnapshot.docs.length;
+          });
+
+          // Build a message for all appointments
+          String message = '';
+          for (var doc in querySnapshot.docs) {
+            final appointmentData = doc.data();
+            final appointmentDate = appointmentData['Appointment_Date'];
+            final appointmentTime = appointmentData['Appointment_Time'];
+
+            if (appointmentDate != null && appointmentTime != null) {
+              final date = DateTime.parse(appointmentDate);
+              final formattedDate = DateFormat('d MMM yyyy').format(date);
+              message +=
+                  "You have an appointment on $formattedDate at $appointmentTime.\n";
+            } else {
+              message += "An appointment has incomplete details.\n";
+            }
+          }
+
+          setState(() {
+            notificationMessage = message.trim();
+          });
+        } else {
+          setState(() {
+            appointmentCount = 0; // No appointments
+            notificationMessage = "No appointments found for this user.";
+          });
+        }
+      }, onError: (error) {
+        print("Error in listener: $error");
+        setState(() {
+          notificationMessage = "Error retrieving appointment details: $error";
+        });
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    startAppointmentListener();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -66,20 +124,50 @@ class _HomepageState extends State<Homepage> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.teal,
         unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.calendar_today),
             label: 'Appointment',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
+            icon: Stack(
+              children: [
+                const Icon(Icons.notifications),
+                if (appointmentCount > 0) // Show badge only if count > 0
+                  Positioned(
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(
+                          2), // Smaller padding for a compact badge
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(
+                            10), // Smaller radius for a compact shape
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 12, // Smaller width for a smaller badge
+                        minHeight: 12, // Smaller height for a smaller badge
+                      ),
+                      child: Text(
+                        '$appointmentCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10, // Smaller font size for the badge
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             label: 'Notification',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Settings',
           ),
@@ -88,64 +176,18 @@ class _HomepageState extends State<Homepage> {
     );
   }
 
- void startAppointmentListener() {
-  final currentUser = FirebaseAuth.instance.currentUser;
-
-  if (currentUser != null) {
-    // Set up a real-time listener for the user's appointments
-    appointmentSubscription = FirebaseFirestore.instance
-        .collection('Appointment')
-        .where('User_ID', isEqualTo: currentUser.uid)
-        .snapshots()
-        .listen((querySnapshot) {
-      if (querySnapshot.docs.isNotEmpty) {
-        // Build a message for all appointments
-        String message = '';
-        for (var doc in querySnapshot.docs) {
-          final appointmentData = doc.data();
-          final appointmentDate = appointmentData['Appointment_Date'];
-          final appointmentTime = appointmentData['Appointment_Time'];
-
-          if (appointmentDate != null && appointmentTime != null) {
-            final date = DateTime.parse(appointmentDate);
-            final formattedDate = DateFormat('d MMM yyyy').format(date);
-            message +=
-                "You have an appointment on $formattedDate at $appointmentTime.\n";
-          } else {
-            message += "An appointment has incomplete details.\n";
-          }
-        }
-
-        setState(() {
-          notificationMessage = message.trim();
-        });
-      } else {
-        setState(() {
-          notificationMessage = "No appointments found for this user.";
-        });
-      }
-    }, onError: (error) {
-      print("Error in listener: $error");
-      setState(() {
-        notificationMessage = "Error retrieving appointment details: $error";
-      });
-    });
-  }
-}
-
-
   @override
-  void initState() {
-    super.initState();
-    startAppointmentListener();
+  void dispose() {
+    appointmentSubscription?.cancel(); // Cancel the subscription on dispose
+    super.dispose();
   }
 }
-
 
 class NotificationPage extends StatefulWidget {
   final String notificationMessage;
 
-  const NotificationPage({Key? key, required this.notificationMessage}) : super(key: key);
+  const NotificationPage({Key? key, required this.notificationMessage})
+      : super(key: key);
 
   @override
   _NotificationPageState createState() => _NotificationPageState();
@@ -163,7 +205,7 @@ class _NotificationPageState extends State<NotificationPage> {
   Widget build(BuildContext context) {
     final messages = _parseMessages();
 
-        return Scaffold(
+    return Scaffold(
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.only(top: 16.0), // Space from top of screen
@@ -175,7 +217,8 @@ class _NotificationPageState extends State<NotificationPage> {
                     ? ListView.separated(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         itemCount: messages.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 16),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 16),
                         itemBuilder: (context, index) {
                           return Container(
                             decoration: BoxDecoration(
@@ -187,7 +230,8 @@ class _NotificationPageState extends State<NotificationPage> {
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(Icons.notifications, color: Colors.teal[700]),
+                                Icon(Icons.notifications,
+                                    color: Colors.teal[700]),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
