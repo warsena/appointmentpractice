@@ -625,7 +625,6 @@ class AppointmentPage extends StatelessWidget {
 class HistoryTab extends StatelessWidget {
   const HistoryTab({Key? key}) : super(key: key);
 
-//reschedule appointment
   // Function to reschedule the appointment
   Future<void> _rescheduleAppointment(
       BuildContext context, Map<String, dynamic> appointment) async {
@@ -634,8 +633,7 @@ class HistoryTab extends StatelessWidget {
 
     if (appointmentId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Appointment ID not found. Unable to reschedule.')),
+        const SnackBar(content: Text('Appointment ID not found. Unable to reschedule.')),
       );
       return;
     }
@@ -643,23 +641,14 @@ class HistoryTab extends StatelessWidget {
     _navigateForReschedule(context, campus, appointmentId);
   }
 
-// Navigation function to go to the appropriate appointment page based on campus
+  // Navigation function to go to the appropriate appointment page based on campus
   void _navigateForReschedule(
       BuildContext context, String campus, String appointmentId) {
-    if (campus == 'Gambang') {
+    if (campus == 'Gambang' || campus == 'Pekan') {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) =>
-              RescheduleAppointment(appointmentId: appointmentId),
-        ),
-      );
-    } else if (campus == 'Pekan') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              RescheduleAppointment(appointmentId: appointmentId),
+          builder: (context) => RescheduleAppointment(appointmentId: appointmentId),
         ),
       );
     } else {
@@ -669,15 +658,26 @@ class HistoryTab extends StatelessWidget {
     }
   }
 
-  // Function to show the cancel dialog (delete appointnment from db)
-  void _showCancelDialog(BuildContext context, String appointmentId) {
+  // Function to display confirmation dialog for canceling
+  void _showCancelConfirmationDialog(
+      BuildContext context, String appointmentId) {
+    _showConfirmationDialog(
+      context,
+      'Cancel Appointment',
+      'Are you sure you want to cancel this appointment?',
+      () => _cancelAppointment(context, appointmentId),
+    );
+  }
+
+  // Function to show a generic confirmation dialog
+  void _showConfirmationDialog(
+      BuildContext context, String title, String message, VoidCallback onConfirm) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Cancel Appointment'),
-          content:
-              const Text('Are you sure you want to cancel this appointment?'),
+          title: Text(title),
+          content: Text(message),
           actions: [
             TextButton(
               onPressed: () {
@@ -686,8 +686,8 @@ class HistoryTab extends StatelessWidget {
               child: const Text('No'),
             ),
             TextButton(
-              onPressed: () async {
-                await _cancelAppointment(context, appointmentId);
+              onPressed: () {
+                onConfirm();
                 Navigator.of(dialogContext).pop(); // Close the dialog
               },
               child: const Text('Yes'),
@@ -698,8 +698,16 @@ class HistoryTab extends StatelessWidget {
     );
   }
 
+  // Cancel the appointment
   Future<void> _cancelAppointment(
       BuildContext context, String appointmentId) async {
+    if (appointmentId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid Appointment ID')),
+      );
+      return;
+    }
+
     try {
       await FirebaseFirestore.instance
           .collection('Appointment')
@@ -716,6 +724,7 @@ class HistoryTab extends StatelessWidget {
     }
   }
 
+  // Function to set a reminder
   Future<void> _setReminder(BuildContext context, Map appointment) async {
     Navigator.push(
       context,
@@ -778,8 +787,7 @@ class HistoryTab extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.center, // Center all content
+                  crossAxisAlignment: CrossAxisAlignment.center, // Center all content
                   children: [
                     Text(
                       'Service: ${appointment['Appointment_Service']}',
@@ -801,8 +809,8 @@ class HistoryTab extends StatelessWidget {
                         runSpacing: 8.0,
                         children: [
                           ElevatedButton.icon(
-                            onPressed: () =>
-                                _rescheduleAppointment(context, appointment),
+                            onPressed: () => _navigateForReschedule(
+                                context, appointment['Appointment_Campus'], appointment['Appointment_ID']),
                             icon: const Icon(Icons.schedule, size: 16),
                             label: const Text('Reschedule'),
                             style: ElevatedButton.styleFrom(
@@ -811,8 +819,8 @@ class HistoryTab extends StatelessWidget {
                             ),
                           ),
                           ElevatedButton.icon(
-                            onPressed: () =>
-                                _cancelAppointment(context, appointmentId),
+                            onPressed: () => _showCancelConfirmationDialog(
+                                context, appointmentId),
                             icon: const Icon(Icons.cancel, size: 16),
                             label: const Text('Cancel'),
                             style: ElevatedButton.styleFrom(
