@@ -127,7 +127,7 @@ class _UpdateBulletinState extends State<UpdateBulletin> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Update Bulletin', style: TextStyle(fontWeight: FontWeight.bold)),  // AppBar title
-        backgroundColor: Colors.teal,  // AppBar background color
+        backgroundColor: const Color.fromARGB(255, 100, 200, 185),  // AppBar background color
         elevation: 0,  // Remove shadow from AppBar
       ),
       body: _isLoading
@@ -242,13 +242,13 @@ class _UpdateBulletinState extends State<UpdateBulletin> {
                         ElevatedButton(
                           onPressed: _updateBulletin,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.teal,
+                            backgroundColor: const Color.fromARGB(255, 100, 200, 185),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
                           child: const Text(
                             'Update Bulletin',  // Button text
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
                           ),
                         ),
                       ],

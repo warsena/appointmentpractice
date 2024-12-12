@@ -133,7 +133,7 @@ class _CreateBulletinState extends State<CreateBulletin> {
           'Create Bulletin',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.teal,
+        backgroundColor: const Color.fromARGB(255, 100, 200, 185),
         elevation: 0,
       ),
 
@@ -289,7 +289,7 @@ class _CreateBulletinState extends State<CreateBulletin> {
                     ElevatedButton(
                       onPressed: _createBulletin,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal,
+                        backgroundColor: const Color.fromARGB(255, 100, 200, 185),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -300,7 +300,7 @@ class _CreateBulletinState extends State<CreateBulletin> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white, // Set text color to white
+                          color: Colors.black, // Set text color to white
                         ),
                       ),
                     ),

@@ -51,7 +51,7 @@ class BulletinList extends StatelessWidget {
           'Health Bulletins',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.teal,
+        backgroundColor: const Color.fromARGB(255, 100, 200, 185),
       ),
 
       // Main body with a gradient background

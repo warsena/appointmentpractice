@@ -44,4 +44,9 @@ flutter {
     source = "../.."
 }
 
+// dependencies {
+//     implementation 'com.google.firebase:firebase-storage:20.2.1' // Add Firebase Storage dependency
+//     implementation 'com.google.firebase:firebase-core:21.3.0'    // Core dependency (ensure it's the latest)
+// } (blh delete)
+
 apply plugin : 'com.google.gms.google-services' // Add this at the bottom

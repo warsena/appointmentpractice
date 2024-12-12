@@ -1,6 +1,6 @@
 // Importing necessary packages and files
-import 'package:appointmentpractice/Appointment/appointmentlist.dart'; // Appointment list page
-import 'package:appointmentpractice/Appointment/createappointment.dart'; // Create appointment page
+// import 'package:appointmentpractice/Appointment/appointmentlist.dart'; // Appointment list page
+// import 'package:appointmentpractice/Appointment/createappointment.dart'; // Create appointment page
 import 'package:appointmentpractice/HealthBulletin/bulletinlist.dart'; // Health bulletin list page
 import 'package:appointmentpractice/HealthBulletin/createbulletin.dart'; // Create health bulletin page
 import 'package:flutter/material.dart'; // Flutter framework for UI design
@@ -63,7 +63,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
           _buildHomePage(), // Home Page
           _buildUserPage(), // User Management Page
           _buildDoctorPage(), // Doctor Management Page
-          _buildAppointmentPage(), // Appointment Management Page
+          // _buildAppointmentPage(), // Appointment Management Page
           _buildSchedulePage(), // Schedule Page
           _buildHealthBulletinPage(), // Health Bulletin Page
         ],
@@ -156,45 +156,48 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 ),
               ],
             ),
+
             // Appointment navigation section
-            ExpansionTile(
-              leading: const Icon(Icons.calendar_today), // Icon for Appointment
-              title: const Text('Appointment'), // Title for Appointment section
-              children: [
-                ListTile(
-                  title: const Text('Create Appointment'), // Create Appointment text
-                  onTap: () {
-                    Navigator.of(context).pop(); // Close the drawer
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const CreateAppointment()), // Navigate to Create Appointment
-                    );
-                  },
-                ),
-                ListTile(
-                  title: const Text('Appointment List'), // Appointment List text
-                  onTap: () {
-                    Navigator.of(context).pop(); // Close the drawer
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const AppointmentList()), // Navigate to Appointment List
-                    );
-                  },
-                ),
-              ],
-            ),
+            // ExpansionTile(
+            //   leading: const Icon(Icons.calendar_today), // Icon for Appointment
+            //   title: const Text('Appointment'), // Title for Appointment section
+            //   children: [
+            //     ListTile(
+            //       title: const Text('Create Appointment'), // Create Appointment text
+            //       onTap: () {
+            //         Navigator.of(context).pop(); // Close the drawer
+            //         Navigator.push(
+            //           context,
+            //           MaterialPageRoute(builder: (context) => const CreateAppointment()), // Navigate to Create Appointment
+            //         );
+            //       },
+            //     ),
+            //     ListTile(
+            //       title: const Text('Appointment List'), // Appointment List text
+            //       onTap: () {
+            //         Navigator.of(context).pop(); // Close the drawer
+            //         Navigator.push(
+            //           context,
+            //           MaterialPageRoute(builder: (context) => const AppointmentList()), // Navigate to Appointment List
+            //         );
+            //       },
+            //     ),
+            //   ],
+            // ),
+
             // Schedule navigation item
-            ListTile(
-              leading: const Icon(Icons.schedule), // Icon for Schedule
-              title: const Text('Schedule'), // Text for Schedule
-              selected: _selectedIndex == 4, // Highlight if selected
-              onTap: () {
-                setState(() {
-                  _selectedIndex = 4; // Set index for Schedule
-                });
-                Navigator.of(context).pop(); // Close the drawer
-              },
-            ),
+            // ListTile(
+            //   leading: const Icon(Icons.schedule), // Icon for Schedule
+            //   title: const Text('Schedule'), // Text for Schedule
+            //   selected: _selectedIndex == 4, // Highlight if selected
+            //   onTap: () {
+            //     setState(() {
+            //       _selectedIndex = 4; // Set index for Schedule
+            //     });
+            //     Navigator.of(context).pop(); // Close the drawer
+            //   },
+            // ),
+
             // Health Bulletin navigation section
             ExpansionTile(
               leading: const Icon(Icons.health_and_safety), // Icon for Health Bulletin
@@ -263,14 +266,14 @@ class _AdminHomePageState extends State<AdminHomePage> {
   }
 
   // Widget for Appointment Management Page
-  Widget _buildAppointmentPage() {
-    return const Center(
-      child: Text(
-        'Appointment Management Page', // Appointment Management message
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), // Text style
-      ),
-    );
-  }
+  // Widget _buildAppointmentPage() {
+  //   return const Center(
+  //     child: Text(
+  //       'Appointment Management Page', // Appointment Management message
+  //       style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), // Text style
+  //     ),
+  //   );
+  // }
 
   // Widget for Schedule Page
   Widget _buildSchedulePage() {
