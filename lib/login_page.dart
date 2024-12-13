@@ -127,12 +127,13 @@ class _LoginPageState extends State<LoginPage> {
         ),
         const SizedBox(height: 15),
         Text(
-          'Welcome Back',
+          'Welcome to the Clinic Campus',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
             color: primaryColor,
           ),
+          textAlign: TextAlign.center,
         ),
         const SizedBox(height: 15),
         Text(
