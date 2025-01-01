@@ -276,6 +276,7 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 }
 
+//display health bulletin for user
 class HealthBulletinPage extends StatelessWidget {
   const HealthBulletinPage({super.key});
 
@@ -375,11 +376,9 @@ class HealthBulletinPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      bulletin['Bulletin_Description'] ??
-                          'No description available',
+                      bulletin['Bulletin_Description'] ?? 'No description available',
                       style: const TextStyle(fontSize: 16),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                       textAlign: TextAlign.justify, // Added justify alignment
                     ),
                   ],
                 ),
@@ -391,6 +390,7 @@ class HealthBulletinPage extends StatelessWidget {
     );
   }
 }
+
 
 //Widget for displaying the appointment page with campus selection
 class AppointmentPage extends StatelessWidget {

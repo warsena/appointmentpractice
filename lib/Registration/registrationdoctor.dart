@@ -20,8 +20,10 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
-  final TextEditingController _selectedServiceController = TextEditingController(); // Changed to TextEditingController
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+  final TextEditingController _selectedServiceController =
+      TextEditingController(); // Changed to TextEditingController
 
   String? _gender;
   String? _userType;
@@ -58,8 +60,10 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
           'User_Gender': _gender,
           'User_Type': _userType,
           'Campus': _campus,
-          'Selected_Service': _selectedServiceController.text, // Save selected service text from controller
-          'User_Password': _passwordController.text, // Note: Storing password in Firestore is not recommended for security
+          'Selected_Service': _selectedServiceController
+              .text, // Save selected service text from controller
+          'User_Password': _passwordController
+              .text, // Note: Storing password in Firestore is not recommended for security
           'User_Confirm_Password': _passwordController.text,
           'Created_At': FieldValue.serverTimestamp(),
         });
@@ -166,7 +170,7 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
               const SizedBox(height: 10),
 
               // Contact
-             Container(
+              Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12.0),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey),
@@ -180,7 +184,8 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
                   ),
                   keyboardType: TextInputType.phone,
                   inputFormatters: [
-                    LengthLimitingTextInputFormatter(11), // Allow up to 11 digits
+                    LengthLimitingTextInputFormatter(
+                        11), // Allow up to 11 digits
                     FilteringTextInputFormatter.digitsOnly, // Only allow digits
                   ],
                   validator: (value) {
@@ -306,7 +311,11 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text(
                         'Register',
-                        style: TextStyle(fontSize: 16.0, color: Colors.black),
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold, // Make text bold
+                        ),
                       ),
               ),
             ],

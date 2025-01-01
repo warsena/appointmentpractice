@@ -58,7 +58,8 @@ class _RegistrationUserState extends State<RegistrationUser> {
           'User_Email': _emailController.text.trim(),
           'User_Contact': _contactController.text.trim(),
           'User_Gender': _gender,
-          'User_Password':_passwordController.text, // Not recommended for real-world apps
+          'User_Password':
+              _passwordController.text, // Not recommended for real-world apps
           'User_Confirm_Password': _passwordController.text,
           'User_Type': _userType,
           'Campus': _campus,
@@ -220,7 +221,8 @@ class _RegistrationUserState extends State<RegistrationUser> {
                   ),
                   keyboardType: TextInputType.phone,
                   inputFormatters: [
-                    LengthLimitingTextInputFormatter(11), // Allow up to 11 digits
+                    LengthLimitingTextInputFormatter(
+                        11), // Allow up to 11 digits
                     FilteringTextInputFormatter.digitsOnly, // Only allow digits
                   ],
                   validator: (value) {
@@ -406,7 +408,11 @@ class _RegistrationUserState extends State<RegistrationUser> {
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text(
                         'Register',
-                        style: TextStyle(fontSize: 16.0, color: Colors.black),
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold, // Make text bold
+                        ),
                       ),
               ),
             ],
