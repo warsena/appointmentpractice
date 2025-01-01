@@ -314,7 +314,7 @@ class _RegistrationUserState extends State<RegistrationDoctor> {
                         style: TextStyle(
                           fontSize: 16.0,
                           color: Colors.black,
-                          fontWeight: FontWeight.bold, // Make text bold
+                          fontWeight: FontWeight.bold, // Make register text bold
                         ),
                       ),
               ),
