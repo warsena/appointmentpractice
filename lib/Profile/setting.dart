@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:appointmentpractice/login_page.dart';
 import 'package:appointmentpractice/Password/changepassword.dart';
 import 'package:appointmentpractice/Profile/userprofile.dart';
-import 'package:appointmentpractice/Profile/doctorprofile.dart'; // Import DoctorProfile
+import 'package:appointmentpractice/Profile/doctorprofile.dart';
 
 class Setting extends StatefulWidget {
   const Setting({super.key});
@@ -15,14 +15,15 @@ class Setting extends StatefulWidget {
 
 class _SettingState extends State<Setting> {
   String? userType; // Variable to store the user type
+  String? userName; // Variable to store the user name
 
   @override
   void initState() {
     super.initState();
-    _fetchUserType(); // Fetch the user type when the widget initializes
+    _fetchUserData(); // Fetch the user data when the widget initializes
   }
 
-  Future<void> _fetchUserType() async {
+  Future<void> _fetchUserData() async {
     try {
       // Get the current user ID
       final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -36,10 +37,11 @@ class _SettingState extends State<Setting> {
 
         setState(() {
           userType = userDoc['User_Type']; // Get the User_Type field
+          userName = userDoc['User_Name']; // Get the User_Name field
         });
       }
     } catch (e) {
-      print('Error fetching user type: $e');
+      print('Error fetching user data: $e');
     }
   }
 
@@ -51,42 +53,44 @@ class _SettingState extends State<Setting> {
 
     return Scaffold(
       appBar: AppBar(
-        title: userType == 'Doctor' // Only display title for Doctor
+        title: userType == 'Doctor'
             ? const Text(
                 'Dual Campus',
                 style: TextStyle(
-                  color: Colors.black, // Set the text color to black
-                  fontWeight: FontWeight.bold, // Set the text to bold
+                  color: Colors.black, 
+                  fontWeight: FontWeight.bold,
                 ),
               )
-            : null, // If user is Student or Lecturer, no title will be displayed
+            : null, 
         backgroundColor: userType == 'Doctor'
-            ? const Color.fromRGBO(
-                37, 163, 255, 1) // Set background color for Doctor
-            : Colors
-                .transparent, // Transparent background for Student and Lecturer
+            ? const Color.fromRGBO( 37, 163, 255, 1)
+            : Colors.transparent, 
         elevation: 0,
         iconTheme: userType == 'Doctor'
-            ? const IconThemeData(
-                color: Colors.black) // Set the icon color for Doctor
-            : const IconThemeData(
-                color: Colors
-                    .transparent), // Set icon color to transparent for Student and Lecturer
-        leading: userType == 'Doctor'
-            ? null // Show the back arrow for Doctor (null removes the back arrow here)
-            : null, // No back arrow for Student or Lecturer
+            ? const IconThemeData(color: Colors.black)
+            : const IconThemeData(color: Colors.transparent),
+        leading: userType == 'Doctor' ? null : null, 
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.0), // Removed vertical space
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Display the personalized welcome message
+            if (userName != null) 
+              Text(
+                'Hey $userName, welcome to the Dual Campus Application!',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            const SizedBox(height: 16),
             // Settings Options
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  // Profile Option
                   _buildSettingItem(
                     icon: Icons.person_outline,
                     title: 'Profile',
@@ -107,8 +111,6 @@ class _SettingState extends State<Setting> {
                       }
                     },
                   ),
-
-                  // Change Password Option
                   _buildSettingItem(
                     icon: Icons.lock_outline,
                     title: 'Change Password',
@@ -121,8 +123,6 @@ class _SettingState extends State<Setting> {
                       );
                     },
                   ),
-
-                  // Log Out Option
                   _buildSettingItem(
                     icon: Icons.logout,
                     title: 'Log Out',
@@ -141,7 +141,6 @@ class _SettingState extends State<Setting> {
     );
   }
 
-  // Custom widget for setting items
   Widget _buildSettingItem({
     required IconData icon,
     required String title,
@@ -187,7 +186,6 @@ class _SettingState extends State<Setting> {
     );
   }
 
-  // Logout confirmation dialog
   void _showLogoutConfirmationDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -202,7 +200,6 @@ class _SettingState extends State<Setting> {
           ),
           content: const Text('Are you sure you want to logout?'),
           actions: <Widget>[
-            // Cancel Button
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(),
               style: ElevatedButton.styleFrom(
@@ -213,7 +210,6 @@ class _SettingState extends State<Setting> {
                 style: TextStyle(color: Colors.white),
               ),
             ),
-            // Log Out Button
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
