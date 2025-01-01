@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authentication
 
-
 class Appointmentpekan extends StatefulWidget {
   const Appointmentpekan({super.key});
 
@@ -18,6 +17,7 @@ class _AppointmentpekanState extends State<Appointmentpekan> {
   String selectedTimeslot = '8.00 AM'; //letak sbb tk blh kosong
   String selectedCampus = 'Pekan';
   List<String> availableTimeslots = [];
+  TextEditingController reasonController = TextEditingController(); // Controller for reason input
 
   final List<String> services = [
     'Dental Service',
@@ -26,7 +26,12 @@ class _AppointmentpekanState extends State<Appointmentpekan> {
   ];
 
   final Map<String, List<String>> medicalSpecializations = {
-    'Medical Health Service': ['Diabetes', 'Obesity', 'Hypertension', 'Physiotherapy'],
+    'Medical Health Service': [
+      'Diabetes',
+      'Obesity',
+      'Hypertension',
+      'Physiotherapy'
+    ],
   };
 
   final Map<String, List<String>> serviceTimeslots = {
@@ -35,7 +40,7 @@ class _AppointmentpekanState extends State<Appointmentpekan> {
     'Mental Health Service': ['8:00 AM', '10:00 AM', '2:00 PM', '4:00 PM'],
   };
 
-   @override
+  @override
   void initState() {
     super.initState();
     availableTimeslots = serviceTimeslots[selectedService] ?? [];
@@ -49,7 +54,6 @@ class _AppointmentpekanState extends State<Appointmentpekan> {
       String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
       // Get all possible timeslots for the selected service
       List<String> allTimeslots = serviceTimeslots[selectedService] ?? [];
-      
 
       // Query Firestore for booked appointments
       QuerySnapshot snapshot = await FirebaseFirestore.instance
@@ -64,8 +68,6 @@ class _AppointmentpekanState extends State<Appointmentpekan> {
           .map((doc) => doc.get('Appointment_Time') as String)
           .toList();
 
-     
-
       // Update state with available timeslots
       setState(() {
         availableTimeslots = allTimeslots
@@ -73,7 +75,7 @@ class _AppointmentpekanState extends State<Appointmentpekan> {
             .toList();
 
         // Clear selected timeslot if it's no longer available
-       if (!availableTimeslots.contains(selectedTimeslot)) {
+        if (!availableTimeslots.contains(selectedTimeslot)) {
           selectedTimeslot = '';
         }
       });
@@ -103,80 +105,90 @@ class _AppointmentpekanState extends State<Appointmentpekan> {
     }
   }
 
-Future<void> _bookAppointment() async {
-  try {
-    // Check if the user is logged in
-    final User? currentUser = FirebaseAuth.instance.currentUser;
+  Future<void> _bookAppointment() async {
+    try {
+      // Check if the user is logged in
+      final User? currentUser = FirebaseAuth.instance.currentUser;
 
-    if (currentUser == null) {
+      if (currentUser == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Please log in to book an appointment')),
+          );
+        }
+        return;
+      }
+
+      if (selectedTimeslot.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a timeslot')),
+        );
+        return;
+      }
+
+      String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+
+      // Check for existing bookings
+      QuerySnapshot existingBookings = await FirebaseFirestore.instance
+          .collection('Appointment')
+          .where('Appointment_Date', isEqualTo: formattedDate)
+          .where('Appointment_Time', isEqualTo: selectedTimeslot)
+          .where('Appointment_Service', isEqualTo: selectedService)
+          .where('Appointment_Campus', isEqualTo: selectedCampus)
+          .get();
+
+      if (existingBookings.docs.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'This timeslot has just been booked. Please select another timeslot.'),
+          ),
+        );
+        await _fetchAvailableTimeslots();
+        return;
+      }
+
+      // Add a new appointment to Firestore
+      final newAppointmentRef =
+          FirebaseFirestore.instance.collection('Appointment').doc();
+
+      // Get the reason from the controller
+      String appointmentReason = reasonController.text.trim();
+
+      // Create the appointment data
+      final appointmentData = {
+        'Appointment_ID':
+            newAppointmentRef.id, // Use the document ID as Appointment_ID
+        'Appointment_Date': formattedDate,
+        'Appointment_Time': selectedTimeslot,
+        'Appointment_Campus': selectedCampus,
+        'Appointment_Service': selectedService,
+        'Appointment_Reason': appointmentReason, // Store the reason
+        'Created_At': FieldValue.serverTimestamp(),
+        'User_ID': currentUser.uid, // Use the current user's UID
+      };
+
+      // Add the appointment to Firestore
+      await newAppointmentRef
+          .set(appointmentData); // Use set() with the document reference
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please log in to book an appointment')),
+          const SnackBar(
+              content: Text('Your booking is successfully confirmed.')),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      print('Error booking appointment: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error booking appointment: $e')),
         );
       }
-      return;
-    }
-
-    if (selectedTimeslot.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a timeslot')),
-      );
-      return;
-    }
-
-    String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
-
-    // Check for existing bookings
-    QuerySnapshot existingBookings = await FirebaseFirestore.instance
-        .collection('Appointment')
-        .where('Appointment_Date', isEqualTo: formattedDate)
-        .where('Appointment_Time', isEqualTo: selectedTimeslot)
-        .where('Appointment_Service', isEqualTo: selectedService)
-        .where('Appointment_Campus', isEqualTo: selectedCampus)
-        .get();
-
-    if (existingBookings.docs.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('This timeslot has just been booked. Please select another timeslot.'),
-        ),
-      );
-      await _fetchAvailableTimeslots();
-      return;
-    }
-
-    // Add a new appointment to Firestore
-    final newAppointmentRef = FirebaseFirestore.instance.collection('Appointment').doc();
-
-    // Create the appointment data
-    final appointmentData = {
-      'Appointment_ID': newAppointmentRef.id, // Use the document ID as Appointment_ID
-      'Appointment_Date': formattedDate,
-      'Appointment_Time': selectedTimeslot,
-      'Appointment_Campus': selectedCampus,
-      'Appointment_Service': selectedService,
-      'Created_At': FieldValue.serverTimestamp(),
-      'User_ID': currentUser.uid, // Use the current user's UID
-    };
-
-    // Add the appointment to Firestore
-    await newAppointmentRef.set(appointmentData); // Use set() with the document reference
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Your booking is successfully confirmed.')),
-      );
-      Navigator.pop(context);
-    }
-  } catch (e) {
-    print('Error booking appointment: $e');
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error booking appointment: $e')),
-      );
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -188,17 +200,12 @@ Future<void> _bookAppointment() async {
         ),
         centerTitle: true,
         backgroundColor: Colors.teal,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -289,59 +296,79 @@ Future<void> _bookAppointment() async {
   }
 
   Widget _buildServiceDropdown() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Select Service',
-              style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF009FA0),
-              ),
-            ),
-            const SizedBox(height: 12.0),
-            DropdownButtonFormField<String>(
-              value: selectedService,
-              icon: Icon(Icons.keyboard_arrow_down, color: Colors.teal.shade700),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.teal.shade50,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                  borderSide: BorderSide(color: Colors.teal.shade100, width: 1.5),
+    return Column(
+      children: [
+        Card(
+          elevation: 2,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Select Service',
+                  style: TextStyle(
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF009FA0),
+                  ),
                 ),
-              ),
-              items: services.map((String service) {
-                return DropdownMenuItem<String>(
-                  value: service,
-                  child: Text(service),
-                );
-              }).toList(),
-              onChanged: (newValue) async {
-                setState(() {
-                  selectedService = newValue!;
-                  selectedTimeslot = ''; // Clear selected timeslot when service changes
-                });
-                await _fetchAvailableTimeslots(); // Fetch new available timeslots
-              },
+                const SizedBox(height: 12.0),
+                DropdownButtonFormField<String>(
+                  value: selectedService,
+                  icon: Icon(Icons.keyboard_arrow_down,
+                      color: Colors.teal.shade700),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.teal.shade50,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      borderSide:
+                          BorderSide(color: Colors.teal.shade100, width: 1.5),
+                    ),
+                  ),
+                  items: services.map((String service) {
+                    return DropdownMenuItem<String>(
+                      value: service,
+                      child: Text(service),
+                    );
+                  }).toList(),
+                  onChanged: (newValue) async {
+                    setState(() {
+                      selectedService = newValue!;
+                      selectedTimeslot = '';
+                    });
+                    await _fetchAvailableTimeslots();
+                  },
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+        if (selectedService.isNotEmpty) const SizedBox(height: 16.0),
+        if (selectedService.isNotEmpty)
+          Card(
+            elevation: 2,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: _buildReasonInput(),
+            ),
+          ),
+      ],
     );
   }
 
   Widget _buildSpecializationDropdown() {
     // Initialize selectedSpecialization if it's empty
-  if (selectedSpecialization.isEmpty && medicalSpecializations['Medical Health Service']?.isNotEmpty == true) {
-    selectedSpecialization = medicalSpecializations['Medical Health Service']!.first;
-  }
+    if (selectedSpecialization.isEmpty &&
+        medicalSpecializations['Medical Health Service']?.isNotEmpty == true) {
+      selectedSpecialization =
+          medicalSpecializations['Medical Health Service']!.first;
+    }
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -361,21 +388,25 @@ Future<void> _bookAppointment() async {
             const SizedBox(height: 12.0),
             DropdownButtonFormField<String>(
               value: selectedSpecialization,
-              icon: Icon(Icons.keyboard_arrow_down, color: Colors.teal.shade700),
+              icon:
+                  Icon(Icons.keyboard_arrow_down, color: Colors.teal.shade700),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.teal.shade50,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.0),
-                  borderSide: BorderSide(color: Colors.teal.shade100, width: 1.5),
+                  borderSide:
+                      BorderSide(color: Colors.teal.shade100, width: 1.5),
                 ),
               ),
-              items: medicalSpecializations['Medical Health Service']?.map((String specialization) {
-                return DropdownMenuItem<String>(
-                  value: specialization,
-                  child: Text(specialization),
-                );
-              }).toList() ?? [],
+              items: medicalSpecializations['Medical Health Service']
+                      ?.map((String specialization) {
+                    return DropdownMenuItem<String>(
+                      value: specialization,
+                      child: Text(specialization),
+                    );
+                  }).toList() ??
+                  [],
               onChanged: (newValue) {
                 setState(() {
                   selectedSpecialization = newValue!;
@@ -385,6 +416,45 @@ Future<void> _bookAppointment() async {
           ],
         ),
       ),
+    );
+  }
+
+  // New method for the styled reason input
+  Widget _buildReasonInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Enter Reason',
+          style: TextStyle(
+            fontSize: 18.0,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF009FA0),
+          ),
+        ),
+        const SizedBox(height: 12.0),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.teal.shade50,
+            borderRadius: BorderRadius.circular(12.0),
+            border: Border.all(color: Colors.teal.shade100, width: 1.5),
+          ),
+          child: TextField(
+            controller: reasonController,
+            decoration: const InputDecoration(
+              hintText: 'Why do you need this service?',
+              contentPadding: EdgeInsets.all(16.0),
+              border: InputBorder.none,
+              hintStyle: TextStyle(color: Colors.grey),
+            ),
+            maxLines: 3,
+            style: TextStyle(
+              color: Colors.teal.shade700,
+              fontSize: 16.0,
+            ),
+          ),
+        ),
+      ],
     );
   }
 

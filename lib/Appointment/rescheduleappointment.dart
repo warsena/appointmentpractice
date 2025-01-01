@@ -19,8 +19,10 @@ class _RescheduleAppointmentState extends State<RescheduleAppointment> {
   String selectedTimeslot = '8.00 AM';
   String selectedCampus = 'Gambang';
   List<String> availableTimeslots = [];
+  TextEditingController reasonController =
+      TextEditingController(); // Controller for reason input
 
-   void _showError(BuildContext context, String message) {
+  void _showError(BuildContext context, String message) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
@@ -35,7 +37,12 @@ class _RescheduleAppointmentState extends State<RescheduleAppointment> {
   ];
 
   final Map<String, List<String>> medicalSpecializations = {
-    'Medical Health Service': ['Diabetes', 'Obesity', 'Hypertension', 'Physiotherapy'],
+    'Medical Health Service': [
+      'Diabetes',
+      'Obesity',
+      'Hypertension',
+      'Physiotherapy'
+    ],
   };
 
   final Map<String, List<String>> serviceTimeslots = {
@@ -45,167 +52,168 @@ class _RescheduleAppointmentState extends State<RescheduleAppointment> {
   };
 
   @override
-void initState() {
-  super.initState();
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-     print("Appointment ID: ${widget.appointmentId}"); // Debugging
-    _fetchAppointmentDetails(context); // Now context is available
-  });
-  availableTimeslots = serviceTimeslots[selectedService] ?? [];
-}
-
+   void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      print("Appointment ID: ${widget.appointmentId}"); // Debugging
+      _fetchAppointmentDetails(context); // Fetch appointment details
+      _fetchAppointmentReason(); // Fetch appointment reason
+    });
+    availableTimeslots = serviceTimeslots[selectedService] ?? [];
+  }
 
   // Fetch current appointment details
   Future<void> _fetchAppointmentDetails(BuildContext context) async {
-  try {
-    final User? currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) {
-      _showError(context, 'No user is logged in');
-      return;
-    }
-
-    final String userId = currentUser.uid;
-
-    QuerySnapshot snapshot = await FirebaseFirestore.instance
-        .collection('Appointment')
-        .where('User_ID', isEqualTo: userId)
-        .where('Appointment_ID', isEqualTo: widget.appointmentId)
-        .limit(1)
-        .get();
-
-    if (snapshot.docs.isEmpty) {
-      _showError(context, 'No appointment found for the logged-in user');
-      return;
-    }
-
-    // Get the first appointment document
-    final DocumentSnapshot doc = snapshot.docs.first;
-    final data = doc.data() as Map<String, dynamic>?;
-
-    if (data == null) {
-      _showError(context, 'Appointment data is empty');
-      return;
-    }
-
-    setState(() {
-      selectedDate = data['Appointment_Date'] != null
-          ? (data['Appointment_Date'] is Timestamp
-              ? (data['Appointment_Date'] as Timestamp).toDate()
-              : DateFormat('yyyy-MM-dd').parse(data['Appointment_Date']))
-          : DateTime.now();
-      selectedService = data['Appointment_Service'] ?? selectedService;
-      selectedCampus = data['Appointment_Campus'] ?? selectedCampus;
-      selectedTimeslot = data['Appointment_Time'] ?? selectedTimeslot;
-    });
-
-    await _fetchAvailableTimeslots();
-
-    // Ensure the previously selected timeslot is included
-    setState(() {
-      if (!availableTimeslots.contains(selectedTimeslot)) {
-        availableTimeslots.add(selectedTimeslot);
+    try {
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        _showError(context, 'No user is logged in');
+        return;
       }
-    });
-  } catch (e) {
-    print('Error fetching appointment details: $e');
-    _showError(context, 'Error fetching appointment details: $e');
+
+      final String userId = currentUser.uid;
+
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('Appointment')
+          .where('User_ID', isEqualTo: userId)
+          .where('Appointment_ID', isEqualTo: widget.appointmentId)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        _showError(context, 'No appointment found for the logged-in user');
+        return;
+      }
+
+      // Get the first appointment document
+      final DocumentSnapshot doc = snapshot.docs.first;
+      final data = doc.data() as Map<String, dynamic>?;
+
+      if (data == null) {
+        _showError(context, 'Appointment data is empty');
+        return;
+      }
+
+      setState(() {
+        selectedDate = data['Appointment_Date'] != null
+            ? (data['Appointment_Date'] is Timestamp
+                ? (data['Appointment_Date'] as Timestamp).toDate()
+                : DateFormat('yyyy-MM-dd').parse(data['Appointment_Date']))
+            : DateTime.now();
+        selectedService = data['Appointment_Service'] ?? selectedService;
+        selectedCampus = data['Appointment_Campus'] ?? selectedCampus;
+        selectedTimeslot = data['Appointment_Time'] ?? selectedTimeslot;
+      });
+
+      await _fetchAvailableTimeslots();
+
+      // Ensure the previously selected timeslot is included
+      setState(() {
+        if (!availableTimeslots.contains(selectedTimeslot)) {
+          availableTimeslots.add(selectedTimeslot);
+        }
+      });
+    } catch (e) {
+      print('Error fetching appointment details: $e');
+      _showError(context, 'Error fetching appointment details: $e');
+    }
   }
-}
 
   // Fetch available timeslots
   Future<void> _fetchAvailableTimeslots() async {
-  try {
-    String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
-    List<String> allTimeslots = serviceTimeslots[selectedService] ?? [];
+    try {
+      String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+      List<String> allTimeslots = serviceTimeslots[selectedService] ?? [];
 
-    QuerySnapshot snapshot = await FirebaseFirestore.instance
-        .collection('Appointment')
-        .where('Appointment_Date', isEqualTo: formattedDate)
-        .where('Appointment_Service', isEqualTo: selectedService)
-        .where('Appointment_Campus', isEqualTo: selectedCampus)
-        .get();
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('Appointment')
+          .where('Appointment_Date', isEqualTo: formattedDate)
+          .where('Appointment_Service', isEqualTo: selectedService)
+          .where('Appointment_Campus', isEqualTo: selectedCampus)
+          .get();
 
-    List<String> bookedSlots = snapshot.docs
-        .map((doc) => doc.get('Appointment_Time') as String)
-        .toList();
-
-    setState(() {
-      availableTimeslots = allTimeslots
-          .where((timeslot) => !bookedSlots.contains(timeslot))
+      List<String> bookedSlots = snapshot.docs
+          .map((doc) => doc.get('Appointment_Time') as String)
           .toList();
 
-      // Ensure the previously selected timeslot is included
-      if (selectedTimeslot.isNotEmpty &&
-          !availableTimeslots.contains(selectedTimeslot)) {
-        availableTimeslots.add(selectedTimeslot);
+      setState(() {
+        availableTimeslots = allTimeslots
+            .where((timeslot) => !bookedSlots.contains(timeslot))
+            .toList();
+
+        // Ensure the previously selected timeslot is included
+        if (selectedTimeslot.isNotEmpty &&
+            !availableTimeslots.contains(selectedTimeslot)) {
+          availableTimeslots.add(selectedTimeslot);
+        }
+      });
+    } catch (e) {
+      print('Error fetching available timeslots: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading available timeslots: $e')),
+        );
       }
-    });
-  } catch (e) {
-    print('Error fetching available timeslots: $e');
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading available timeslots: $e')),
-      );
     }
   }
-}
-
 
   // Update the appointment
- Future<void> _updateAppointment() async {
-  try {
-    print("Reschedule triggered for Appointment_ID: ${widget.appointmentId}");
+  Future<void> _updateAppointment() async {
+    try {
+      print("Reschedule triggered for Appointment_ID: ${widget.appointmentId}");
 
-    // Query the document ID using Appointment_ID
-    QuerySnapshot snapshot = await FirebaseFirestore.instance
-        .collection('Appointment')
-        .where('Appointment_ID', isEqualTo: widget.appointmentId)
-        .limit(1)
-        .get();
+      // Query the document ID using Appointment_ID
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('Appointment')
+          .where('Appointment_ID', isEqualTo: widget.appointmentId)
+          .limit(1)
+          .get();
 
-    if (snapshot.docs.isEmpty) {
-      throw Exception("No appointment found with Appointment_ID: ${widget.appointmentId}");
-    }
+      if (snapshot.docs.isEmpty) {
+        throw Exception(
+            "No appointment found with Appointment_ID: ${widget.appointmentId}");
+      }
 
-    final doc = snapshot.docs.first;
-    String documentId = doc.id;
-    print("Document ID retrieved: $documentId");
-    print("Document data before update: ${doc.data()}");
+      final doc = snapshot.docs.first;
+      String documentId = doc.id;
+      print("Document ID retrieved: $documentId");
+      print("Document data before update: ${doc.data()}");
 
-    // Validate update data
-    if (selectedTimeslot.isEmpty) {
-      throw Exception("Selected timeslot is empty.");
-    }
+      // Validate update data
+      if (selectedTimeslot.isEmpty) {
+        throw Exception("Selected timeslot is empty.");
+      }
 
-    // Update the appointment document
-    await FirebaseFirestore.instance
-        .collection('Appointment')
-        .doc(documentId)
-        .update({
-      'Appointment_Date': DateFormat('yyyy-MM-dd').format(selectedDate),
-      'Appointment_Time': selectedTimeslot,
-      'Appointment_Service': selectedService,
-      'Appointment_Campus': selectedCampus,
-      'Updated_At': FieldValue.serverTimestamp(),
-    });
+      // Update the appointment document
+      await FirebaseFirestore.instance
+          .collection('Appointment')
+          .doc(documentId)
+          .update({
+        'Appointment_Date': DateFormat('yyyy-MM-dd').format(selectedDate),
+        'Appointment_Time': selectedTimeslot,
+        'Appointment_Service': selectedService,
+        'Appointment_Reason': reasonController.text, // Use the controller's text value here
+        'Appointment_Campus': selectedCampus,
+        'Updated_At': FieldValue.serverTimestamp(),
+      });
 
-    print("Appointment updated successfully.");
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Appointment rescheduled successfully.')),
-      );
-      Navigator.pop(context);
-    }
-  } catch (e) {
-    print('Error updating document: $e');
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating appointment: $e')),
-      );
+      print("Appointment updated successfully.");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Appointment rescheduled successfully.')),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      print('Error updating document: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating appointment: $e')),
+        );
+      }
     }
   }
-}
-
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -223,6 +231,29 @@ void initState() {
     }
   }
 
+    // Fetch the appointment reason
+  Future<void> _fetchAppointmentReason() async {
+    try {
+      // Query to get the appointment details based on Appointment_ID
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('Appointment')
+          .where('Appointment_ID', isEqualTo: widget.appointmentId)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        final data = snapshot.docs.first.data() as Map<String, dynamic>;
+        setState(() {
+          // Set the reason to the TextEditingController
+          reasonController.text = data['Appointment_Reason'] ?? '';
+        });
+      }
+    } catch (e) {
+      print('Error fetching reason: $e');
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -231,19 +262,14 @@ void initState() {
           'Reschedule Appointment',
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
-        centerTitle: true,
+        centerTitle: false,
         backgroundColor: const Color(0xFF009FA0),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -262,9 +288,8 @@ void initState() {
                         borderRadius: BorderRadius.circular(12.0),
                       ),
                     ),
-                    onPressed: selectedTimeslot.isEmpty
-                        ? null
-                        : _updateAppointment,
+                    onPressed:
+                        selectedTimeslot.isEmpty ? null : _updateAppointment,
                     child: const Text(
                       'Reschedule',
                       style: TextStyle(
@@ -334,7 +359,7 @@ void initState() {
     );
   }
 
-  Widget _buildServiceDropdown() {
+  Widget _buildSpecializationDropdown() {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -354,13 +379,15 @@ void initState() {
             const SizedBox(height: 12.0),
             DropdownButtonFormField<String>(
               value: selectedService,
-              icon: Icon(Icons.keyboard_arrow_down, color: Colors.teal.shade700),
+              icon:
+                  Icon(Icons.keyboard_arrow_down, color: Colors.teal.shade700),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.teal.shade50,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.0),
-                  borderSide: BorderSide(color: Colors.teal.shade100, width: 1.5),
+                  borderSide:
+                      BorderSide(color: Colors.teal.shade100, width: 1.5),
                 ),
               ),
               items: services.map((String service) {
@@ -372,65 +399,116 @@ void initState() {
               onChanged: (newValue) async {
                 setState(() {
                   selectedService = newValue!;
-                  selectedTimeslot = ''; // Clear selected timeslot when service changes
+                  selectedTimeslot =
+                      ''; // Clear selected timeslot when service changes
                 });
                 await _fetchAvailableTimeslots(); // Fetch new available timeslots
               },
             ),
+            if (selectedService.isNotEmpty) const SizedBox(height: 16.0),
+            if (selectedService.isNotEmpty)
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: _buildReasonInput(),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSpecializationDropdown() {
-    // Initialize selectedSpecialization if it's empty
-  if (selectedSpecialization.isEmpty && medicalSpecializations['Medical Health Service']?.isNotEmpty == true) {
-    selectedSpecialization = medicalSpecializations['Medical Health Service']!.first;
-  }
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Select Specialization',
-              style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF009FA0),
+Widget _buildServiceDropdown() {
+  return Card(
+    elevation: 2,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Select Service',
+            style: TextStyle(
+              fontSize: 18.0,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF009FA0),
+            ),
+          ),
+          const SizedBox(height: 12.0),
+          DropdownButtonFormField<String>(
+            value: selectedService,
+            icon: Icon(Icons.keyboard_arrow_down, color: Colors.teal.shade700),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.teal.shade50,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.0),
+                borderSide: BorderSide(color: Colors.teal.shade100, width: 1.5),
               ),
             ),
-            const SizedBox(height: 12.0),
-            DropdownButtonFormField<String>(
-              value: selectedSpecialization,
-              icon: Icon(Icons.keyboard_arrow_down, color: Colors.teal.shade700),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.teal.shade50,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                  borderSide: BorderSide(color: Colors.teal.shade100, width: 1.5),
-                ),
-              ),
-              items: medicalSpecializations['Medical Health Service']?.map((String specialization) {
-                return DropdownMenuItem<String>(
-                  value: specialization,
-                  child: Text(specialization),
-                );
-              }).toList() ?? [],
-              onChanged: (newValue) {
-                setState(() {
-                  selectedSpecialization = newValue!;
-                });
-              },
-            ),
-          ],
-        ),
+            items: services.map((String service) {
+              return DropdownMenuItem<String>(
+                value: service,
+                child: Text(service),
+              );
+            }).toList(),
+            onChanged: (newValue) async {
+              setState(() {
+                selectedService = newValue!;
+                selectedTimeslot = '';
+              });
+              await _fetchAvailableTimeslots();
+            },
+          ),
+          const SizedBox(height: 16.0),
+          _buildReasonInput(),
+        ],
       ),
+    ),
+  );
+}
+
+
+  Widget _buildReasonInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Enter Reason',
+          style: TextStyle(
+            fontSize: 18.0,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF009FA0),
+          ),
+        ),
+        const SizedBox(height: 12.0),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.teal.shade50,
+            borderRadius: BorderRadius.circular(12.0),
+            border: Border.all(color: Colors.teal.shade100, width: 1.5),
+          ),
+          child: TextField(
+            controller: reasonController,
+            decoration: const InputDecoration(
+              hintText: 'Why do you need this service?',
+              contentPadding: EdgeInsets.all(16.0),
+              border: InputBorder.none,
+              hintStyle: TextStyle(color: Colors.grey),
+            ),
+            maxLines: 3,
+            style: TextStyle(
+              color: Colors.teal.shade700,
+              fontSize: 16.0,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -501,37 +579,4 @@ void initState() {
     );
   }
 
-  Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home_outlined),
-          activeIcon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today_outlined),
-          activeIcon: Icon(Icons.calendar_today),
-          label: 'Appointments',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.notifications_outlined),
-          activeIcon: Icon(Icons.notifications),
-          label: 'Notifications',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          activeIcon: Icon(Icons.person),
-          label: 'Profile',
-        ),
-      ],
-      currentIndex: 1,
-      selectedItemColor: const Color(0xFF009FA0),
-      unselectedItemColor: Colors.grey,
-      showSelectedLabels: true,
-      showUnselectedLabels: true,
-      type: BottomNavigationBarType.fixed,
-      elevation: 0,
-    );
-  }
 }

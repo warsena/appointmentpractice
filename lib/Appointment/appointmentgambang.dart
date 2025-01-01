@@ -17,6 +17,7 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
   String selectedTimeslot = '8:00 AM';
   String selectedCampus = 'Gambang';
   List<String> availableTimeslots = [];
+  TextEditingController reasonController = TextEditingController(); // Controller for reason input
 
   final List<String> services = [
     'Dental Service',
@@ -144,13 +145,18 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
     // Add a new appointment to Firestore
     final newAppointmentRef = FirebaseFirestore.instance.collection('Appointment').doc();
 
-      // 3. Create new appointment with consistent User_ID
+    // Get the reason from the controller
+    String appointmentReason = reasonController.text.trim();
+
+
+    // 3. Create new appointment with consistent User_ID
     final appointmentData = {
       'Appointment_ID': newAppointmentRef.id, // Use the document ID as Appointment_ID
       'Appointment_Date': formattedDate,
       'Appointment_Time': selectedTimeslot,
       'Appointment_Campus': selectedCampus,
       'Appointment_Service': selectedService,
+      'Appointment_Reason': appointmentReason, // Store the reason
       'Created_At': FieldValue.serverTimestamp(),
       'User_ID': currentUser.uid,  // Use the current user's UID
     };
@@ -186,12 +192,6 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
         ),
         centerTitle: true,
         backgroundColor: const Color(0xFF009FA0),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -286,52 +286,70 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
     );
   }
 
-  Widget _buildServiceDropdown() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Select Service',
-              style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF009FA0),
-              ),
-            ),
-            const SizedBox(height: 12.0),
-            DropdownButtonFormField<String>(
-              value: selectedService,
-              icon: Icon(Icons.keyboard_arrow_down, color: Colors.teal.shade700),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.teal.shade50,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                  borderSide: BorderSide(color: Colors.teal.shade100, width: 1.5),
+ Widget _buildServiceDropdown() {
+    return Column(
+      children: [
+        Card(
+          elevation: 2,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Select Service',
+                  style: TextStyle(
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF009FA0),
+                  ),
                 ),
-              ),
-              items: services.map((String service) {
-                return DropdownMenuItem<String>(
-                  value: service,
-                  child: Text(service),
-                );
-              }).toList(),
-              onChanged: (newValue) async {
-                setState(() {
-                  selectedService = newValue!;
-                  selectedTimeslot = ''; // Clear selected timeslot when service changes
-                });
-                await _fetchAvailableTimeslots(); // Fetch new available timeslots
-              },
+                const SizedBox(height: 12.0),
+                DropdownButtonFormField<String>(
+                  value: selectedService,
+                  icon: Icon(Icons.keyboard_arrow_down,
+                      color: Colors.teal.shade700),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.teal.shade50,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      borderSide:
+                          BorderSide(color: Colors.teal.shade100, width: 1.5),
+                    ),
+                  ),
+                  items: services.map((String service) {
+                    return DropdownMenuItem<String>(
+                      value: service,
+                      child: Text(service),
+                    );
+                  }).toList(),
+                  onChanged: (newValue) async {
+                    setState(() {
+                      selectedService = newValue!;
+                      selectedTimeslot = '';
+                    });
+                    await _fetchAvailableTimeslots();
+                  },
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+        if (selectedService.isNotEmpty) const SizedBox(height: 16.0),
+        if (selectedService.isNotEmpty)
+          Card(
+            elevation: 2,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: _buildReasonInput(),
+            ),
+          ),
+      ],
     );
   }
 
@@ -385,6 +403,46 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
       ),
     );
   }
+
+  // New method for the styled reason input
+  Widget _buildReasonInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Enter Reason',
+          style: TextStyle(
+            fontSize: 18.0,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF009FA0),
+          ),
+        ),
+        const SizedBox(height: 12.0),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.teal.shade50,
+            borderRadius: BorderRadius.circular(12.0),
+            border: Border.all(color: Colors.teal.shade100, width: 1.5),
+          ),
+          child: TextField(
+            controller: reasonController,
+            decoration: const InputDecoration(
+              hintText: 'Why do you need this service?',
+              contentPadding: EdgeInsets.all(16.0),
+              border: InputBorder.none,
+              hintStyle: TextStyle(color: Colors.grey),
+            ),
+            maxLines: 3,
+            style: TextStyle(
+              color: Colors.teal.shade700,
+              fontSize: 16.0,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
 
   Widget _buildTimeSlotsGrid() {
     return Card(

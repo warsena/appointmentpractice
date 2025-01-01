@@ -424,13 +424,13 @@ class AppointmentPage extends StatelessWidget {
                 tabs: const [
                   Tab(
                     child: Text(
-                      'Upcoming',
+                      'Appointment',
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
                   Tab(
                     child: Text(
-                      'History',
+                      'Upcoming',
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -546,7 +546,7 @@ class AppointmentPage extends StatelessWidget {
                 );
               },
             ),
-            const HistoryTab(),
+            const UpcomingTab(),
           ],
         ),
       ),
@@ -622,8 +622,8 @@ class AppointmentPage extends StatelessWidget {
 }
 
 // History Tab Widget to show appointment history
-class HistoryTab extends StatelessWidget {
-  const HistoryTab({Key? key}) : super(key: key);
+class UpcomingTab extends StatelessWidget {
+  const UpcomingTab({Key? key}) : super(key: key);
 
   // Function to reschedule the appointment
   Future<void> _rescheduleAppointment(
@@ -796,11 +796,12 @@ class HistoryTab extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text('Date: ${appointment['Appointment_Date']}'),
-                    Text('Time: ${appointment['Appointment_Time']}'),
-                    Text('Campus: ${appointment['Appointment_Campus']}'),
-                    const SizedBox(height: 16),
+                  const SizedBox(height: 8),
+                  Text('Date: ${appointment['Appointment_Date']}'),
+                  Text('Time: ${appointment['Appointment_Time']}'),
+                  Text('Campus: ${appointment['Appointment_Campus']}'),
+                  Text('Service Reason: ${appointment['Appointment_Reason']}'),
+                  const SizedBox(height: 16),
                     Container(
                       alignment: Alignment.center,
                       child: Wrap(
