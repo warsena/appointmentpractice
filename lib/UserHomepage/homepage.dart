@@ -378,7 +378,7 @@ class HealthBulletinPage extends StatelessWidget {
                     Text(
                       bulletin['Bulletin_Description'] ?? 'No description available',
                       style: const TextStyle(fontSize: 16),
-                       textAlign: TextAlign.justify, // Added justify alignment
+                       textAlign: TextAlign.justify, 
                     ),
                   ],
                 ),
