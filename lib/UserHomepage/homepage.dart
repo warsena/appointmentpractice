@@ -734,6 +734,14 @@ class UpcomingTab extends StatelessWidget {
     );
   }
 
+  // Function to check if the appointment date is in the past
+  bool _isAppointmentPast(String appointmentDate) {
+    DateTime appointmentDateTime = DateTime.parse(appointmentDate);
+    DateTime currentDateTime = DateTime.now();
+
+    return appointmentDateTime.isBefore(currentDateTime);
+  }
+
   @override
   Widget build(BuildContext context) {
     final User? currentUser = FirebaseAuth.instance.currentUser;
@@ -779,6 +787,9 @@ class UpcomingTab extends StatelessWidget {
             final appointment = appointments[index].data()
                 as Map<String, dynamic>; // Explicit cast
             final appointmentId = appointments[index].id;
+            final appointmentDate = appointment['Appointment_Date'];
+
+            bool isPastAppointment = _isAppointmentPast(appointmentDate);
 
             return Card(
               elevation: 4,
@@ -796,12 +807,12 @@ class UpcomingTab extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  const SizedBox(height: 8),
-                  Text('Date: ${appointment['Appointment_Date']}'),
-                  Text('Time: ${appointment['Appointment_Time']}'),
-                  Text('Campus: ${appointment['Appointment_Campus']}'),
-                  Text('Service Reason: ${appointment['Appointment_Reason']}'),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 8),
+                    Text('Date: ${appointment['Appointment_Date']}'),
+                    Text('Time: ${appointment['Appointment_Time']}'),
+                    Text('Campus: ${appointment['Appointment_Campus']}'),
+                    Text('Service Reason: ${appointment['Appointment_Reason']}'),
+                    const SizedBox(height: 16),
                     Container(
                       alignment: Alignment.center,
                       child: Wrap(
@@ -810,7 +821,7 @@ class UpcomingTab extends StatelessWidget {
                         runSpacing: 8.0,
                         children: [
                           ElevatedButton.icon(
-                            onPressed: () => _navigateForReschedule(
+                            onPressed: isPastAppointment ? null : () => _navigateForReschedule(
                                 context, appointment['Appointment_Campus'], appointment['Appointment_ID']),
                             icon: const Icon(Icons.schedule, size: 16),
                             label: const Text('Reschedule'),
@@ -820,7 +831,7 @@ class UpcomingTab extends StatelessWidget {
                             ),
                           ),
                           ElevatedButton.icon(
-                            onPressed: () => _showCancelConfirmationDialog(
+                            onPressed: isPastAppointment ? null : () => _showCancelConfirmationDialog(
                                 context, appointmentId),
                             icon: const Icon(Icons.cancel, size: 16),
                             label: const Text('Cancel'),
@@ -830,7 +841,7 @@ class UpcomingTab extends StatelessWidget {
                             ),
                           ),
                           ElevatedButton.icon(
-                            onPressed: () => _setReminder(context, appointment),
+                            onPressed: isPastAppointment ? null : () => _setReminder(context, appointment),
                             icon: const Icon(Icons.alarm, size: 16),
                             label: const Text('Reminder'),
                             style: ElevatedButton.styleFrom(
@@ -851,3 +862,5 @@ class UpcomingTab extends StatelessWidget {
     );
   }
 }
+
+
