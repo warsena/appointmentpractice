@@ -625,17 +625,6 @@ class AppointmentPage extends StatelessWidget {
 class UpcomingTab extends StatelessWidget {
   const UpcomingTab({Key? key}) : super(key: key);
 
-  // Function to display confirmation dialog for rescheduling
-  void _showRescheduleConfirmationDialog(
-      BuildContext context, Map<String, dynamic> appointment) {
-    _showConfirmationDialog(
-      context,
-      'Reschedule Appointment',
-      'Are you sure you want to reschedule this appointment?',
-      () => _rescheduleAppointment(context, appointment),
-    );
-  }
-
 // Function to reschedule the appointment
   Future<void> _rescheduleAppointment(
       BuildContext context, Map<String, dynamic> appointment) async {
@@ -674,94 +663,89 @@ class UpcomingTab extends StatelessWidget {
     }
   }
 
-  // Generic confirmation dialog
+  // Function to display confirmation dialog for canceling the appointment
+  void _showCancelConfirmationDialog(
+      BuildContext context, String appointmentId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        backgroundColor: Colors.white,
+        title: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.warning_amber_outlined, color: Colors.orange, size: 30),
+            SizedBox(width: 10),
+            Text(
+              'Cancel Appointment',
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to cancel this appointment?',
+          style: TextStyle(color: Colors.black87, fontSize: 16),
+          textAlign: TextAlign.center,
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+            },
+            child: const Text(
+              'No',
+              style: TextStyle(
+                color: Colors.blue,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close the dialog
+              _cancelAppointment(context, appointmentId); // Cancel appointment
+            },
+            child: const Text(
+              'Yes',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Function to show a generic confirmation dialog
   void _showConfirmationDialog(BuildContext context, String title,
       String message, VoidCallback onConfirm) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          titlePadding: const EdgeInsets.only(
-              top: 16, left: 16, right: 16, bottom: 8), // Reduced padding
-          contentPadding: const EdgeInsets.only(
-              left: 16, right: 16, bottom: 8), // Reduced padding
-          actionsPadding:
-              const EdgeInsets.only(bottom: 8), // Reduced bottom padding
-          title: const Center(
-            child: Text(
-              'Are you sure?',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          content: Text(
-            message,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.black87,
-            ),
-            textAlign: TextAlign.center,
-          ),
+          title: Text(title),
+          content: Text(message),
           actions: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  margin: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 0), // Reduced vertical margin
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[200],
-                      foregroundColor: Colors.black87,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 8), // Reduced vertical padding
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'No',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-                Container(
-                  margin: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 0), // Reduced vertical margin
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(dialogContext).pop();
-                      onConfirm();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 8), // Reduced vertical padding
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'Yes',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-              ],
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(); // Close the dialog
+              },
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () {
+                onConfirm();
+                Navigator.of(dialogContext).pop(); // Close the dialog
+              },
+              child: const Text('Yes'),
             ),
           ],
         );
@@ -769,27 +753,28 @@ class UpcomingTab extends StatelessWidget {
     );
   }
 
-  void _showCancelConfirmationDialog(
-      BuildContext context, String appointmentId) {
-    _showConfirmationDialog(
-      context,
-      'Cancel Appointment',
-      'Are you sure you want to cancel this appointment?',
-      () => _cancelAppointment(appointmentId),
-    );
-  }
-
-  void _cancelAppointment(String appointmentId) {
-    // Add cancellation logic here, such as removing the appointment from Firestore
-    FirebaseFirestore.instance
-        .collection('Appointment')
-        .doc(appointmentId)
-        .delete()
-        .then((_) {
-      print('Appointment $appointmentId canceled');
-    }).catchError((e) {
-      print('Error canceling appointment: $e');
-    });
+  // Cancel the appointment
+  Future<void> _cancelAppointment(
+      BuildContext context, String appointmentId) async {
+    if (appointmentId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid Appointment ID')),
+      );
+      return;
+    }
+    try {
+      await FirebaseFirestore.instance
+          .collection('Appointment')
+          .doc(appointmentId)
+          .delete();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Appointment cancelled successfully')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error cancelling appointment: $e')),
+      );
+    }
   }
 
   // Function to set a reminder
@@ -800,6 +785,19 @@ class UpcomingTab extends StatelessWidget {
         builder: (context) => SetReminder(appointment: appointment),
       ),
     );
+  }
+
+  void _confirmBooking(BuildContext context, Map<String, dynamic> appointment) {
+    // Replace this logic with your actual confirmation logic
+    if (appointment['Appointment_ID'] == null ||
+        appointment['Appointment_ID'].isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content:
+                Text('Invalid appointment data. Unable to confirm booking.')),
+      );
+      return;
+    }
   }
 
   // Function to check if the appointment date is in the past
@@ -893,9 +891,10 @@ class UpcomingTab extends StatelessWidget {
                           ElevatedButton.icon(
                             onPressed: isPastAppointment
                                 ? null
-                                : () => _showRescheduleConfirmationDialog(
+                                : () => _navigateForReschedule(
                                     context,
-                                    appointment), // Show confirmation dialog
+                                    appointment['Appointment_Campus'],
+                                    appointment['Appointment_ID']),
                             icon: const Icon(Icons.schedule, size: 16),
                             label: const Text('Reschedule'),
                             style: ElevatedButton.styleFrom(
@@ -912,6 +911,17 @@ class UpcomingTab extends StatelessWidget {
                             label: const Text('Cancel'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: isPastAppointment
+                                ? null
+                                : () => _confirmBooking(context, appointment),
+                            icon: const Icon(Icons.check_circle, size: 16),
+                            label: const Text('Confirm Booking'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.purple,
                               foregroundColor: Colors.white,
                             ),
                           ),
