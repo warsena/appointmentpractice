@@ -622,28 +622,31 @@ class AppointmentPage extends StatelessWidget {
 }
 
 // History Tab Widget to show appointment history
-class UpcomingTab extends StatelessWidget {
+class UpcomingTab extends StatefulWidget {
   const UpcomingTab({Key? key}) : super(key: key);
 
-// Function to reschedule the appointment
+  @override
+  _UpcomingTabState createState() => _UpcomingTabState();
+}
+
+class _UpcomingTabState extends State<UpcomingTab> {
+  bool isBookingConfirmed = false;
+
+  // Function to reschedule the appointment
   Future<void> _rescheduleAppointment(
       BuildContext context, Map<String, dynamic> appointment) async {
-    String? campus = appointment['Appointment_Campus'];
-    String? appointmentId = appointment['Appointment_ID'];
-
-    if (campus == null ||
-        campus.isEmpty ||
-        appointmentId == null ||
-        appointmentId.isEmpty) {
+    String campus = appointment['Appointment_Campus'];
+    String appointmentId = appointment['Appointment_ID'];
+    if (appointmentId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Invalid appointment data. Unable to reschedule.')),
+        const SnackBar(content: Text('Appointment ID not found. Unable to reschedule.')),
       );
       return;
     }
-
     _navigateForReschedule(context, campus, appointmentId);
   }
+
+
 
   // Navigation function to go to the appropriate appointment page based on campus
   void _navigateForReschedule(
@@ -787,165 +790,182 @@ class UpcomingTab extends StatelessWidget {
     );
   }
 
-  void _confirmBooking(BuildContext context, Map<String, dynamic> appointment) {
-    // Replace this logic with your actual confirmation logic
-    if (appointment['Appointment_ID'] == null ||
-        appointment['Appointment_ID'].isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content:
-                Text('Invalid appointment data. Unable to confirm booking.')),
-      );
-      return;
-    }
+  // Create a map to track confirmed appointments
+  Map<String, bool> confirmedAppointments = {};
+
+  // Function to confirm booking
+  void _confirmBooking(BuildContext context, Map<String, dynamic> appointment) async {
+  if (appointment['Appointment_ID'] == null || appointment['Appointment_ID'].isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Invalid appointment data. Unable to confirm booking.')),
+    );
+    return;
   }
 
-  // Function to check if the appointment date is in the past
-  bool _isAppointmentPast(String appointmentDate) {
-    DateTime appointmentDateTime = DateTime.parse(appointmentDate);
-    DateTime currentDateTime = DateTime.now();
+  try {
+    await FirebaseFirestore.instance
+        .collection('Appointment')
+        .doc(appointment['Appointment_ID'])
+        .update({'Appointment_Attendance': 'Attend'}); // Set attendance to "Attend"
+    
+    setState(() {
+      confirmedAppointments[appointment['Appointment_ID']] = true;
+    });
 
-    return appointmentDateTime.isBefore(currentDateTime);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final User? currentUser = FirebaseAuth.instance.currentUser;
-
-    if (currentUser == null) {
-      return const Center(
-        child: Text('Please log in to view your appointment history.'),
-      );
-    }
-
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('Appointment')
-          .where('User_ID', isEqualTo: currentUser.uid)
-          .snapshots(),
-      builder: (context, snapshot) {
-        // Show a loading indicator while waiting for data
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        // Handle errors
-        if (snapshot.hasError) {
-          return Center(
-            child: Text('An error occurred: ${snapshot.error}'),
-          );
-        }
-
-        // Handle the case where there is no data
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(
-            child: Text('No appointment history found.'),
-          );
-        }
-
-        // If data exists, display the list of appointments
-        final appointments = snapshot.data!.docs;
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(12.0),
-          itemCount: appointments.length,
-          itemBuilder: (context, index) {
-            final appointment = appointments[index].data()
-                as Map<String, dynamic>; // Explicit cast
-            final appointmentId = appointments[index].id;
-            final appointmentDate = appointment['Appointment_Date'];
-
-            bool isPastAppointment = _isAppointmentPast(appointmentDate);
-
-            return Card(
-              elevation: 4,
-              margin: const EdgeInsets.only(bottom: 16.0),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.center, // Center all content
-                  children: [
-                    Text(
-                      'Service: ${appointment['Appointment_Service']}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text('Date: ${appointment['Appointment_Date']}'),
-                    Text('Time: ${appointment['Appointment_Time']}'),
-                    Text('Campus: ${appointment['Appointment_Campus']}'),
-                    Text(
-                        'Service Reason: ${appointment['Appointment_Reason']}'),
-                    const SizedBox(height: 16),
-                    Container(
-                      alignment: Alignment.center,
-                      child: Wrap(
-                        alignment: WrapAlignment.center,
-                        spacing: 8.0,
-                        runSpacing: 8.0,
-                        children: [
-                          ElevatedButton.icon(
-                            onPressed: isPastAppointment
-                                ? null
-                                : () => _navigateForReschedule(
-                                    context,
-                                    appointment['Appointment_Campus'],
-                                    appointment['Appointment_ID']),
-                            icon: const Icon(Icons.schedule, size: 16),
-                            label: const Text('Reschedule'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
-                          ElevatedButton.icon(
-                            onPressed: isPastAppointment
-                                ? null
-                                : () => _showCancelConfirmationDialog(
-                                    context, appointmentId),
-                            icon: const Icon(Icons.cancel, size: 16),
-                            label: const Text('Cancel'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
-                          ElevatedButton.icon(
-                            onPressed: isPastAppointment
-                                ? null
-                                : () => _confirmBooking(context, appointment),
-                            icon: const Icon(Icons.check_circle, size: 16),
-                            label: const Text('Confirm Booking'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.purple,
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
-                          ElevatedButton.icon(
-                            onPressed: isPastAppointment
-                                ? null
-                                : () => _setReminder(context, appointment),
-                            icon: const Icon(Icons.alarm, size: 16),
-                            label: const Text('Reminder'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Booking confirmed successfully')),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error confirming booking: $e')),
     );
   }
+}
+
+
+// Function to check if the appointment date is in the past
+bool _isAppointmentPast(String appointmentDate) {
+  DateTime appointmentDateTime = DateTime.parse(appointmentDate);
+  DateTime currentDateTime = DateTime.now();
+
+  return appointmentDateTime.isBefore(currentDateTime);
+}
+
+@override
+Widget build(BuildContext context) {
+  final User? currentUser = FirebaseAuth.instance.currentUser;
+
+  if (currentUser == null) {
+    return const Center(
+      child: Text('Please log in to view your appointment history.'),
+    );
+  }
+
+  return StreamBuilder<QuerySnapshot>(
+    stream: FirebaseFirestore.instance
+        .collection('Appointment')
+        .where('User_ID', isEqualTo: currentUser.uid)
+        .snapshots(),
+    builder: (context, snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (snapshot.hasError) {
+        return Center(
+          child: Text('An error occurred: ${snapshot.error}'),
+        );
+      }
+
+      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        return const Center(
+          child: Text('No appointment history found.'),
+        );
+      }
+
+      final appointments = snapshot.data!.docs;
+
+      return ListView.builder(
+        padding: const EdgeInsets.all(12.0),
+        itemCount: appointments.length,
+        itemBuilder: (context, index) {
+          final appointment =
+              appointments[index].data() as Map<String, dynamic>;
+          final appointmentId = appointments[index].id;
+          final appointmentDate = appointment['Appointment_Date'];
+
+          bool isPastAppointment = _isAppointmentPast(appointmentDate);
+          bool isConfirmed = confirmedAppointments[appointmentId] ?? false;
+
+          return Card(
+            elevation: 4,
+            margin: const EdgeInsets.only(bottom: 16.0),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'Service: ${appointment['Appointment_Service']}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Date: ${appointment['Appointment_Date']}'),
+                  Text('Time: ${appointment['Appointment_Time']}'),
+                  Text('Campus: ${appointment['Appointment_Campus']}'),
+                  Text('Service Reason: ${appointment['Appointment_Reason']}'),
+                  const SizedBox(height: 16),
+                  Container(
+                    alignment: Alignment.center,
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 8.0,
+                      runSpacing: 8.0,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: isPastAppointment || isConfirmed
+                              ? null
+                              : () => _navigateForReschedule(
+                                  context,
+                                  appointment['Appointment_Campus'],
+                                  appointment['Appointment_ID']),
+                          icon: const Icon(Icons.schedule, size: 16),
+                          label: const Text('Reschedule'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: isPastAppointment || isConfirmed
+                              ? null
+                              : () => _showCancelConfirmationDialog(
+                                  context, appointment['Appointment_ID']),
+                          icon: const Icon(Icons.cancel, size: 16),
+                          label: const Text('Cancel'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: isPastAppointment || isConfirmed
+                              ? null
+                              : () => _confirmBooking(context, appointment),
+                          icon: const Icon(Icons.check, size: 16),
+                          label: isConfirmed
+                              ? const Text('Booking Confirmed')
+                              : const Text('Confirm Booking'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: isPastAppointment
+                              ? null
+                              : () => _setReminder(context, appointment),
+                          icon: const Icon(Icons.notifications, size: 16),
+                          label: const Text('Set Reminder'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
 }

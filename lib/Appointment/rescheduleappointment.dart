@@ -159,61 +159,60 @@ class _RescheduleAppointmentState extends State<RescheduleAppointment> {
 
   // Update the appointment
   Future<void> _updateAppointment() async {
-    try {
-      print("Reschedule triggered for Appointment_ID: ${widget.appointmentId}");
+  try {
+    print("Reschedule triggered for Appointment_ID: ${widget.appointmentId}");
 
-      // Query the document ID using Appointment_ID
-      QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('Appointment')
-          .where('Appointment_ID', isEqualTo: widget.appointmentId)
-          .limit(1)
-          .get();
+    // Query the document ID using Appointment_ID
+    QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('Appointment')
+        .where('Appointment_ID', isEqualTo: widget.appointmentId)
+        .limit(1)
+        .get();
 
-      if (snapshot.docs.isEmpty) {
-        throw Exception(
-            "No appointment found with Appointment_ID: ${widget.appointmentId}");
-      }
+    if (snapshot.docs.isEmpty) {
+      throw Exception("No appointment found with Appointment_ID: ${widget.appointmentId}");
+    }
 
-      final doc = snapshot.docs.first;
-      String documentId = doc.id;
-      print("Document ID retrieved: $documentId");
-      print("Document data before update: ${doc.data()}");
+    final doc = snapshot.docs.first;
+    String documentId = doc.id;
+    print("Document ID retrieved: $documentId");
+    print("Document data before update: ${doc.data()}");
 
-      // Validate update data
-      if (selectedTimeslot.isEmpty) {
-        throw Exception("Selected timeslot is empty.");
-      }
+    // Validate update data
+    if (selectedTimeslot.isEmpty) {
+      throw Exception("Selected timeslot is empty.");
+    }
 
-      // Update the appointment document
-      await FirebaseFirestore.instance
-          .collection('Appointment')
-          .doc(documentId)
-          .update({
-        'Appointment_Date': DateFormat('yyyy-MM-dd').format(selectedDate),
-        'Appointment_Time': selectedTimeslot,
-        'Appointment_Service': selectedService,
-        'Appointment_Reason': reasonController.text, // Use the controller's text value here
-        'Appointment_Campus': selectedCampus,
-        'Updated_At': FieldValue.serverTimestamp(),
-      });
+    // Update the appointment document
+    await FirebaseFirestore.instance
+        .collection('Appointment')
+        .doc(documentId)
+        .update({
+      'Appointment_Date': DateFormat('yyyy-MM-dd').format(selectedDate),
+      'Appointment_Time': selectedTimeslot,
+      'Appointment_Service': selectedService,
+      'Appointment_Reason': reasonController.text, // Use the controller's text value here
+      'Appointment_Campus': selectedCampus,
+      'Appointment_Attendance': 'Not Attend', // Update the attendance status to Not Attend
+      'Updated_At': FieldValue.serverTimestamp(),
+    });
 
-      print("Appointment updated successfully.");
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Appointment rescheduled successfully.')),
-        );
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      print('Error updating document: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating appointment: $e')),
-        );
-      }
+    print("Appointment updated successfully.");
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Appointment rescheduled successfully.')),
+      );
+      Navigator.pop(context); // Navigate back to the previous screen
+    }
+  } catch (e) {
+    print('Error updating document: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating appointment: $e')),
+      );
     }
   }
+}
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
