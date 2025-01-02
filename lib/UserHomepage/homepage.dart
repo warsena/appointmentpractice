@@ -376,9 +376,10 @@ class HealthBulletinPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      bulletin['Bulletin_Description'] ?? 'No description available',
+                      bulletin['Bulletin_Description'] ??
+                          'No description available',
                       style: const TextStyle(fontSize: 16),
-                       textAlign: TextAlign.justify, //Justify text
+                      textAlign: TextAlign.justify, //Justify text
                     ),
                   ],
                 ),
@@ -390,7 +391,6 @@ class HealthBulletinPage extends StatelessWidget {
     );
   }
 }
-
 
 //Widget for displaying the appointment page with campus selection
 class AppointmentPage extends StatelessWidget {
@@ -625,15 +625,30 @@ class AppointmentPage extends StatelessWidget {
 class UpcomingTab extends StatelessWidget {
   const UpcomingTab({Key? key}) : super(key: key);
 
-  // Function to reschedule the appointment
+  // Function to display confirmation dialog for rescheduling
+  void _showRescheduleConfirmationDialog(
+      BuildContext context, Map<String, dynamic> appointment) {
+    _showConfirmationDialog(
+      context,
+      'Reschedule Appointment',
+      'Are you sure you want to reschedule this appointment?',
+      () => _rescheduleAppointment(context, appointment),
+    );
+  }
+
+// Function to reschedule the appointment
   Future<void> _rescheduleAppointment(
       BuildContext context, Map<String, dynamic> appointment) async {
-    String campus = appointment['Appointment_Campus'];
-    String appointmentId = appointment['Appointment_ID'];
+    String? campus = appointment['Appointment_Campus'];
+    String? appointmentId = appointment['Appointment_ID'];
 
-    if (appointmentId.isEmpty) {
+    if (campus == null ||
+        campus.isEmpty ||
+        appointmentId == null ||
+        appointmentId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Appointment ID not found. Unable to reschedule.')),
+        const SnackBar(
+            content: Text('Invalid appointment data. Unable to reschedule.')),
       );
       return;
     }
@@ -648,49 +663,105 @@ class UpcomingTab extends StatelessWidget {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => RescheduleAppointment(appointmentId: appointmentId),
+          builder: (context) =>
+              RescheduleAppointment(appointmentId: appointmentId),
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid campus for rescheduling')),
+        const SnackBar(content: Text('Invalid campus for rescheduling.')),
       );
     }
   }
 
-  // Function to display confirmation dialog for canceling
-  void _showCancelConfirmationDialog(
-      BuildContext context, String appointmentId) {
-    _showConfirmationDialog(
-      context,
-      'Cancel Appointment',
-      'Are you sure you want to cancel this appointment?',
-      () => _cancelAppointment(context, appointmentId),
-    );
-  }
-
-  // Function to show a generic confirmation dialog
-  void _showConfirmationDialog(
-      BuildContext context, String title, String message, VoidCallback onConfirm) {
+  // Generic confirmation dialog
+  void _showConfirmationDialog(BuildContext context, String title,
+      String message, VoidCallback onConfirm) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: Text(title),
-          content: Text(message),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(); // Close the dialog
-              },
-              child: const Text('No'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          titlePadding: const EdgeInsets.only(
+              top: 16, left: 16, right: 16, bottom: 8), // Reduced padding
+          contentPadding: const EdgeInsets.only(
+              left: 16, right: 16, bottom: 8), // Reduced padding
+          actionsPadding:
+              const EdgeInsets.only(bottom: 8), // Reduced bottom padding
+          title: const Center(
+            child: Text(
+              'Are you sure?',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+              textAlign: TextAlign.center,
             ),
-            TextButton(
-              onPressed: () {
-                onConfirm();
-                Navigator.of(dialogContext).pop(); // Close the dialog
-              },
-              child: const Text('Yes'),
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.black87,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  margin: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 0), // Reduced vertical margin
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[200],
+                      foregroundColor: Colors.black87,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 8), // Reduced vertical padding
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'No',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 0), // Reduced vertical margin
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop();
+                      onConfirm();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 8), // Reduced vertical padding
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'Yes',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         );
@@ -698,30 +769,27 @@ class UpcomingTab extends StatelessWidget {
     );
   }
 
-  // Cancel the appointment
-  Future<void> _cancelAppointment(
-      BuildContext context, String appointmentId) async {
-    if (appointmentId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid Appointment ID')),
-      );
-      return;
-    }
+  void _showCancelConfirmationDialog(
+      BuildContext context, String appointmentId) {
+    _showConfirmationDialog(
+      context,
+      'Cancel Appointment',
+      'Are you sure you want to cancel this appointment?',
+      () => _cancelAppointment(appointmentId),
+    );
+  }
 
-    try {
-      await FirebaseFirestore.instance
-          .collection('Appointment')
-          .doc(appointmentId)
-          .delete();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Appointment cancelled successfully')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error cancelling appointment: $e')),
-      );
-    }
+  void _cancelAppointment(String appointmentId) {
+    // Add cancellation logic here, such as removing the appointment from Firestore
+    FirebaseFirestore.instance
+        .collection('Appointment')
+        .doc(appointmentId)
+        .delete()
+        .then((_) {
+      print('Appointment $appointmentId canceled');
+    }).catchError((e) {
+      print('Error canceling appointment: $e');
+    });
   }
 
   // Function to set a reminder
@@ -798,7 +866,8 @@ class UpcomingTab extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center, // Center all content
+                  crossAxisAlignment:
+                      CrossAxisAlignment.center, // Center all content
                   children: [
                     Text(
                       'Service: ${appointment['Appointment_Service']}',
@@ -811,7 +880,8 @@ class UpcomingTab extends StatelessWidget {
                     Text('Date: ${appointment['Appointment_Date']}'),
                     Text('Time: ${appointment['Appointment_Time']}'),
                     Text('Campus: ${appointment['Appointment_Campus']}'),
-                    Text('Service Reason: ${appointment['Appointment_Reason']}'),
+                    Text(
+                        'Service Reason: ${appointment['Appointment_Reason']}'),
                     const SizedBox(height: 16),
                     Container(
                       alignment: Alignment.center,
@@ -821,8 +891,11 @@ class UpcomingTab extends StatelessWidget {
                         runSpacing: 8.0,
                         children: [
                           ElevatedButton.icon(
-                            onPressed: isPastAppointment ? null : () => _navigateForReschedule(
-                                context, appointment['Appointment_Campus'], appointment['Appointment_ID']),
+                            onPressed: isPastAppointment
+                                ? null
+                                : () => _showRescheduleConfirmationDialog(
+                                    context,
+                                    appointment), // Show confirmation dialog
                             icon: const Icon(Icons.schedule, size: 16),
                             label: const Text('Reschedule'),
                             style: ElevatedButton.styleFrom(
@@ -831,8 +904,10 @@ class UpcomingTab extends StatelessWidget {
                             ),
                           ),
                           ElevatedButton.icon(
-                            onPressed: isPastAppointment ? null : () => _showCancelConfirmationDialog(
-                                context, appointmentId),
+                            onPressed: isPastAppointment
+                                ? null
+                                : () => _showCancelConfirmationDialog(
+                                    context, appointmentId),
                             icon: const Icon(Icons.cancel, size: 16),
                             label: const Text('Cancel'),
                             style: ElevatedButton.styleFrom(
@@ -841,7 +916,9 @@ class UpcomingTab extends StatelessWidget {
                             ),
                           ),
                           ElevatedButton.icon(
-                            onPressed: isPastAppointment ? null : () => _setReminder(context, appointment),
+                            onPressed: isPastAppointment
+                                ? null
+                                : () => _setReminder(context, appointment),
                             icon: const Icon(Icons.alarm, size: 16),
                             label: const Text('Reminder'),
                             style: ElevatedButton.styleFrom(
@@ -862,5 +939,3 @@ class UpcomingTab extends StatelessWidget {
     );
   }
 }
-
-
