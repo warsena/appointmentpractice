@@ -639,14 +639,13 @@ class _UpcomingTabState extends State<UpcomingTab> {
     String appointmentId = appointment['Appointment_ID'];
     if (appointmentId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Appointment ID not found. Unable to reschedule.')),
+        const SnackBar(
+            content: Text('Appointment ID not found. Unable to reschedule.')),
       );
       return;
     }
     _navigateForReschedule(context, campus, appointmentId);
   }
-
-
 
   // Navigation function to go to the appropriate appointment page based on campus
   void _navigateForReschedule(
@@ -793,6 +792,7 @@ class _UpcomingTabState extends State<UpcomingTab> {
   // Create a map to track confirmed appointments
   Map<String, bool> confirmedAppointments = {};
 
+  
   // Function to confirm booking
   void _confirmBooking(BuildContext context, Map<String, dynamic> appointment) async {
   if (appointment['Appointment_ID'] == null || appointment['Appointment_ID'].isEmpty) {
