@@ -176,7 +176,7 @@ class _AppointmentpekanState extends State<Appointmentpekan> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Your booking is successfully confirmed.')),
+              content: Text('Your booking is successfully booked.')),
         );
         Navigator.pop(context);
       }

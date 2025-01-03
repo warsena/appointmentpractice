@@ -166,7 +166,7 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Your booking is successfully confirmed.')),
+        const SnackBar(content: Text('Your booking is successfully booked.')),
       );
       Navigator.pop(context);
     }
