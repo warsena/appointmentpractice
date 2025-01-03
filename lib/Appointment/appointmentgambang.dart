@@ -191,7 +191,7 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        backgroundColor: const Color(0xFF009FA0),
+        backgroundColor: Colors.teal,
       ),
       body: SafeArea(
         child: SingleChildScrollView(

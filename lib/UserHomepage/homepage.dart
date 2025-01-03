@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../Appointment/appointmentgambang.dart';
 import '../Appointment/appointmentpekan.dart';
 import 'package:appointmentpractice/Appointment/rescheduleappointment.dart';
+import 'package:appointmentpractice/Appointment/appointmenthistory.dart';
 import 'package:appointmentpractice/Profile/setting.dart';
 import 'package:appointmentpractice/Reminder/setreminder.dart';
 import 'dart:async';
@@ -399,7 +400,7 @@ class AppointmentPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,  // Updated to 3 for three tabs
+      length: 3, // Updated to 3 for three tabs
       child: Scaffold(
         backgroundColor: Colors.grey[100],
         appBar: AppBar(
@@ -551,97 +552,101 @@ class AppointmentPage extends StatelessWidget {
               },
             ),
             const UpcomingTab(),
-            const HistoryTab(),  // Added History tab
+            const HistoryTab(), // Added History tab
           ],
         ),
       ),
     );
   }
 }
-
 
 class HistoryTab extends StatelessWidget {
   const HistoryTab({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Add your history-related content here
-    return const Center(
-      child: Text(
-        'History Tab Content',
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-      ),
-    );
+    Future.delayed(Duration.zero, () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const AppointmentHistory(),
+        ),
+      );
+    });
+
+    // Return an empty container or placeholder as this widget
+    // will immediately navigate to another page.
+    return Container();
   }
 }
 
-  Widget _buildCampusButton(
-    BuildContext context,
-    String campusName,
-    Widget page,
-    IconData icon,
-  ) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 16.0),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFF009FA0),
-            Color(0xFF009FA0),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+
+Widget _buildCampusButton(
+  BuildContext context,
+  String campusName,
+  Widget page,
+  IconData icon,
+) {
+  return Container(
+    width: double.infinity,
+    margin: const EdgeInsets.symmetric(horizontal: 16.0),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        colors: [
+          Color(0xFF009FA0),
+          Color(0xFF009FA0),
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.blueGrey[300]!.withOpacity(0.5),
+          spreadRadius: 2,
+          blurRadius: 10,
+          offset: const Offset(0, 5),
         ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blueGrey[300]!.withOpacity(0.5),
-            spreadRadius: 2,
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+      ],
+    ),
+    child: ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        padding: const EdgeInsets.symmetric(vertical: 10.0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => page),
+        );
+      },
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            color: Colors.white,
+            size: 28,
+          ),
+          const SizedBox(width: 15.0),
+          Text(
+            campusName,
+            style: const TextStyle(
+              fontSize: 15.0,
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
           ),
         ],
       ),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: 10.0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-        ),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => page),
-          );
-        },
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 28,
-            ),
-            const SizedBox(width: 15.0),
-            Text(
-              campusName,
-              style: const TextStyle(
-                fontSize: 15.0,
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
+    ),
+  );
+}
 
 // History Tab Widget to show appointment history
 class UpcomingTab extends StatefulWidget {
