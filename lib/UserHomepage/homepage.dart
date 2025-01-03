@@ -399,7 +399,7 @@ class AppointmentPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,  // Updated to 3 for three tabs
       child: Scaffold(
         backgroundColor: Colors.grey[100],
         appBar: AppBar(
@@ -431,6 +431,12 @@ class AppointmentPage extends StatelessWidget {
                   Tab(
                     child: Text(
                       'Upcoming',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  Tab(
+                    child: Text(
+                      'History',
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -524,9 +530,7 @@ class AppointmentPage extends StatelessWidget {
                           color: Colors.blueGrey[800],
                         ),
                       ),
-                      const SizedBox(
-                          height:
-                              20.0), //spacing between select campus and button (UMPSA Campus)
+                      const SizedBox(height: 20.0), //spacing between select campus and button (UMPSA Campus)
                       if (userCampus == 'Pekan')
                         _buildCampusButton(
                           context,
@@ -547,11 +551,29 @@ class AppointmentPage extends StatelessWidget {
               },
             ),
             const UpcomingTab(),
+            const HistoryTab(),  // Added History tab
           ],
         ),
       ),
     );
   }
+}
+
+
+class HistoryTab extends StatelessWidget {
+  const HistoryTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // Add your history-related content here
+    return const Center(
+      child: Text(
+        'History Tab Content',
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+}
 
   Widget _buildCampusButton(
     BuildContext context,
@@ -619,7 +641,7 @@ class AppointmentPage extends StatelessWidget {
       ),
     );
   }
-}
+
 
 // History Tab Widget to show appointment history
 class UpcomingTab extends StatefulWidget {
