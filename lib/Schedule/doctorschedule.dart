@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
+import 'package:appointmentpractice/medicalcertificate.dart';
 
 class DoctorSchedule extends StatefulWidget {
   const DoctorSchedule({Key? key}) : super(key: key);
@@ -92,7 +93,10 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
                 'Appointment_Name': data['Appointment_Service'] ?? "Unknown",
                 'Appointment_Date': data['Appointment_Date'] ?? "Unknown",
                 'Appointment_Time': data['Appointment_Time'] ?? "Unknown",
+                'Appointment_Reason': data['Appointment_Reason'] ?? "Unknown",
                 'Campus': data['Appointment_Campus'] ?? "Unknown",
+                'Appointment_Attendance':
+                    data['Appointment_Attendance'] ?? "Unknown",
               });
             }
           }
@@ -134,10 +138,10 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
         return Theme(
           data: ThemeData(
             colorScheme: ColorScheme.light(
-              primary: primaryColor,        // Header background color
-              onPrimary: Colors.white,       // Header text color
-              surface: Colors.white,         // Background color of dialog
-              onSurface: textColor,          // Text color of dialog
+              primary: primaryColor, // Header background color
+              onPrimary: Colors.white, // Header text color
+              surface: Colors.white, // Background color of dialog
+              onSurface: textColor, // Text color of dialog
             ),
             dialogTheme: DialogTheme(
               shape: RoundedRectangleBorder(
@@ -157,10 +161,11 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
         );
       },
     );
-    
+
     if (selectedYear != null) {
       setState(() {
-        focusedDay = DateTime(selectedYear.year, focusedDay.month, focusedDay.day);
+        focusedDay =
+            DateTime(selectedYear.year, focusedDay.month, focusedDay.day);
       });
     }
   }
@@ -168,7 +173,7 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
   // Show Day Appointments Method
   void _showDayAppointments(DateTime day) {
     final dayAppointments = _getAppointmentsForDay(day);
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -221,19 +226,33 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
                                     ),
                                   ),
                                   subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'Time: ${appointment['Appointment_Time']}',
-                                        style: TextStyle(color: Colors.grey[700]),
+                                        style:
+                                            TextStyle(color: Colors.grey[700]),
                                       ),
                                       Text(
                                         'Service: ${appointment['Appointment_Name']}',
-                                        style: TextStyle(color: Colors.grey[700]),
+                                        style:
+                                            TextStyle(color: Colors.grey[700]),
+                                      ),
+                                      Text(
+                                        'Reason: ${appointment['Appointment_Reason']}',
+                                        style:
+                                            TextStyle(color: Colors.grey[700]),
                                       ),
                                       Text(
                                         'Campus: ${appointment['Campus']}',
-                                        style: TextStyle(color: Colors.grey[700]),
+                                        style:
+                                            TextStyle(color: Colors.grey[700]),
+                                      ),
+                                      Text(
+                                        'Attendance: ${appointment['Appointment_Attendance']}',
+                                        style:
+                                            TextStyle(color: Colors.grey[700]),
                                       ),
                                     ],
                                   ),
@@ -242,6 +261,43 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
                             },
                           ),
                         ),
+                  const SizedBox(height: 16),
+                  // Create MC button
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MedicalCertificate(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue[600],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 3,
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.add_circle_outline, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Create MC',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
                 ],
               ),
             );
@@ -257,9 +313,9 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
       backgroundColor: backgroundColor,
       appBar: AppBar(
         title: const Text(
-          'Doctor\'s Schedule', 
+          'Doctor\'s Schedule',
           style: TextStyle(
-            color: Colors.black, 
+            color: Colors.black,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -325,15 +381,16 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
                         ],
                       ),
                     ),
-                  
+
                   // Year Selection
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: ElevatedButton.icon(
                       onPressed: _selectYear,
-                      icon: const Icon(Icons.calendar_month_outlined, color: Colors.white),
+                      icon: const Icon(Icons.calendar_month_outlined,
+                          color: Colors.white),
                       label: const Text(
-                        'Select Year', 
+                        'Select Year',
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -344,7 +401,8 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
                         backgroundColor: primaryColor,
                         foregroundColor: Colors.white,
                         elevation: 4,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -354,7 +412,7 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
                       ),
                     ),
                   ),
-                  
+
                   // Calendar
                   Padding(
                     padding: const EdgeInsets.all(16),
@@ -369,7 +427,8 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
                           firstDay: DateTime.utc(2020, 1, 1),
                           lastDay: DateTime.utc(2100, 12, 31),
                           focusedDay: focusedDay,
-                          selectedDayPredicate: (day) => isSameDay(selectedDay, day),
+                          selectedDayPredicate: (day) =>
+                              isSameDay(selectedDay, day),
                           eventLoader: _getAppointmentsForDay,
                           onDaySelected: (selectedDay, focusedDay) {
                             setState(() {
