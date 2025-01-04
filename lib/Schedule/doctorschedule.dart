@@ -261,8 +261,11 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (context) =>
-                                                    MedicalCertificate(appointmentDate: appointment['Appointment_Date'],appointmentService:appointment['Appointment_Name'], appointmentTime: appointment['Appointment_Time'], appointmentReason:appointment['Appointment_Reason'], userName: appointment['User_Name'],
+                                                builder: (context) => MedicalCertificate(appointmentDate: appointment['Appointment_Date'] ?? "Unknown", // Use a default value if null
+                                                  appointmentService: appointment['Appointment_Name'] ??"Unknown", // Default if null
+                                                  appointmentTime: appointment['Appointment_Time'] ??"Unknown", // Default if null
+                                                  appointmentReason: appointment['Appointment_Reason'] ??"Unknown", // Default if null
+                                                  userName: appointment['User_Name'] ??"Unknown", // Default if null
                                                 ),
                                               ),
                                             );
