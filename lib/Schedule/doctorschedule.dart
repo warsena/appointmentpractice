@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
-import 'package:appointmentpractice/medicalcertificate.dart';
+import 'package:appointmentpractice/MedicalCertificate/doctormedicalcertificate.dart';
 
 class DoctorSchedule extends StatefulWidget {
   const DoctorSchedule({Key? key}) : super(key: key);

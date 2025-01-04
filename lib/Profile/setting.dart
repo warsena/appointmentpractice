@@ -5,6 +5,7 @@ import 'package:appointmentpractice/login_page.dart';
 import 'package:appointmentpractice/Password/changepassword.dart';
 import 'package:appointmentpractice/Profile/userprofile.dart';
 import 'package:appointmentpractice/Profile/doctorprofile.dart';
+import 'package:appointmentpractice/MedicalCertificate/usermedicalcertificate.dart'; // Import the new page
 
 class Setting extends StatefulWidget {
   const Setting({super.key});
@@ -53,36 +54,39 @@ class _SettingState extends State<Setting> {
 
     return Scaffold(
       appBar: AppBar(
-        title: userType == 'Doctor'
-            ? const Text(
-                'Dual Campus',
-                style: TextStyle(
-                  color: Colors.black, 
-                  fontWeight: FontWeight.bold,
-                ),
-              )
-            : null, 
-        backgroundColor: userType == 'Doctor'
-            ? const Color.fromRGBO( 37, 163, 255, 1)
-            : Colors.transparent, 
-        elevation: 0,
-        iconTheme: userType == 'Doctor'
-            ? const IconThemeData(color: Colors.black)
-            : const IconThemeData(color: Colors.transparent),
-        leading: userType == 'Doctor' ? null : null, 
-      ),
+  title: const Text(
+    'Dual Campus',
+    style: TextStyle(
+      color: Colors.black,
+      fontWeight: FontWeight.bold,
+    ),
+  ),
+  centerTitle: true, // Ensures the title stays in the center
+  backgroundColor: userType == 'Doctor'
+      ? const Color.fromRGBO(37, 163, 255, 1)
+      : Colors.transparent,
+  elevation: 0,
+  iconTheme: userType == 'Doctor'
+      ? const IconThemeData(color: Colors.black)
+      : const IconThemeData(color: Colors.transparent),
+  leading: userType == 'Doctor' ? null : null,
+),
+
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.0), // Removed vertical space
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Display the personalized welcome message
-            if (userName != null) 
-              Text(
-                'Hey $userName, welcome to the Dual Campus Application!',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+            if (userName != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  'Hey $userName, welcome to the Dual Campus Application!',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             const SizedBox(height: 16),
@@ -111,6 +115,22 @@ class _SettingState extends State<Setting> {
                       }
                     },
                   ),
+                  // Medical Certificate Box (conditionally rendered)
+                  if (userType == 'Student' || userType == 'Lecturer')
+                    _buildSettingItem(
+                      icon: Icons.medical_services,
+                      title: 'Medical Certificate',
+                      backgroundColor: itemBackgroundColor,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                UserMedicalCertificate(mcId: 'some_MC_ID_here'),
+                          ),
+                        );
+                      },
+                    ),
                   _buildSettingItem(
                     icon: Icons.lock_outline,
                     title: 'Change Password',

@@ -166,34 +166,42 @@ class _MedicalCertificateState extends State<MedicalCertificate> {
     }
   }
 
-  Future<void> _saveMedicalCertificate() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      try {
-        final docRef = FirebaseFirestore.instance.collection('Medical_Certificate').doc();
-        final mcId = docRef.id;
-        
-        await docRef.set({
-          'MC_ID': mcId,
-          'Doctor_Name': _doctorController.text,
-          'User_Name': widget.userName,
-          'Appointment_Date': widget.appointmentDate,
-          'Appointment_Service': widget.appointmentService,
-          'Appointment_Time': widget.appointmentTime,
-          'Appointment_Reason': widget.appointmentReason,
-          'MC_Duration': _mcDurationController.text,
-          'MC_Start_Date': _mcStartDateController.text,
-          'MC_End_Date': _mcEndDateController.text,
-          'Created_At': FieldValue.serverTimestamp(),
-        });
-
-        await _showSuccessDialog();  // Show success dialog instead of SnackBar
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving certificate: $e')),
-        );
+ Future<void> _saveMedicalCertificate() async {
+  if (_formKey.currentState?.validate() ?? false) {
+    try {
+      // Ensure the user is logged in and `currentUserId` is set
+      if (currentUserId == null) {
+        throw 'User is not logged in';
       }
+
+      final docRef = FirebaseFirestore.instance.collection('Medical_Certificate').doc();
+      final mcId = docRef.id;
+
+      // Save the medical certificate document with User_ID
+      await docRef.set({
+        'MC_ID': mcId,
+        'User_ID': currentUserId,  // Add User_ID to the document
+        'Doctor_Name': _doctorController.text,
+        'User_Name': widget.userName,
+        'Appointment_Date': widget.appointmentDate,
+        'Appointment_Service': widget.appointmentService,
+        'Appointment_Time': widget.appointmentTime,
+        'Appointment_Reason': widget.appointmentReason,
+        'MC_Duration': _mcDurationController.text,
+        'MC_Start_Date': _mcStartDateController.text,
+        'MC_End_Date': _mcEndDateController.text,
+        'Created_At': FieldValue.serverTimestamp(),
+      });
+
+      await _showSuccessDialog();  // Show success dialog instead of SnackBar
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving certificate: $e')),
+      );
     }
   }
+}
+
 
   // [Rest of the widget building methods remain the same...]
   Widget _buildSectionTitle(String title) {
