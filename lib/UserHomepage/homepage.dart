@@ -1,69 +1,73 @@
-import 'package:appointmentpractice/Profile/setting.dart';
-import 'package:appointmentpractice/Profile/userprofile.dart';
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:intl/intl.dart';
-import '../Appointment/appointmentgambang.dart';
-import '../Appointment/appointmentpekan.dart';
-import 'package:appointmentpractice/Appointment/rescheduleappointment.dart';
-import 'package:appointmentpractice/Appointment/appointmenthistory.dart';
-import 'package:appointmentpractice/Profile/setting.dart';
-import 'package:appointmentpractice/Reminder/setreminder.dart';
-import 'dart:async';
+// Importing necessary packages and files
+import 'package:appointmentpractice/Profile/setting.dart'; // For user settings page
+import 'package:appointmentpractice/Profile/userprofile.dart'; // For user profile page
+import 'package:flutter/material.dart'; // Flutter UI components
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firebase Firestore for database interaction
+import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authentication
+import 'package:intl/intl.dart'; // For date formatting
+import '../Appointment/appointmentgambang.dart'; // Gambang campus appointment page
+import '../Appointment/appointmentpekan.dart'; // Pekan campus appointment page
+import 'package:appointmentpractice/Appointment/rescheduleappointment.dart'; // Reschedule appointment page
+import 'package:appointmentpractice/Appointment/appointmenthistory.dart'; // Appointment history page
+import 'package:appointmentpractice/Reminder/setreminder.dart'; // Set reminder page
+import 'dart:async'; // For asynchronous programming
 
+// Homepage widget with state management
 class Homepage extends StatefulWidget {
-  const Homepage({super.key});
+  const Homepage({super.key}); // Constructor
 
   @override
-  State<Homepage> createState() => _HomepageState();
+  State<Homepage> createState() => _HomepageState(); // Creates the state for this widget
 }
 
 class _HomepageState extends State<Homepage> {
-  int _selectedIndex = 0;
-  String? notificationMessage;
-  int appointmentCount = 0; // State variable for appointment count
-  StreamSubscription? appointmentSubscription;
+  int _selectedIndex = 0; // State variable for selected bottom navigation index
+  String? notificationMessage; // Holds notification messages
+  int appointmentCount = 0; // Tracks the number of appointments
+  StreamSubscription? appointmentSubscription; // Subscription for Firestore real-time updates
 
+  // Handles bottom navigation item tap
   void _onItemTapped(int index) {
     setState(() {
-      _selectedIndex = index;
+      _selectedIndex = index; // Updates selected index
     });
   }
 
+  // Returns the widget for the selected tab
   Widget _getTabWidget(int index) {
     switch (index) {
       case 0:
-        return const HealthBulletinPage();
+        return const HealthBulletinPage(); // Health Bulletin tab
       case 1:
-        return const AppointmentPage();
+        return const AppointmentPage(); // Appointment tab
       case 2:
         return NotificationPage(
-            notificationMessage: notificationMessage ?? 'No Notifications Yet');
+            notificationMessage: notificationMessage ?? 'No Notifications Yet'); // Notification tab
       case 3:
-        return const Setting();
+        return const Setting(); // Settings tab
       default:
-        return const Center(child: Text('Unknown Page'));
+        return const Center(child: Text('Unknown Page')); // Fallback for unknown tabs
     }
   }
 
+  // Listens for appointment updates in Firestore
   void startAppointmentListener() {
     final currentUser = FirebaseAuth.instance.currentUser;
 
     if (currentUser != null) {
-      // Set up a real-time listener for the user's appointments
+      // Setting up real-time listener for appointments of the current user
       appointmentSubscription = FirebaseFirestore.instance
           .collection('Appointment')
-          .where('User_ID', isEqualTo: currentUser.uid)
+          .where('User_ID', isEqualTo: currentUser.uid) // Query by user ID
           .snapshots()
           .listen((querySnapshot) {
         if (querySnapshot.docs.isNotEmpty) {
-          // Update the appointment count
+          // If there are appointments, update count and build notification message
           setState(() {
             appointmentCount = querySnapshot.docs.length;
           });
 
-          // Build a message for all appointments
+          // Build notification message from appointments
           String message = '';
           for (var doc in querySnapshot.docs) {
             final appointmentData = doc.data();
@@ -81,15 +85,17 @@ class _HomepageState extends State<Homepage> {
           }
 
           setState(() {
-            notificationMessage = message.trim();
+            notificationMessage = message.trim(); // Update notification message
           });
         } else {
+          // No appointments found
           setState(() {
-            appointmentCount = 0; // No appointments
+            appointmentCount = 0;
             notificationMessage = "No appointments found for this user.";
           });
         }
       }, onError: (error) {
+        // Handle errors in the listener
         print("Error in listener: $error");
         setState(() {
           notificationMessage = "Error retrieving appointment details: $error";
@@ -101,81 +107,80 @@ class _HomepageState extends State<Homepage> {
   @override
   void initState() {
     super.initState();
-    startAppointmentListener();
+    startAppointmentListener(); // Start listening for appointments
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Dual Campus',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
+  return Scaffold(
+    appBar: AppBar(
+      automaticallyImplyLeading: false, // Prevents the back arrow from being displayed
+      title: const Text(
+        'Dual Campus',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 24,
         ),
-        centerTitle: true,
-        backgroundColor: Colors.teal,
       ),
-      body: _getTabWidget(_selectedIndex),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.teal,
-        unselectedItemColor: Colors.grey,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Appointment',
-          ),
-          BottomNavigationBarItem(
-            icon: Stack(
-              children: [
-                const Icon(Icons.notifications),
-                if (appointmentCount > 0) // Show badge only if count > 0
-                  Positioned(
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(
-                          2), // Smaller padding for a compact badge
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(
-                            10), // Smaller radius for a compact shape
+      centerTitle: true, // Centers the app bar title
+      backgroundColor: Colors.teal, // Teal background for the app bar
+    ),
+    body: _getTabWidget(_selectedIndex), // Displays the selected tab's widget
+    bottomNavigationBar: BottomNavigationBar(
+      currentIndex: _selectedIndex, // Sets the current selected tab
+      onTap: _onItemTapped, // Calls _onItemTapped when a tab is tapped
+      type: BottomNavigationBarType.fixed, // Fixed bottom navigation style
+      selectedItemColor: Colors.teal, // Highlight color for selected tab
+      unselectedItemColor: Colors.grey, // Color for unselected tabs
+      items: [
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.home),
+          label: 'Home', // Home tab
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.calendar_today),
+          label: 'Appointment', // Appointment tab
+        ),
+        BottomNavigationBarItem(
+          icon: Stack(
+            children: [
+              const Icon(Icons.notifications),
+              if (appointmentCount > 0) // Show badge only if count > 0
+                Positioned(
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2), // Badge padding
+                    decoration: BoxDecoration(
+                      color: Colors.red, // Badge color
+                      borderRadius: BorderRadius.circular(10), // Rounded badge
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 12, // Minimum width for badge
+                      minHeight: 12, // Minimum height for badge
+                    ),
+                    child: Text(
+                      '$appointmentCount', // Display appointment count
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10, // Font size for badge text
+                        fontWeight: FontWeight.bold,
                       ),
-                      constraints: const BoxConstraints(
-                        minWidth: 12, // Smaller width for a smaller badge
-                        minHeight: 12, // Smaller height for a smaller badge
-                      ),
-                      child: Text(
-                        '$appointmentCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10, // Smaller font size for the badge
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
-              ],
-            ),
-            label: 'Notification',
+                ),
+            ],
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
-      ),
-    );
-  }
+          label: 'Notification', // Notification tab
+        ),
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.settings),
+          label: 'Settings', // Settings tab
+        ),
+      ],
+    ),
+  );
+}
 
   @override
   void dispose() {
@@ -184,27 +189,29 @@ class _HomepageState extends State<Homepage> {
   }
 }
 
+// NotificationPage widget to display notifications
 class NotificationPage extends StatefulWidget {
-  final String notificationMessage;
+  final String notificationMessage; // Notification message to display
 
   const NotificationPage({Key? key, required this.notificationMessage})
       : super(key: key);
 
   @override
-  _NotificationPageState createState() => _NotificationPageState();
+  _NotificationPageState createState() => _NotificationPageState(); // State for NotificationPage
 }
 
 class _NotificationPageState extends State<NotificationPage> {
+  // Parses notification messages into a list
   List<String> _parseMessages() {
     return widget.notificationMessage
-        .split('\n')
-        .where((message) => message.isNotEmpty)
+        .split('\n') // Split by newline
+        .where((message) => message.isNotEmpty) // Exclude empty messages
         .toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final messages = _parseMessages();
+    final messages = _parseMessages(); // Get parsed messages
 
     return Scaffold(
       body: SafeArea(
@@ -217,29 +224,29 @@ class _NotificationPageState extends State<NotificationPage> {
                 child: messages.isNotEmpty
                     ? ListView.separated(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: messages.length,
+                        itemCount: messages.length, // Number of messages
                         separatorBuilder: (context, index) =>
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 16), // Space between items
                         itemBuilder: (context, index) {
                           return Container(
                             decoration: BoxDecoration(
-                              color: Colors.teal[50],
+                              color: Colors.teal[50], // Background color
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(color: Colors.teal.shade100),
                             ),
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(16), // Item padding
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Icon(Icons.notifications,
-                                    color: Colors.teal[700]),
-                                const SizedBox(width: 12),
+                                    color: Colors.teal[700]), // Icon
+                                const SizedBox(width: 12), // Space between icon and text
                                 Expanded(
                                   child: Text(
-                                    messages[index],
+                                    messages[index], // Display message text
                                     style: TextStyle(
                                       color: Colors.teal[900],
-                                      fontSize: 16,
+                                      fontSize: 16, // Font size
                                     ),
                                   ),
                                 ),
@@ -254,15 +261,15 @@ class _NotificationPageState extends State<NotificationPage> {
                           children: [
                             Icon(
                               Icons.notifications_off,
-                              size: 100,
-                              color: Colors.grey[300],
+                              size: 100, // Icon size for empty state
+                              color: Colors.grey[300], // Icon color
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 16), // Space below icon
                             Text(
-                              'No Notifications',
+                              'No Notifications', // Text for empty state
                               style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 18,
+                                color: Colors.grey[600], // Text color
+                                fontSize: 18, // Font size
                               ),
                             ),
                           ],
@@ -393,51 +400,52 @@ class HealthBulletinPage extends StatelessWidget {
   }
 }
 
-//Widget for displaying the appointment page with campus selection
+// Widget for displaying the appointment page with campus selection
 class AppointmentPage extends StatelessWidget {
   const AppointmentPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3, // Updated to 3 for three tabs
+      length: 3, // Specifies three tabs: Appointment, Upcoming, and History
       child: Scaffold(
-        backgroundColor: Colors.grey[100],
+        backgroundColor: Colors.grey[100], // Sets the background color of the page
         appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 1,
+          automaticallyImplyLeading: false, // Prevents the back arrow from being displayed
+          backgroundColor: Colors.white, // Sets the app bar color
+          elevation: 1, // Adds a slight shadow to the app bar
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(60),
+            preferredSize: const Size.fromHeight(60), // Sets the height of the app bar's bottom
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), // Adds spacing around the tab bar
               decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(30),
+                color: Colors.grey[200], // Background color for the tab bar
+                borderRadius: BorderRadius.circular(30), // Rounded corners for the tab bar
               ),
               child: TabBar(
-                indicatorSize: TabBarIndicatorSize.tab,
+                indicatorSize: TabBarIndicatorSize.tab, // Sets indicator size to match the tabs
                 indicator: BoxDecoration(
-                  color: const Color(0xFF009FA0),
-                  borderRadius: BorderRadius.circular(30),
+                  color: const Color(0xFF009FA0), // Color for the active tab indicator
+                  borderRadius: BorderRadius.circular(30), // Rounds the indicator corners
                 ),
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.blueGrey[600],
+                labelColor: Colors.white, // Color for active tab labels
+                unselectedLabelColor: Colors.blueGrey[600], // Color for inactive tab labels
                 tabs: const [
                   Tab(
                     child: Text(
-                      'Appointment',
+                      'Appointment', // First tab for campus selection
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
                   Tab(
                     child: Text(
-                      'Upcoming',
+                      'Upcoming', // Second tab for upcoming appointments
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
                   Tab(
                     child: Text(
-                      'History',
+                      'History', // Third tab for appointment history
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -448,33 +456,35 @@ class AppointmentPage extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
+            // Tab for displaying the appointment campus selection
             StreamBuilder<DocumentSnapshot>(
               stream: FirebaseFirestore.instance
-                  .collection('User')
+                  .collection('User') // Fetches user data from Firestore
                   .doc(FirebaseAuth.instance.currentUser?.uid)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
                     child: CircularProgressIndicator(
-                      color: Colors.blueGrey,
+                      color: Colors.blueGrey, // Loading spinner color
                     ),
                   );
                 }
 
                 if (snapshot.hasError) {
+                  // Displays error message when Firestore query fails
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
                           Icons.error_outline,
-                          color: Colors.red[300],
+                          color: Colors.red[300], // Error icon color
                           size: 80,
                         ),
                         const SizedBox(height: 20),
                         Text(
-                          'Oops! Something went wrong',
+                          'Oops! Something went wrong', // User-friendly error message
                           style: TextStyle(
                             color: Colors.blueGrey[700],
                             fontSize: 18,
@@ -483,7 +493,7 @@ class AppointmentPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          'Error: ${snapshot.error}',
+                          'Error: ${snapshot.error}', // Displays specific error details
                           style: const TextStyle(color: Colors.grey),
                         ),
                       ],
@@ -492,18 +502,19 @@ class AppointmentPage extends StatelessWidget {
                 }
 
                 if (!snapshot.hasData || !snapshot.data!.exists) {
+                  // Displays message when no user data is found
                   return const Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
                           Icons.assignment_late_outlined,
-                          color: Color(0xFF009FA0),
+                          color: Color(0xFF009FA0), // Icon color for "no data" state
                           size: 60,
                         ),
                         SizedBox(height: 20),
                         Text(
-                          'No User Data Found',
+                          'No User Data Found', // Informative message
                           style: TextStyle(
                             color: Color(0xFF009FA0),
                             fontSize: 18,
@@ -515,8 +526,8 @@ class AppointmentPage extends StatelessWidget {
                   );
                 }
 
-                final userData = snapshot.data!.data() as Map<String, dynamic>;
-                final userCampus = userData['Campus'] as String;
+                final userData = snapshot.data!.data() as Map<String, dynamic>; // Extracts user data
+                final userCampus = userData['Campus'] as String; // Gets the user's campus
 
                 return Padding(
                   padding: const EdgeInsets.all(20.0),
@@ -524,41 +535,42 @@ class AppointmentPage extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'Select Campus',
+                        'Select Campus', // Header text for campus selection
                         style: TextStyle(
                           fontSize: 20.0,
                           fontWeight: FontWeight.w600,
                           color: Colors.blueGrey[800],
                         ),
                       ),
-                      const SizedBox(height: 20.0), //spacing between select campus and button (UMPSA Campus)
-                      if (userCampus == 'Pekan')
+                      const SizedBox(height: 20.0), // Spacing before campus buttons
+                      if (userCampus == 'Pekan') // Displays the Pekan campus button if applicable
                         _buildCampusButton(
                           context,
-                          'UMPSA Pekan',
-                          const Appointmentpekan(),
-                          Icons.location_city,
+                          'UMPSA Pekan', // Button label
+                          const Appointmentpekan(), // Navigates to Pekan appointment page
+                          Icons.location_city, // Icon for Pekan
                         )
-                      else if (userCampus == 'Gambang')
+                      else if (userCampus == 'Gambang') // Displays Gambang campus button if applicable
                         _buildCampusButton(
                           context,
-                          'UMPSA Gambang',
-                          const Appointmentgambang(),
-                          Icons.school,
+                          'UMPSA Gambang', // Button label
+                          const Appointmentgambang(), // Navigates to Gambang appointment page
+                          Icons.school, // Icon for Gambang
                         ),
                     ],
                   ),
                 );
               },
             ),
-            const UpcomingTab(),
-            const HistoryTab(), // Added History tab
+            const UpcomingTab(), // Tab for upcoming appointments
+            const HistoryTab(), // Tab for appointment history
           ],
         ),
       ),
     );
   }
 }
+
 
 class HistoryTab extends StatelessWidget {
   const HistoryTab({super.key});
@@ -579,7 +591,6 @@ class HistoryTab extends StatelessWidget {
     return Container();
   }
 }
-
 
 Widget _buildCampusButton(
   BuildContext context,
