@@ -171,98 +171,93 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
   }
 
   // Show Day Appointments Method
-  void _showDayAppointments(DateTime day) {
-    final dayAppointments = _getAppointmentsForDay(day);
+  // Show Day Appointments Method
+void _showDayAppointments(DateTime day) {
+  final dayAppointments = _getAppointmentsForDay(day);
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.5,
-          minChildSize: 0.25,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-            return Container(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Text(
-                    'Appointments on ${DateFormat('dd MMM yyyy').format(day)}',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
-                    ),
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (context) {
+      return DraggableScrollableSheet(
+        initialChildSize: 0.5,
+        minChildSize: 0.25,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Text(
+                  'Appointments on ${DateFormat('dd MMM yyyy').format(day)}',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
                   ),
-                  const SizedBox(height: 16),
-                  dayAppointments.isEmpty
-                      ? const Text(
-                          'No appointments on this day',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                          ),
-                        )
-                      : Expanded(
-                          child: ListView.builder(
-                            controller: scrollController,
-                            itemCount: dayAppointments.length,
-                            itemBuilder: (context, index) {
-                              final appointment = dayAppointments[index];
-                              return Card(
-                                elevation: 3,
-                                margin: const EdgeInsets.symmetric(vertical: 8),
-                                child: ListTile(
-                                  title: Text(
-                                    'User: ${appointment['User_Name']}',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: textColor,
-                                    ),
-                                  ),
-                                  subtitle: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Time: ${appointment['Appointment_Time']}',
-                                        style:
-                                            TextStyle(color: Colors.grey[700]),
-                                      ),
-                                      Text(
-                                        'Service: ${appointment['Appointment_Name']}',
-                                        style:
-                                            TextStyle(color: Colors.grey[700]),
-                                      ),
-                                      Text(
-                                        'Reason: ${appointment['Appointment_Reason']}',
-                                        style:
-                                            TextStyle(color: Colors.grey[700]),
-                                      ),
-                                      Text(
-                                        'Campus: ${appointment['Campus']}',
-                                        style:
-                                            TextStyle(color: Colors.grey[700]),
-                                      ),
-                                      Text(
-                                        'Attendance: ${appointment['Appointment_Attendance']}',
-                                        style:
-                                            TextStyle(color: Colors.grey[700]),
-                                      ),
-                                    ],
+                ),
+                const SizedBox(height: 16),
+                dayAppointments.isEmpty
+                    ? const Text(
+                        'No appointments on this day',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      )
+                    : Expanded(
+                        child: ListView.builder(
+                          controller: scrollController,
+                          itemCount: dayAppointments.length,
+                          itemBuilder: (context, index) {
+                            final appointment = dayAppointments[index];
+                            return Card(
+                              elevation: 3,
+                              margin: const EdgeInsets.symmetric(vertical: 8),
+                              child: ListTile(
+                                title: Text(
+                                  'User: ${appointment['User_Name']}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: textColor,
                                   ),
                                 ),
-                              );
-                            },
-                          ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Time: ${appointment['Appointment_Time']}',
+                                      style: TextStyle(color: Colors.grey[700]),
+                                    ),
+                                    Text(
+                                      'Service: ${appointment['Appointment_Name']}',
+                                      style: TextStyle(color: Colors.grey[700]),
+                                    ),
+                                    Text(
+                                      'Reason: ${appointment['Appointment_Reason']}',
+                                      style: TextStyle(color: Colors.grey[700]),
+                                    ),
+                                    Text(
+                                      'Campus: ${appointment['Campus']}',
+                                      style: TextStyle(color: Colors.grey[700]),
+                                    ),
+                                    Text(
+                                      'Attendance: ${appointment['Appointment_Attendance']}',
+                                      style: TextStyle(color: Colors.grey[700]),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                  const SizedBox(height: 16),
-                  // Create MC button
+                      ),
+                const SizedBox(height: 16),
+                if (dayAppointments.isNotEmpty) // Only show button if there are appointments
                   ElevatedButton(
                     onPressed: () {
                       Navigator.push(
@@ -297,15 +292,15 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
                         ),
                       ],
                     ),
-                  )
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
+                  ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {

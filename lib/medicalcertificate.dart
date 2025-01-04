@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 
 class MedicalCertificate extends StatefulWidget {
   const MedicalCertificate({Key? key}) : super(key: key);
@@ -16,6 +17,7 @@ class _MedicalCertificateState extends State<MedicalCertificate> {
   final TextEditingController _manualAppointmentDateController = TextEditingController();
   final TextEditingController _manualAppointmentServiceController = TextEditingController();
   final TextEditingController _manualAppointmentReasonController = TextEditingController();
+
   Map<String, dynamic>? appointmentDetails;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   bool isLoading = true;
@@ -62,6 +64,21 @@ class _MedicalCertificateState extends State<MedicalCertificate> {
     }
   }
 
+  Future<String> _getDoctorName() async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("No user is logged in.");
+
+    final docSnapshot = await FirebaseFirestore.instance
+        .collection('User')
+        .doc(user.uid)
+        .get();
+
+    if (docSnapshot.exists) {
+      return docSnapshot.data()?['User_Name'] ?? 'N/A';
+    }
+    return 'N/A';
+  }
+
   Future<void> _saveMedicalCertificate() async {
     if (_mcDurationController.text.isEmpty || _mcDateController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -72,15 +89,18 @@ class _MedicalCertificateState extends State<MedicalCertificate> {
 
     try {
       final mcId = FirebaseFirestore.instance.collection('Medical_Certificate').doc().id;
+      final doctorName = await _getDoctorName();
 
       final mcData = {
         'MC_ID': mcId,
         'MC_Duration': int.parse(_mcDurationController.text),
         'MC_Date': _mcDateController.text,
+        'Doctor_Name': doctorName,
       };
 
       if (appointmentDetails != null) {
         mcData.addAll({
+          'Appointment_ID': appointmentDetails!['Appointment_ID'],
           'Appointment_Date': appointmentDetails!['Appointment_Date'],
           'Appointment_Service': appointmentDetails!['Appointment_Service'],
           'User_ID': appointmentDetails!['User_ID'],
@@ -101,12 +121,26 @@ class _MedicalCertificateState extends State<MedicalCertificate> {
         const SnackBar(content: Text('MC Created Successfully')),
       );
 
+      _mcDurationController.clear();
+      _mcDateController.clear();
       Navigator.pop(context);
     } catch (e) {
       print("Error saving medical certificate: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to create MC')),
       );
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null) {
+      _mcDateController.text = picked.toLocal().toString().split(' ')[0];
     }
   }
 
@@ -161,6 +195,7 @@ class _MedicalCertificateState extends State<MedicalCertificate> {
                         TextField(
                           controller: _mcDurationController,
                           keyboardType: TextInputType.number,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                           decoration: const InputDecoration(
                             labelText: 'MC Duration (in days)',
                           ),
@@ -168,9 +203,9 @@ class _MedicalCertificateState extends State<MedicalCertificate> {
                         const SizedBox(height: 8),
                         TextField(
                           controller: _mcDateController,
-                          decoration: const InputDecoration(
-                            labelText: 'MC Date',
-                          ),
+                          readOnly: true,
+                          onTap: () => _selectDate(context),
+                          decoration: const InputDecoration(labelText: 'MC Date'),
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
@@ -217,6 +252,7 @@ class _MedicalCertificateState extends State<MedicalCertificate> {
                       TextField(
                         controller: _mcDurationController,
                         keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                         decoration: const InputDecoration(
                           labelText: 'MC Duration (in days)',
                         ),
@@ -224,9 +260,9 @@ class _MedicalCertificateState extends State<MedicalCertificate> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _mcDateController,
-                        decoration: const InputDecoration(
-                          labelText: 'MC Date',
-                        ),
+                        readOnly: true,
+                        onTap: () => _selectDate(context),
+                        decoration: const InputDecoration(labelText: 'MC Date'),
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton(
