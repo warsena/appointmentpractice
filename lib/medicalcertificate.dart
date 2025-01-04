@@ -1,146 +1,65 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/services.dart';
 
 class MedicalCertificate extends StatefulWidget {
-  const MedicalCertificate({Key? key}) : super(key: key);
+  const MedicalCertificate({super.key});
 
   @override
   State<MedicalCertificate> createState() => _MedicalCertificateState();
 }
 
 class _MedicalCertificateState extends State<MedicalCertificate> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _appointmentDateController =
+      TextEditingController();
+  final TextEditingController _appointmentServiceController =
+      TextEditingController();
+  final TextEditingController _appointmentReasonController =
+      TextEditingController();
   final TextEditingController _mcDurationController = TextEditingController();
-  final TextEditingController _mcDateController = TextEditingController(); // Controller for MC Date
-  final TextEditingController _manualUserNameController = TextEditingController();
-  final TextEditingController _manualAppointmentDateController = TextEditingController();
-  final TextEditingController _manualAppointmentServiceController = TextEditingController();
-  final TextEditingController _manualAppointmentReasonController = TextEditingController();
+  final TextEditingController _mcDateController = TextEditingController();
+  final TextEditingController _doctorController = TextEditingController();
 
-  Map<String, dynamic>? appointmentDetails;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchAppointmentDetails();
-  }
-
-  Future<void> _fetchAppointmentDetails() async {
-    setState(() {
-      isLoading = true;
-    });
-
-    try {
-      final user = _auth.currentUser;
-      if (user == null) {
-        throw Exception("No user is logged in.");
-      }
-
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('Appointment')
-          .where('User_ID', isEqualTo: user.uid)
-          .orderBy('Appointment_Date', descending: true)
-          .limit(1)
-          .get();
-
-      if (querySnapshot.docs.isNotEmpty) {
-        setState(() {
-          appointmentDetails = querySnapshot.docs.first.data();
+  // Save the form data to Firestore
+  Future<void> _saveMedicalCertificate() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        // Create a new document in Firestore under 'Medical_Certificate' collection
+        await FirebaseFirestore.instance.collection('Medical_Certificate').add({
+          'MC_ID': DateTime.now()
+              .millisecondsSinceEpoch
+              .toString(), // Unique ID for the medical certificate
+          'Name': _nameController.text,
+          'Appointment_Date': _appointmentDateController.text,
+          'Appointment_Service': _appointmentServiceController.text,
+          'Appointment_Reason': _appointmentReasonController.text,
+          'MC_Duration': _mcDurationController.text,
+          'MC_Date': _mcDateController.text,
+          'Doctor': _doctorController.text,
         });
-      } else {
+
+        // Clear the form fields after submission
+        _nameController.clear();
+        _appointmentDateController.clear();
+        _appointmentServiceController.clear();
+        _appointmentReasonController.clear();
+        _mcDurationController.clear();
+        _mcDateController.clear();
+        _doctorController.clear();
+
+        // Show a success message
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No appointments found for this user')),
+          const SnackBar(
+              content: Text('Medical Certificate saved successfully')),
+        );
+      } catch (e) {
+        // Show an error message if something goes wrong
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving data: $e')),
         );
       }
-    } catch (e) {
-      print("Error fetching appointment details: $e");
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
-
-  Future<String> _getDoctorName() async {
-    final user = _auth.currentUser;
-    if (user == null) throw Exception("No user is logged in.");
-
-    final docSnapshot = await FirebaseFirestore.instance
-        .collection('User')
-        .doc(user.uid)
-        .get();
-
-    if (docSnapshot.exists) {
-      return docSnapshot.data()?['User_Name'] ?? 'N/A';
-    }
-    return 'N/A';
-  }
-
-  Future<void> _saveMedicalCertificate() async {
-    if (_mcDurationController.text.isEmpty || _mcDateController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter all required fields')),
-      );
-      return;
-    }
-
-    try {
-      final mcId = FirebaseFirestore.instance.collection('Medical_Certificate').doc().id;
-      final doctorName = await _getDoctorName();
-
-      final mcData = {
-        'MC_ID': mcId,
-        'MC_Duration': int.parse(_mcDurationController.text),
-        'MC_Date': _mcDateController.text,
-        'Doctor_Name': doctorName,
-      };
-
-      if (appointmentDetails != null) {
-        mcData.addAll({
-          'Appointment_ID': appointmentDetails!['Appointment_ID'],
-          'Appointment_Date': appointmentDetails!['Appointment_Date'],
-          'Appointment_Service': appointmentDetails!['Appointment_Service'],
-          'User_ID': appointmentDetails!['User_ID'],
-          'Appointment_Reason': appointmentDetails!['Appointment_Reason'],
-        });
-      } else {
-        mcData.addAll({
-          'Appointment_Date': _manualAppointmentDateController.text,
-          'Appointment_Service': _manualAppointmentServiceController.text,
-          'User_ID': _auth.currentUser?.uid ?? 'N/A',
-          'Appointment_Reason': _manualAppointmentReasonController.text,
-        });
-      }
-
-      await FirebaseFirestore.instance.collection('Medical_Certificate').doc(mcId).set(mcData);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('MC Created Successfully')),
-      );
-
-      _mcDurationController.clear();
-      _mcDateController.clear();
-      Navigator.pop(context);
-    } catch (e) {
-      print("Error saving medical certificate: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to create MC')),
-      );
-    }
-  }
-
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null) {
-      _mcDateController.text = picked.toLocal().toString().split(' ')[0];
     }
   }
 
@@ -148,130 +67,83 @@ class _MedicalCertificateState extends State<MedicalCertificate> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Medical Certificate'),
+        title: const Text(
+          'Medical Certificate Form',
+          style: TextStyle(fontWeight: FontWeight.bold), // Make the text bold
+        ),
+        backgroundColor: const Color(0xFF2196F3),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : appointmentDetails == null
-              ? Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'No appointment found. Enter details manually:',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: _manualUserNameController,
-                          decoration: const InputDecoration(
-                            labelText: 'User Name',
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: _manualAppointmentDateController,
-                          decoration: const InputDecoration(
-                            labelText: 'Appointment Date',
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: _manualAppointmentServiceController,
-                          decoration: const InputDecoration(
-                            labelText: 'Appointment Service',
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: _manualAppointmentReasonController,
-                          decoration: const InputDecoration(
-                            labelText: 'Appointment Reason',
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: _mcDurationController,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          decoration: const InputDecoration(
-                            labelText: 'MC Duration (in days)',
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: _mcDateController,
-                          readOnly: true,
-                          onTap: () => _selectDate(context),
-                          decoration: const InputDecoration(labelText: 'MC Date'),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _saveMedicalCertificate,
-                          child: const Text('Save MC'),
-                        ),
-                      ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTextFormField(_nameController, 'Name'),
+              _buildTextFormField(
+                  _appointmentDateController, 'Appointment Date'),
+              _buildTextFormField(
+                  _appointmentServiceController, 'Appointment Service'),
+              _buildTextFormField(
+                  _appointmentReasonController, 'Appointment Reason'),
+              _buildTextFormField(_mcDurationController, 'MC Duration'),
+              _buildTextFormField(_mcDateController, 'MC Date'),
+              _buildTextFormField(_doctorController, 'Doctor'),
+              const SizedBox(height: 20),
+              Center(
+                child: ElevatedButton(
+                  onPressed: _saveMedicalCertificate,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent, // Button color
+                    padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text(
+                    'Submit',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.white, // Text color
+                      fontWeight: FontWeight.bold, // Bold text
                     ),
                   ),
-                )
-              : Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Create Medical Certificate',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'User Name: ${appointmentDetails!['User_Name'] ?? 'N/A'}',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Appointment Date: ${appointmentDetails!['Appointment_Date'] ?? 'N/A'}',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Service: ${appointmentDetails!['Appointment_Service'] ?? 'N/A'}',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Reason: ${appointmentDetails!['Appointment_Reason'] ?? 'N/A'}',
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _mcDurationController,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        decoration: const InputDecoration(
-                          labelText: 'MC Duration (in days)',
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _mcDateController,
-                        readOnly: true,
-                        onTap: () => _selectDate(context),
-                        decoration: const InputDecoration(labelText: 'MC Date'),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _saveMedicalCertificate,
-                        child: const Text('Save MC'),
-                      ),
-                    ],
-                  ),
                 ),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextFormField(
+      TextEditingController controller, String labelText) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: labelText,
+          labelStyle: const TextStyle(fontSize: 16, color: Colors.black54),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Colors.blueAccent),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Colors.blueAccent),
+          ),
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Please enter $labelText';
+          }
+          return null;
+        },
+      ),
     );
   }
 }

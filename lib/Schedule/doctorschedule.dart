@@ -170,7 +170,7 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
     }
   }
 
-  // Show Day Appointments Method
+
   // Show Day Appointments Method
 void _showDayAppointments(DateTime day) {
   final dayAppointments = _getAppointmentsForDay(day);
