@@ -73,7 +73,6 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
     }
   }
 
-
   void _initializeCertificatesStream(String name) {
     _certificatesStream = FirebaseFirestore.instance
         .collection('Medical_Certificate')
@@ -95,7 +94,7 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
         });
   }
 
- Future<void> _retryWithOrderBy(String name) async {
+  Future<void> _retryWithOrderBy(String name) async {
     try {
       await FirebaseFirestore.instance
           .collection('Medical_Certificate')
@@ -213,15 +212,38 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
       // Save the PDF
       await file.writeAsBytes(await pdf.save());
       
-      // Share the PDF
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        text: 'Medical Certificate',
-        subject: 'MC_${documentId.substring(0, 6)}.pdf',
-      );
+      if (!mounted) return;
+
+      // Share with platform-specific handling
+      if (Platform.isAndroid) {
+       final result = await Share.shareXFiles(
+  [XFile(file.path)],
+  text: 'Medical Certificate for ${data['User_Name']}',
+  subject: 'MC_${data['User_Name']}.pdf',
+  sharePositionOrigin: const Rect.fromLTWH(0, 0, 10, 10),
+);
+
+        // Handle share result
+        if (result.status == ShareResultStatus.dismissed) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Sharing cancelled'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        }
+      } else {
+        await Share.shareXFiles(
+  [XFile(file.path)],
+  text: 'Medical Certificate for ${data['User_Name']}',
+  subject: 'MC_${data['User_Name']}.pdf',
+);
+
+      }
     } catch (e) {
       debugPrint('Error sharing PDF: $e');
-      // Show error snackbar
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -264,11 +286,16 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
   }
 
 
+
  Widget _buildMCCard(DocumentSnapshot document) {
     try {
       final data = document.data() as Map<String, dynamic>;
       String documentId = document.id;
       
+      // Add these debug prints
+      print('Document Data: $data'); // Let's see what's in the data
+      print('User Name: ${data['User_Name']}'); // Check if User_Name exists
+
       return Card(
         elevation: 4,
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -285,11 +312,11 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
                 children: [
                   Flexible(
                     child: Text(
-                      'MC #${documentId.length >= 6 ? documentId.substring(0, 6) : documentId}',
+                    'MC ${data['User_Name'] ?? 'Unknown'}',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
-                        color: Colors.blue,
+                        color: Colors.teal,
                       ),
                     ),
                   ),
@@ -298,7 +325,7 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.1),
+                          color: Colors.teal.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -306,14 +333,14 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
                               ? '${data['MC_Duration']} days'
                               : 'Duration N/A',
                           style: const TextStyle(
-                            color: Colors.blue,
+                            color: Colors.teal,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       IconButton(
-                        icon: const Icon(Icons.share, color: Colors.blue),
+                        icon: const Icon(Icons.share, color: Colors.teal),
                         onPressed: () => _generateAndDownloadPDF(data, documentId),
                         tooltip: 'Share MC',
                       ),
@@ -412,12 +439,6 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
   }
 
 
-
-
-
-  
-  
-
   Widget _buildErrorWidget(String message) {
     return Center(
       child: Padding(
@@ -491,10 +512,10 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
           'Medical Certificates',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Colors.black,
           ),
         ),
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.teal,
         elevation: 2,
         centerTitle: true,
       ),
