@@ -669,6 +669,8 @@ class UpcomingTab extends StatefulWidget {
 
 class _UpcomingTabState extends State<UpcomingTab> {
   bool isBookingConfirmed = false;
+  final Map<String, bool> confirmedAppointments = {};
+
 
   // Function to reschedule the appointment
   Future<void> _rescheduleAppointment(
@@ -831,34 +833,53 @@ class _UpcomingTabState extends State<UpcomingTab> {
   bool _isAppointmentPast(String appointmentDate) {
     DateTime appointmentDateTime = DateTime.parse(appointmentDate);
     DateTime currentDateTime = DateTime.now();
-
-    return appointmentDateTime.isBefore(currentDateTime);
+    
+    // Create DateTime for 11:59 PM of the appointment date
+    DateTime appointmentEndTime = DateTime(
+      appointmentDateTime.year,
+      appointmentDateTime.month,
+      appointmentDateTime.day,
+      23,
+      59,
+    );
+    
+    return currentDateTime.isAfter(appointmentEndTime);
   }
 
-  // Create a map to track confirmed appointments
-  Map<String, bool> confirmedAppointments = {};
+  // Function to check if today is the appointment date
+  bool _isAppointmentToday(String appointmentDate) {
+    DateTime appointmentDateTime = DateTime.parse(appointmentDate);
+    DateTime currentDateTime = DateTime.now();
+    
+    return appointmentDateTime.year == currentDateTime.year &&
+           appointmentDateTime.month == currentDateTime.month &&
+           appointmentDateTime.day == currentDateTime.day;
+  }
 
-  // Function to confirm booking
-  void _confirmBooking(
-      BuildContext context, Map<String, dynamic> appointment) async {
-    if (appointment['Appointment_ID'] == null ||
-        appointment['Appointment_ID'].isEmpty) {
+  // Function to confirm booking with date check
+  void _confirmBooking(BuildContext context, Map<String, dynamic> appointment) async {
+    if (appointment['Appointment_ID'] == null || appointment['Appointment_ID'].isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content:
-                Text('Invalid appointment data. Unable to confirm booking.')),
+        const SnackBar(content: Text('Invalid appointment data. Unable to confirm booking.')),
+      );
+      return;
+    }
+
+    // Check if today is the appointment date
+    if (!_isAppointmentToday(appointment['Appointment_Date'])) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Booking can only be confirmed on the appointment date')),
       );
       return;
     }
 
     try {
-      // Update Firestore: Mark appointment as confirmed
       await FirebaseFirestore.instance
           .collection('Appointment')
           .doc(appointment['Appointment_ID'])
           .update({
         'Appointment_Attendance': 'Attend',
-        'isBookingConfirmed': true, // Add this field to disable buttons
+        'isBookingConfirmed': true,
       });
 
       setState(() {
@@ -874,6 +895,8 @@ class _UpcomingTabState extends State<UpcomingTab> {
       );
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -978,19 +1001,19 @@ class _UpcomingTabState extends State<UpcomingTab> {
                               foregroundColor: Colors.white,
                             ),
                           ),
-                          ElevatedButton.icon(
-                            onPressed: isPastAppointment || isConfirmed
-                                ? null
-                                : () => _confirmBooking(context, appointment),
-                            icon: const Icon(Icons.check, size: 16),
-                            label: isConfirmed
-                                ? const Text('Booking Confirmed')
-                                : const Text('Confirm Booking'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
+                           ElevatedButton.icon(
+    onPressed: isPastAppointment || isConfirmed || !_isAppointmentToday(appointment['Appointment_Date'])
+        ? null
+        : () => _confirmBooking(context, appointment),
+    icon: const Icon(Icons.check, size: 16),
+    label: isConfirmed
+        ? const Text('Booking Confirmed')
+        : const Text('Confirm Booking'),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.green,
+      foregroundColor: Colors.white,
+    ),
+  ),
                           ElevatedButton.icon(
                             onPressed: isPastAppointment
                                 ? null
