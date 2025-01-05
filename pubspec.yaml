@@ -11,19 +11,17 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  table_calendar: ^3.0.6
+  table_calendar: ^3.0.9
   cupertino_icons: ^1.0.8
-  intl: ^0.17.0
-  firebase_core: ^2.10.0
-  firebase_auth: ^4.20.0
-  cloud_firestore: ^4.17.5
-  # firebase_storage: ^11.1.2
-  # image_picker: ^1.1.2
-  # firebase_remote_config: ^0.10.0
+  intl: ^0.18.0  # Updated to match Flutter 3.x
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.15.3
+  cloud_firestore: ^4.13.6
   pdf: ^3.10.8
   path_provider: ^2.1.2
   share_plus: ^7.2.2
   printing: ^5.11.1
+  google_fonts: ^6.1.0  # Added for PDF fonts
 
 dev_dependencies:
   flutter_test:
