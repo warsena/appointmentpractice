@@ -17,11 +17,13 @@ class _DoctorhomepageState extends State<Doctorhomepage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false, // This removes the back arrow
         title: const Text(
           'Dual Campus',
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
+            fontSize: 24,
           ),
         ),
         centerTitle: true,
