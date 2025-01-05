@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserMedicalCertificate extends StatefulWidget {
-  final String mcId; // Medical Certificate ID passed to the widget
+  final String mcId;
 
   const UserMedicalCertificate({Key? key, required this.mcId}) : super(key: key);
 
@@ -20,12 +20,11 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
     _fetchCertificateData();
   }
 
-  // Fetch the certificate data from Firestore based on the MC_ID
   Future<void> _fetchCertificateData() async {
     try {
       DocumentSnapshot docSnapshot = await FirebaseFirestore.instance
           .collection('Medical_Certificate')
-          .doc(widget.mcId) // Use the MC_ID passed from the widget
+          .doc(widget.mcId) // Use the mcId passed from the previous page
           .get();
 
       if (docSnapshot.exists) {
@@ -34,7 +33,6 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
           isLoading = false;
         });
       } else {
-        // Handle the case where no certificate is found
         setState(() {
           isLoading = false;
         });
@@ -43,7 +41,6 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
         );
       }
     } catch (e) {
-      // Handle any errors
       setState(() {
         isLoading = false;
       });
@@ -60,56 +57,55 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
         title: const Text('Medical Certificate'),
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator()) // Show loading spinner
+          ? const Center(child: CircularProgressIndicator())
           : certificateData == null
-              ? const Center(child: Text('No data available.')) // Show if no data
+              ? const Center(child: Text('No data available.'))
               : Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: ListView(
                     children: [
                       Text(
-                        'Patient Name: ${certificateData!['User_Name']}',
+                        'Patient Name: ${certificateData!['User_Name'] ?? 'Unknown'}',
                         style: const TextStyle(fontSize: 18),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Doctor: ${certificateData!['Doctor_Name']}',
+                        'Doctor: ${certificateData!['Doctor_Name'] ?? 'Unknown'}',
                         style: const TextStyle(fontSize: 18),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Appointment Date: ${certificateData!['Appointment_Date']}',
+                        'Appointment Date: ${certificateData!['Appointment_Date'] ?? 'Unknown'}',
                         style: const TextStyle(fontSize: 18),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Appointment Time: ${certificateData!['Appointment_Time']}',
+                        'Appointment Time: ${certificateData!['Appointment_Time'] ?? 'Unknown'}',
                         style: const TextStyle(fontSize: 18),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Service: ${certificateData!['Appointment_Service']}',
+                        'Service: ${certificateData!['Appointment_Service'] ?? 'Unknown'}',
                         style: const TextStyle(fontSize: 18),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Reason: ${certificateData!['Appointment_Reason']}',
+                        'Reason: ${certificateData!['Appointment_Reason'] ?? 'Unknown'}',
                         style: const TextStyle(fontSize: 18),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Duration: ${certificateData!['MC_Duration']} days',
+                        'Duration: ${certificateData!['MC_Duration'] ?? 'Unknown'} days',
                         style: const TextStyle(fontSize: 18),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'MC Start Date: ${certificateData!['MC_Start_Date']}',
+                        'MC Start Date: ${certificateData!['MC_Start_Date'] ?? 'Unknown'}',
                         style: const TextStyle(fontSize: 18),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'MC End Date: ${certificateData!['MC_End_Date']}',
+                        'MC End Date: ${certificateData!['MC_End_Date'] ?? 'Unknown'}',
                         style: const TextStyle(fontSize: 18),
                       ),
                     ],
