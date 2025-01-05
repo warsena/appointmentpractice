@@ -181,7 +181,6 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
   }
 }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -202,8 +201,6 @@ class _AppointmentgambangState extends State<Appointmentgambang> {
               children: [
                 _buildDateSelection(context),
                 _buildServiceDropdown(),
-                if (selectedService == 'Medical Health Service')
-                  _buildSpecializationDropdown(),
                 _buildTimeSlotsGrid(),
                 const SizedBox(height: 32.0),
                 SizedBox(

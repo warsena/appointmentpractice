@@ -52,7 +52,7 @@ class _RescheduleAppointmentState extends State<RescheduleAppointment> {
   };
 
   @override
-   void initState() {
+  void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       print("Appointment ID: ${widget.appointmentId}"); // Debugging
@@ -159,60 +159,64 @@ class _RescheduleAppointmentState extends State<RescheduleAppointment> {
 
   // Update the appointment
   Future<void> _updateAppointment() async {
-  try {
-    print("Reschedule triggered for Appointment_ID: ${widget.appointmentId}");
+    try {
+      print("Reschedule triggered for Appointment_ID: ${widget.appointmentId}");
 
-    // Query the document ID using Appointment_ID
-    QuerySnapshot snapshot = await FirebaseFirestore.instance
-        .collection('Appointment')
-        .where('Appointment_ID', isEqualTo: widget.appointmentId)
-        .limit(1)
-        .get();
+      // Query the document ID using Appointment_ID
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('Appointment')
+          .where('Appointment_ID', isEqualTo: widget.appointmentId)
+          .limit(1)
+          .get();
 
-    if (snapshot.docs.isEmpty) {
-      throw Exception("No appointment found with Appointment_ID: ${widget.appointmentId}");
-    }
+      if (snapshot.docs.isEmpty) {
+        throw Exception(
+            "No appointment found with Appointment_ID: ${widget.appointmentId}");
+      }
 
-    final doc = snapshot.docs.first;
-    String documentId = doc.id;
-    print("Document ID retrieved: $documentId");
-    print("Document data before update: ${doc.data()}");
+      final doc = snapshot.docs.first;
+      String documentId = doc.id;
+      print("Document ID retrieved: $documentId");
+      print("Document data before update: ${doc.data()}");
 
-    // Validate update data
-    if (selectedTimeslot.isEmpty) {
-      throw Exception("Selected timeslot is empty.");
-    }
+      // Validate update data
+      if (selectedTimeslot.isEmpty) {
+        throw Exception("Selected timeslot is empty.");
+      }
 
-    // Update the appointment document
-    await FirebaseFirestore.instance
-        .collection('Appointment')
-        .doc(documentId)
-        .update({
-      'Appointment_Date': DateFormat('yyyy-MM-dd').format(selectedDate),
-      'Appointment_Time': selectedTimeslot,
-      'Appointment_Service': selectedService,
-      'Appointment_Reason': reasonController.text, // Use the controller's text value here
-      'Appointment_Campus': selectedCampus,
-      'Appointment_Attendance': 'Not Attend', // Update the attendance status to Not Attend
-      'Updated_At': FieldValue.serverTimestamp(),
-    });
+      // Update the appointment document
+      await FirebaseFirestore.instance
+          .collection('Appointment')
+          .doc(documentId)
+          .update({
+        'Appointment_Date': DateFormat('yyyy-MM-dd').format(selectedDate),
+        'Appointment_Time': selectedTimeslot,
+        'Appointment_Service': selectedService,
+        'Appointment_Reason':
+            reasonController.text, // Use the controller's text value here
+        'Appointment_Campus': selectedCampus,
+        'Appointment_Attendance':
+            'Not Attend', // Update the attendance status to Not Attend
+        'Updated_At': FieldValue.serverTimestamp(),
+      });
 
-    print("Appointment updated successfully.");
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Appointment rescheduled successfully.')),
-      );
-      Navigator.pop(context); // Navigate back to the previous screen
-    }
-  } catch (e) {
-    print('Error updating document: $e');
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating appointment: $e')),
-      );
+      print("Appointment updated successfully.");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Appointment rescheduled successfully.')),
+        );
+        Navigator.pop(context); // Navigate back to the previous screen
+      }
+    } catch (e) {
+      print('Error updating document: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating appointment: $e')),
+        );
+      }
     }
   }
-}
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -230,7 +234,7 @@ class _RescheduleAppointmentState extends State<RescheduleAppointment> {
     }
   }
 
-    // Fetch the appointment reason
+  // Fetch the appointment reason
   Future<void> _fetchAppointmentReason() async {
     try {
       // Query to get the appointment details based on Appointment_ID
@@ -251,7 +255,6 @@ class _RescheduleAppointmentState extends State<RescheduleAppointment> {
       print('Error fetching reason: $e');
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -274,8 +277,7 @@ class _RescheduleAppointmentState extends State<RescheduleAppointment> {
               children: [
                 _buildDateSelection(context),
                 _buildServiceDropdown(),
-                if (selectedService == 'Medical Health Service')
-                  _buildSpecializationDropdown(),
+                // Removed the duplicate specialization dropdown
                 _buildTimeSlotsGrid(),
                 const SizedBox(height: 32.0),
                 SizedBox(
@@ -358,7 +360,88 @@ class _RescheduleAppointmentState extends State<RescheduleAppointment> {
     );
   }
 
+  Widget _buildServiceDropdown() {
+    return Column(
+      children: [
+        Card(
+          elevation: 2,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Select Service',
+                  style: TextStyle(
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF009FA0),
+                  ),
+                ),
+                const SizedBox(height: 12.0),
+                DropdownButtonFormField<String>(
+                  value: selectedService,
+                  icon: Icon(Icons.keyboard_arrow_down,
+                      color: Colors.teal.shade700),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.teal.shade50,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                      borderSide:
+                          BorderSide(color: Colors.teal.shade100, width: 1.5),
+                    ),
+                  ),
+                  items: services.map((String service) {
+                    return DropdownMenuItem<String>(
+                      value: service,
+                      child: Text(service),
+                    );
+                  }).toList(),
+                  onChanged: (newValue) async {
+                    setState(() {
+                      selectedService = newValue!;
+                      selectedTimeslot = '';
+                      // Reset specialization when changing service
+                      if (newValue != 'Medical Health Service') {
+                        selectedSpecialization = '';
+                      } else if (medicalSpecializations[
+                                  'Medical Health Service']
+                              ?.isNotEmpty ==
+                          true) {
+                        // Set default specialization for Medical Health Service
+                        selectedSpecialization =
+                            medicalSpecializations['Medical Health Service']!
+                                .first;
+                      }
+                    });
+                    await _fetchAvailableTimeslots();
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (selectedService == 'Medical Health Service') ...[
+          const SizedBox(height: 16.0),
+          _buildSpecializationDropdown(),
+        ],
+        const SizedBox(height: 16.0),
+        _buildReasonInput(),
+      ],
+    );
+  }
+
   Widget _buildSpecializationDropdown() {
+    // Initialize selectedSpecialization if it's empty
+    if (selectedSpecialization.isEmpty &&
+        medicalSpecializations['Medical Health Service']?.isNotEmpty == true) {
+      selectedSpecialization =
+          medicalSpecializations['Medical Health Service']!.first;
+    }
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -368,7 +451,7 @@ class _RescheduleAppointmentState extends State<RescheduleAppointment> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Select Service',
+              'Select Specialization',
               style: TextStyle(
                 fontSize: 18.0,
                 fontWeight: FontWeight.bold,
@@ -377,7 +460,7 @@ class _RescheduleAppointmentState extends State<RescheduleAppointment> {
             ),
             const SizedBox(height: 12.0),
             DropdownButtonFormField<String>(
-              value: selectedService,
+              value: selectedSpecialization,
               icon:
                   Icon(Icons.keyboard_arrow_down, color: Colors.teal.shade700),
               decoration: InputDecoration(
@@ -389,125 +472,68 @@ class _RescheduleAppointmentState extends State<RescheduleAppointment> {
                       BorderSide(color: Colors.teal.shade100, width: 1.5),
                 ),
               ),
-              items: services.map((String service) {
-                return DropdownMenuItem<String>(
-                  value: service,
-                  child: Text(service),
-                );
-              }).toList(),
-              onChanged: (newValue) async {
+              items: medicalSpecializations['Medical Health Service']
+                      ?.map((String specialization) {
+                    return DropdownMenuItem<String>(
+                      value: specialization,
+                      child: Text(specialization),
+                    );
+                  }).toList() ??
+                  [],
+              onChanged: (newValue) {
                 setState(() {
-                  selectedService = newValue!;
-                  selectedTimeslot =
-                      ''; // Clear selected timeslot when service changes
+                  selectedSpecialization = newValue!;
                 });
-                await _fetchAvailableTimeslots(); // Fetch new available timeslots
               },
             ),
-            if (selectedService.isNotEmpty) const SizedBox(height: 16.0),
-            if (selectedService.isNotEmpty)
-              Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15)),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: _buildReasonInput(),
-                ),
-              ),
           ],
         ),
       ),
     );
   }
 
-Widget _buildServiceDropdown() {
-  return Card(
-    elevation: 2,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-    child: Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Select Service',
-            style: TextStyle(
-              fontSize: 18.0,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF009FA0),
-            ),
-          ),
-          const SizedBox(height: 12.0),
-          DropdownButtonFormField<String>(
-            value: selectedService,
-            icon: Icon(Icons.keyboard_arrow_down, color: Colors.teal.shade700),
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.teal.shade50,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12.0),
-                borderSide: BorderSide(color: Colors.teal.shade100, width: 1.5),
+  Widget _buildReasonInput() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Enter Reason',
+              style: TextStyle(
+                fontSize: 18.0,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF009FA0),
               ),
             ),
-            items: services.map((String service) {
-              return DropdownMenuItem<String>(
-                value: service,
-                child: Text(service),
-              );
-            }).toList(),
-            onChanged: (newValue) async {
-              setState(() {
-                selectedService = newValue!;
-                selectedTimeslot = '';
-              });
-              await _fetchAvailableTimeslots();
-            },
-          ),
-          const SizedBox(height: 16.0),
-          _buildReasonInput(),
-        ],
+            const SizedBox(height: 12.0),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.teal.shade50,
+                borderRadius: BorderRadius.circular(12.0),
+                border: Border.all(color: Colors.teal.shade100, width: 1.5),
+              ),
+              child: TextField(
+                controller: reasonController,
+                decoration: const InputDecoration(
+                  hintText: 'Why do you need this service?',
+                  contentPadding: EdgeInsets.all(16.0),
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(color: Colors.grey),
+                ),
+                maxLines: 3,
+                style: TextStyle(
+                  color: Colors.teal.shade700,
+                  fontSize: 16.0,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
-
-
-  Widget _buildReasonInput() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Enter Reason',
-          style: TextStyle(
-            fontSize: 18.0,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF009FA0),
-          ),
-        ),
-        const SizedBox(height: 12.0),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.teal.shade50,
-            borderRadius: BorderRadius.circular(12.0),
-            border: Border.all(color: Colors.teal.shade100, width: 1.5),
-          ),
-          child: TextField(
-            controller: reasonController,
-            decoration: const InputDecoration(
-              hintText: 'Why do you need this service?',
-              contentPadding: EdgeInsets.all(16.0),
-              border: InputBorder.none,
-              hintStyle: TextStyle(color: Colors.grey),
-            ),
-            maxLines: 3,
-            style: TextStyle(
-              color: Colors.teal.shade700,
-              fontSize: 16.0,
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -577,5 +603,4 @@ Widget _buildServiceDropdown() {
       ),
     );
   }
-
 }
