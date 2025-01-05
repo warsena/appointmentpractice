@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 class AppointmentHistory extends StatefulWidget {
   const AppointmentHistory({super.key});
@@ -15,39 +14,46 @@ class _AppointmentHistoryState extends State<AppointmentHistory> {
   String? selectedYear;
 
   Future<List<Map<String, dynamic>>> fetchAppointments() async {
-    try {
-      String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
-      Query query = FirebaseFirestore.instance
-          .collection('Appointment')
-          .where('User_ID', isEqualTo: currentUserId);
+  try {
+    String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    Query query = FirebaseFirestore.instance
+        .collection('Appointment')
+        .where('User_ID', isEqualTo: currentUserId);
 
-      if (selectedAttendance != null && selectedAttendance!.isNotEmpty) {
-        query = query.where('Appointment_Attendance', isEqualTo: selectedAttendance);
-      }
-
-      if (selectedYear != null && selectedYear!.isNotEmpty) {
-        int year = int.parse(selectedYear!);
-        QuerySnapshot snapshot = await query.get();
-        List<Map<String, dynamic>> appointments = snapshot.docs
-            .map((doc) => doc.data() as Map<String, dynamic>)
-            .toList();
-            
-        return appointments.where((appointment) {
-          if (appointment['Appointment_Date'] is Timestamp) {
-            DateTime date = (appointment['Appointment_Date'] as Timestamp).toDate();
-            return date.year == year;
-          }
-          return false;
-        }).toList();
-      }
-
-      QuerySnapshot snapshot = await query.get();
-      return snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
-    } catch (e) {
-      debugPrint("Error fetching appointments: $e");
-      return [];
+    // Only apply attendance filter if it's not "All" and not null
+    if (selectedAttendance != null && selectedAttendance != 'All') {
+      query = query.where('Appointment_Attendance', isEqualTo: selectedAttendance);
     }
+
+    QuerySnapshot snapshot = await query.get();
+    List<Map<String, dynamic>> appointments = snapshot.docs
+        .map((doc) => doc.data() as Map<String, dynamic>)
+        .toList();
+
+    // Filter by year if selected
+    if (selectedYear != null && selectedYear!.isNotEmpty) {
+      int year = int.parse(selectedYear!);
+      appointments = appointments.where((appointment) {
+        String? dateStr = appointment['Appointment_Date'];
+        if (dateStr != null) {
+          try {
+            DateTime date = DateTime.parse(dateStr);
+            return date.year == year;
+          } catch (e) {
+            debugPrint("Error parsing date: $e");
+            return false;
+          }
+        }
+        return false;
+      }).toList();
+    }
+
+    return appointments;
+  } catch (e) {
+    debugPrint("Error fetching appointments: $e");
+    return [];
   }
+}
 
   Widget _buildInfoRow(IconData icon, String label, String? value) {
     return Padding(
@@ -134,7 +140,7 @@ class _AppointmentHistoryState extends State<AppointmentHistory> {
                             value: selectedAttendance,
                             hint: const Text('Attendance'),
                             isExpanded: true,
-                            items: ['Attend', 'Not Attend'].map((attendance) {
+                            items: ['All','Attend', 'Not Attend'].map((attendance) {
                               return DropdownMenuItem(
                                 value: attendance,
                                 child: Text(attendance),
