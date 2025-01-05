@@ -167,15 +167,13 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      _buildPDFInfoRow('Certificate ID',
-                          documentId.substring(0, 6), font, boldFont),
-                      _buildPDFInfoRow('Duration',
-                          '${data['MC_Duration']} days', font, boldFont),
-                      _buildPDFInfoRow(
+                          _buildPDFInfoRow(
                           'Doctor',
                           data['Doctor_Name'] ?? 'Not specified',
                           font,
                           boldFont),
+                      _buildPDFInfoRow('Duration',
+                          '${data['MC_Duration']} days', font, boldFont),
                       _buildPDFInfoRow(
                           'Start Date',
                           data['MC_Start_Date'] ?? 'Not specified',
@@ -386,12 +384,12 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
               const SizedBox(height: 4),
               _buildInfoRow('End Date', _getDataSafely(data, 'MC_End_Date')),
               const Divider(height: 24),
-              Text(
+              const Text(
                 'Appointment Details',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: Colors.grey[800],
+                  color: Colors.teal,
                 ),
               ),
               const SizedBox(height: 12),
