@@ -215,8 +215,9 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
         // App bar for the screen.
         title: const Text(
           'Edit Profile',
-          style: TextStyle(fontWeight: FontWeight.bold), // Bold title text.
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24), // Bold title text.
         ),
+        centerTitle: true,
         backgroundColor: Colors.blue, // App bar background color.
         elevation: 0, // Remove shadow.
       ),
@@ -288,7 +289,7 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: _saveChanges, // Call the save changes method.
-                  icon: const Icon(Icons.save), // Save icon.
+                  icon: const Icon(Icons.save, color: Colors.white,), // Save icon.
                   label: const Text('Save Changes'), // Button label.
                   style: ElevatedButton.styleFrom( // Button styling.
                     backgroundColor: const Color.fromRGBO(37, 163, 255, 1),

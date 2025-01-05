@@ -114,7 +114,7 @@ class _SettingState extends State<Setting> {
             if (userName != null)
               Padding(
                 padding: const EdgeInsets.only(
-                    top: 28.0), //spacing text hey dengan dual campus
+                    top: 20.0), //spacing text hey dengan dual campus
                 child: Text(
                   'Hey $userName, welcome to the Dual Campus Application!',
                   style: const TextStyle(
@@ -238,39 +238,59 @@ class _SettingState extends State<Setting> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
-          title: const Text(
-            'Log Out',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: const Text('Are you sure you want to logout?'),
-          actions: <Widget>[
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey,
-              ),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginPage()),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-              ),
-              child: const Text(
+          content: Column(
+            mainAxisSize: MainAxisSize
+                .min, // Ensure the dialog only takes necessary space
+            children: [
+              const Text(
                 'Log Out',
-                style: TextStyle(color: Colors.black),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+                textAlign: TextAlign.center,
               ),
-            ),
-          ],
+              const SizedBox(
+                  height: 16), // Add spacing between the text and buttons
+              const Text(
+                'Are you sure you want to logout?',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24), // Add spacing before buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey,
+                    ),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const LoginPage()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                    ),
+                    child: const Text(
+                      'Log Out',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         );
       },
     );

@@ -103,8 +103,9 @@ class _DoctorProfileState extends State<DoctorProfile> {
        appBar: AppBar(
          title: const Text(
            'Doctor Profile',
-           style: TextStyle(fontWeight: FontWeight.bold),
+           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
          ),
+         centerTitle: true,
          backgroundColor: const Color.fromRGBO(37, 163, 255, 1),
          elevation: 0,
        ),
@@ -132,7 +133,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
                          ),
                        );
                      },
-                     icon: const Icon(Icons.edit),
+                     icon: const Icon(Icons.edit, color: Colors.white,),
                      label: const Text('Edit Profile'),
                      style: ElevatedButton.styleFrom(
                        foregroundColor: Colors.white,
