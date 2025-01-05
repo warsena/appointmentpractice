@@ -17,14 +17,16 @@ class Homepage extends StatefulWidget {
   const Homepage({super.key}); // Constructor
 
   @override
-  State<Homepage> createState() => _HomepageState(); // Creates the state for this widget
+  State<Homepage> createState() =>
+      _HomepageState(); // Creates the state for this widget
 }
 
 class _HomepageState extends State<Homepage> {
   int _selectedIndex = 0; // State variable for selected bottom navigation index
   String? notificationMessage; // Holds notification messages
   int appointmentCount = 0; // Tracks the number of appointments
-  StreamSubscription? appointmentSubscription; // Subscription for Firestore real-time updates
+  StreamSubscription?
+      appointmentSubscription; // Subscription for Firestore real-time updates
 
   // Handles bottom navigation item tap
   void _onItemTapped(int index) {
@@ -42,11 +44,13 @@ class _HomepageState extends State<Homepage> {
         return const AppointmentPage(); // Appointment tab
       case 2:
         return NotificationPage(
-            notificationMessage: notificationMessage ?? 'No Notifications Yet'); // Notification tab
+            notificationMessage: notificationMessage ??
+                'No Notifications Yet'); // Notification tab
       case 3:
         return const Setting(); // Settings tab
       default:
-        return const Center(child: Text('Unknown Page')); // Fallback for unknown tabs
+        return const Center(
+            child: Text('Unknown Page')); // Fallback for unknown tabs
     }
   }
 
@@ -112,75 +116,77 @@ class _HomepageState extends State<Homepage> {
 
   @override
   Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(
-      automaticallyImplyLeading: false, // Prevents the back arrow from being displayed
-      title: const Text(
-        'Dual Campus',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 24,
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading:
+            false, // Prevents the back arrow from being displayed
+        title: const Text(
+          'Dual Campus',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+          ),
         ),
+        centerTitle: true, // Centers the app bar title
+        backgroundColor: Colors.teal, // Teal background for the app bar
       ),
-      centerTitle: true, // Centers the app bar title
-      backgroundColor: Colors.teal, // Teal background for the app bar
-    ),
-    body: _getTabWidget(_selectedIndex), // Displays the selected tab's widget
-    bottomNavigationBar: BottomNavigationBar(
-      currentIndex: _selectedIndex, // Sets the current selected tab
-      onTap: _onItemTapped, // Calls _onItemTapped when a tab is tapped
-      type: BottomNavigationBarType.fixed, // Fixed bottom navigation style
-      selectedItemColor: Colors.teal, // Highlight color for selected tab
-      unselectedItemColor: Colors.grey, // Color for unselected tabs
-      items: [
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Home', // Home tab
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
-          label: 'Appointment', // Appointment tab
-        ),
-        BottomNavigationBarItem(
-          icon: Stack(
-            children: [
-              const Icon(Icons.notifications),
-              if (appointmentCount > 0) // Show badge only if count > 0
-                Positioned(
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(2), // Badge padding
-                    decoration: BoxDecoration(
-                      color: Colors.red, // Badge color
-                      borderRadius: BorderRadius.circular(10), // Rounded badge
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 12, // Minimum width for badge
-                      minHeight: 12, // Minimum height for badge
-                    ),
-                    child: Text(
-                      '$appointmentCount', // Display appointment count
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10, // Font size for badge text
-                        fontWeight: FontWeight.bold,
+      body: _getTabWidget(_selectedIndex), // Displays the selected tab's widget
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex, // Sets the current selected tab
+        onTap: _onItemTapped, // Calls _onItemTapped when a tab is tapped
+        type: BottomNavigationBarType.fixed, // Fixed bottom navigation style
+        selectedItemColor: Colors.teal, // Highlight color for selected tab
+        unselectedItemColor: Colors.grey, // Color for unselected tabs
+        items: [
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home', // Home tab
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: 'Appointment', // Appointment tab
+          ),
+          BottomNavigationBarItem(
+            icon: Stack(
+              children: [
+                const Icon(Icons.notifications),
+                if (appointmentCount > 0) // Show badge only if count > 0
+                  Positioned(
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(2), // Badge padding
+                      decoration: BoxDecoration(
+                        color: Colors.red, // Badge color
+                        borderRadius:
+                            BorderRadius.circular(10), // Rounded badge
                       ),
-                      textAlign: TextAlign.center,
+                      constraints: const BoxConstraints(
+                        minWidth: 12, // Minimum width for badge
+                        minHeight: 12, // Minimum height for badge
+                      ),
+                      child: Text(
+                        '$appointmentCount', // Display appointment count
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10, // Font size for badge text
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
+            label: 'Notification', // Notification tab
           ),
-          label: 'Notification', // Notification tab
-        ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
-          label: 'Settings', // Settings tab
-        ),
-      ],
-    ),
-  );
-}
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings', // Settings tab
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -197,7 +203,8 @@ class NotificationPage extends StatefulWidget {
       : super(key: key);
 
   @override
-  _NotificationPageState createState() => _NotificationPageState(); // State for NotificationPage
+  _NotificationPageState createState() =>
+      _NotificationPageState(); // State for NotificationPage
 }
 
 class _NotificationPageState extends State<NotificationPage> {
@@ -240,7 +247,8 @@ class _NotificationPageState extends State<NotificationPage> {
                               children: [
                                 Icon(Icons.notifications,
                                     color: Colors.teal[700]), // Icon
-                                const SizedBox(width: 12), // Space between icon and text
+                                const SizedBox(
+                                    width: 12), // Space between icon and text
                                 Expanded(
                                   child: Text(
                                     messages[index], // Display message text
@@ -409,27 +417,39 @@ class AppointmentPage extends StatelessWidget {
     return DefaultTabController(
       length: 3, // Specifies three tabs: Appointment, Upcoming, and History
       child: Scaffold(
-        backgroundColor: Colors.grey[100], // Sets the background color of the page
+        backgroundColor:
+            Colors.grey[100], // Sets the background color of the page
         appBar: AppBar(
-          automaticallyImplyLeading: false, // Prevents the back arrow from being displayed
+          automaticallyImplyLeading:
+              false, // Prevents the back arrow from being displayed
           backgroundColor: Colors.white, // Sets the app bar color
           elevation: 1, // Adds a slight shadow to the app bar
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(60), // Sets the height of the app bar's bottom
+            preferredSize: const Size.fromHeight(
+                20), // Sets the height of the app bar's bottom
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10), // Adds spacing around the tab bar
+              margin: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10), // Adds spacing around the tab bar
               decoration: BoxDecoration(
                 color: Colors.grey[200], // Background color for the tab bar
-                borderRadius: BorderRadius.circular(30), // Rounded corners for the tab bar
+                borderRadius: BorderRadius.circular(
+                    30), // Rounded corners for the tab bar
               ),
               child: TabBar(
-                indicatorSize: TabBarIndicatorSize.tab, // Sets indicator size to match the tabs
+                indicatorPadding: EdgeInsets.zero,
+                isScrollable: false, // Forces tabs to take equal width
+                labelPadding: const EdgeInsets.symmetric(
+                    horizontal: 10), // Adjusts padding
                 indicator: BoxDecoration(
-                  color: const Color(0xFF009FA0), // Color for the active tab indicator
-                  borderRadius: BorderRadius.circular(30), // Rounds the indicator corners
+                  color: const Color(
+                      0xFF009FA0), // Color for the active tab indicator
+                  borderRadius:
+                      BorderRadius.circular(20), // Rounds the indicator corners
                 ),
                 labelColor: Colors.white, // Color for active tab labels
-                unselectedLabelColor: Colors.blueGrey[600], // Color for inactive tab labels
+                unselectedLabelColor:
+                    Colors.blueGrey[600], // Color for inactive tab labels
                 tabs: const [
                   Tab(
                     child: Text(
@@ -509,7 +529,8 @@ class AppointmentPage extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.assignment_late_outlined,
-                          color: Color(0xFF009FA0), // Icon color for "no data" state
+                          color: Color(
+                              0xFF009FA0), // Icon color for "no data" state
                           size: 60,
                         ),
                         SizedBox(height: 20),
@@ -526,8 +547,10 @@ class AppointmentPage extends StatelessWidget {
                   );
                 }
 
-                final userData = snapshot.data!.data() as Map<String, dynamic>; // Extracts user data
-                final userCampus = userData['Campus'] as String; // Gets the user's campus
+                final userData = snapshot.data!.data()
+                    as Map<String, dynamic>; // Extracts user data
+                final userCampus =
+                    userData['Campus'] as String; // Gets the user's campus
 
                 return Padding(
                   padding: const EdgeInsets.all(20.0),
@@ -542,15 +565,18 @@ class AppointmentPage extends StatelessWidget {
                           color: Colors.blueGrey[800],
                         ),
                       ),
-                      const SizedBox(height: 20.0), // Spacing before campus buttons
-                      if (userCampus == 'Pekan') // Displays the Pekan campus button if applicable
+                      const SizedBox(
+                          height: 20.0), // Spacing before campus buttons
+                      if (userCampus ==
+                          'Pekan') // Displays the Pekan campus button if applicable
                         _buildCampusButton(
                           context,
                           'UMPSA Pekan', // Button label
                           const Appointmentpekan(), // Navigates to Pekan appointment page
                           Icons.location_city, // Icon for Pekan
                         )
-                      else if (userCampus == 'Gambang') // Displays Gambang campus button if applicable
+                      else if (userCampus ==
+                          'Gambang') // Displays Gambang campus button if applicable
                         _buildCampusButton(
                           context,
                           'UMPSA Gambang', // Button label
@@ -570,7 +596,6 @@ class AppointmentPage extends StatelessWidget {
     );
   }
 }
-
 
 class HistoryTab extends StatelessWidget {
   const HistoryTab({super.key});
@@ -670,7 +695,6 @@ class UpcomingTab extends StatefulWidget {
 class _UpcomingTabState extends State<UpcomingTab> {
   bool isBookingConfirmed = false;
   final Map<String, bool> confirmedAppointments = {};
-
 
   // Function to reschedule the appointment
   Future<void> _rescheduleAppointment(
@@ -833,7 +857,7 @@ class _UpcomingTabState extends State<UpcomingTab> {
   bool _isAppointmentPast(String appointmentDate) {
     DateTime appointmentDateTime = DateTime.parse(appointmentDate);
     DateTime currentDateTime = DateTime.now();
-    
+
     // Create DateTime for 11:59 PM of the appointment date
     DateTime appointmentEndTime = DateTime(
       appointmentDateTime.year,
@@ -842,7 +866,7 @@ class _UpcomingTabState extends State<UpcomingTab> {
       23,
       59,
     );
-    
+
     return currentDateTime.isAfter(appointmentEndTime);
   }
 
@@ -850,17 +874,21 @@ class _UpcomingTabState extends State<UpcomingTab> {
   bool _isAppointmentToday(String appointmentDate) {
     DateTime appointmentDateTime = DateTime.parse(appointmentDate);
     DateTime currentDateTime = DateTime.now();
-    
+
     return appointmentDateTime.year == currentDateTime.year &&
-           appointmentDateTime.month == currentDateTime.month &&
-           appointmentDateTime.day == currentDateTime.day;
+        appointmentDateTime.month == currentDateTime.month &&
+        appointmentDateTime.day == currentDateTime.day;
   }
 
   // Function to confirm booking with date check
-  void _confirmBooking(BuildContext context, Map<String, dynamic> appointment) async {
-    if (appointment['Appointment_ID'] == null || appointment['Appointment_ID'].isEmpty) {
+  void _confirmBooking(
+      BuildContext context, Map<String, dynamic> appointment) async {
+    if (appointment['Appointment_ID'] == null ||
+        appointment['Appointment_ID'].isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid appointment data. Unable to confirm booking.')),
+        const SnackBar(
+            content:
+                Text('Invalid appointment data. Unable to confirm booking.')),
       );
       return;
     }
@@ -868,7 +896,9 @@ class _UpcomingTabState extends State<UpcomingTab> {
     // Check if today is the appointment date
     if (!_isAppointmentToday(appointment['Appointment_Date'])) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Booking can only be confirmed on the appointment date')),
+        const SnackBar(
+            content:
+                Text('Booking can only be confirmed on the appointment date')),
       );
       return;
     }
@@ -895,8 +925,6 @@ class _UpcomingTabState extends State<UpcomingTab> {
       );
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -948,6 +976,8 @@ class _UpcomingTabState extends State<UpcomingTab> {
             return Card(
               elevation: 4,
               margin: const EdgeInsets.only(bottom: 16.0),
+              // Add color property with conditional check
+              color: isPastAppointment ? Colors.red[50] : Colors.white,
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16.0),
@@ -982,7 +1012,8 @@ class _UpcomingTabState extends State<UpcomingTab> {
                                     context,
                                     appointment['Appointment_Campus'],
                                     appointment['Appointment_ID']),
-                            icon: const Icon(Icons.schedule, size: 16),
+                            icon: const Icon(Icons.schedule,
+                                size: 16, color: Colors.black),
                             label: const Text('Reschedule'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blue,
@@ -994,31 +1025,42 @@ class _UpcomingTabState extends State<UpcomingTab> {
                                 ? null
                                 : () => _showCancelConfirmationDialog(
                                     context, appointment['Appointment_ID']),
-                            icon: const Icon(Icons.cancel, size: 16),
+                            icon: const Icon(Icons.cancel,
+                                size: 16, color: Colors.black),
                             label: const Text('Cancel'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red,
                               foregroundColor: Colors.white,
                             ),
                           ),
-                           ElevatedButton.icon(
-    onPressed: isPastAppointment || isConfirmed || !_isAppointmentToday(appointment['Appointment_Date'])
-        ? null
-        : () => _confirmBooking(context, appointment),
-    icon: const Icon(Icons.check, size: 16),
-    label: isConfirmed
-        ? const Text('Booking Confirmed')
-        : const Text('Confirm Booking'),
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.green,
-      foregroundColor: Colors.white,
-    ),
-  ),
                           ElevatedButton.icon(
-                            onPressed: isPastAppointment
+                            onPressed: isPastAppointment ||
+                                    isConfirmed ||
+                                    !_isAppointmentToday(
+                                        appointment['Appointment_Date'])
+                                ? null
+                                : () => _confirmBooking(context, appointment),
+                            icon: const Icon(Icons.check,
+                                size: 16, color: Colors.black),
+                            label: isConfirmed
+                                ? const Text('Booking Confirmed')
+                                : const Text('Confirm Booking'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            // Check both Firestore data and local state
+                            onPressed: isPastAppointment ||
+                                    isConfirmed ||
+                                    confirmedAppointments[
+                                            appointment['Appointment_ID']] ==
+                                        true
                                 ? null
                                 : () => _setReminder(context, appointment),
-                            icon: const Icon(Icons.notifications, size: 16),
+                            icon: const Icon(Icons.notifications,
+                                size: 16, color: Colors.black),
                             label: const Text('Set Reminder'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.orange,
