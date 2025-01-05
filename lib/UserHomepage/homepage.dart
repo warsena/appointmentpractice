@@ -1013,7 +1013,7 @@ class _UpcomingTabState extends State<UpcomingTab> {
                                     appointment['Appointment_Campus'],
                                     appointment['Appointment_ID']),
                             icon: const Icon(Icons.schedule,
-                                size: 16, color: Colors.black),
+                                size: 16, color: Colors.white),
                             label: const Text('Reschedule'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blue,
@@ -1026,7 +1026,7 @@ class _UpcomingTabState extends State<UpcomingTab> {
                                 : () => _showCancelConfirmationDialog(
                                     context, appointment['Appointment_ID']),
                             icon: const Icon(Icons.cancel,
-                                size: 16, color: Colors.black),
+                                size: 16, color: Colors.white),
                             label: const Text('Cancel'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red,
@@ -1041,7 +1041,7 @@ class _UpcomingTabState extends State<UpcomingTab> {
                                 ? null
                                 : () => _confirmBooking(context, appointment),
                             icon: const Icon(Icons.check,
-                                size: 16, color: Colors.black),
+                                size: 16, color: Colors.white),
                             label: isConfirmed
                                 ? const Text('Booking Confirmed')
                                 : const Text('Confirm Booking'),
@@ -1060,7 +1060,7 @@ class _UpcomingTabState extends State<UpcomingTab> {
                                 ? null
                                 : () => _setReminder(context, appointment),
                             icon: const Icon(Icons.notifications,
-                                size: 16, color: Colors.black),
+                                size: 16, color: Colors.white),
                             label: const Text('Set Reminder'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.orange,
