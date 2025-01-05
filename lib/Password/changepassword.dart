@@ -208,7 +208,7 @@ class _ChangepasswordState extends State<Changepassword> {
         ),
         backgroundColor: appBarColor, // Use dynamic color here
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
