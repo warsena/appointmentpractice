@@ -215,7 +215,8 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
         // App bar for the screen.
         title: const Text(
           'Edit Profile',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24), // Bold title text.
+          style: TextStyle(
+              fontWeight: FontWeight.bold, fontSize: 24), // Bold title text.
         ),
         centerTitle: true,
         backgroundColor: Colors.blue, // App bar background color.
@@ -276,7 +277,7 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
                 isEditable: false,
                 icon: Icons.work,
               ),
-              
+
               _buildTextField(
                 // Read-only field for campus.
                 label: 'Campus',
@@ -285,16 +286,19 @@ class _DoctorEditProfileState extends State<DoctorEditProfile> {
                 icon: Icons.location_city,
               ),
               const SizedBox(height: 24), // Add spacing before the save button.
-              SizedBox( // Full-width button for saving changes.
-                width: double.infinity,
+              Center(
+                // Center widget to position the button
                 child: ElevatedButton.icon(
-                  onPressed: _saveChanges, // Call the save changes method.
-                  icon: const Icon(Icons.save, color: Colors.white,), // Save icon.
-                  label: const Text('Save Changes'), // Button label.
-                  style: ElevatedButton.styleFrom( // Button styling.
+                  onPressed: _saveChanges,
+                  icon: const Icon(Icons.save, color: Colors.white),
+                  label: const Text('Save Changes'),
+                  style: ElevatedButton.styleFrom(
                     backgroundColor: const Color.fromRGBO(37, 163, 255, 1),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
