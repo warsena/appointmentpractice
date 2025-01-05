@@ -298,8 +298,9 @@ class _MedicalCertificateState extends State<MedicalCertificate> {
       appBar: AppBar(
         title: const Text(
           'Medical Certificate',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize:24),
         ),
+        centerTitle: true, // Added to center the title
         backgroundColor: Colors.blue,
         elevation: 2,
       ),

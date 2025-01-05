@@ -37,7 +37,7 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
       errorMessage = null;
       isIndexBuilding = false;
     });
-    
+
     try {
       User? user = _auth.currentUser;
       if (user != null) {
@@ -45,7 +45,7 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
             .collection('User')
             .doc(user.uid)
             .get();
-            
+
         if (userDoc.exists) {
           final name = (userDoc.data() as Map<String, dynamic>)['User_Name'];
           setState(() {
@@ -79,19 +79,20 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
         .where('User_Name', isEqualTo: name)
         .snapshots()
         .handleError((error) {
-          print('Stream error: $error');
-          if (error.toString().contains('indexes?create_composite=')) {
-            setState(() {
-              isIndexBuilding = true;
-              errorMessage = 'Database is being optimized. This may take a few minutes. You can still view your certificates below.';
-            });
-          } else {
-            setState(() {
-              errorMessage = 'Error loading certificates: $error';
-            });
-          }
-          return Stream.error(error);
+      print('Stream error: $error');
+      if (error.toString().contains('indexes?create_composite=')) {
+        setState(() {
+          isIndexBuilding = true;
+          errorMessage =
+              'Database is being optimized. This may take a few minutes. You can still view your certificates below.';
         });
+      } else {
+        setState(() {
+          errorMessage = 'Error loading certificates: $error';
+        });
+      }
+      return Stream.error(error);
+    });
   }
 
   Future<void> _retryWithOrderBy(String name) async {
@@ -122,7 +123,8 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
     }
   }
 
-  Future<void> _generateAndDownloadPDF(Map<String, dynamic> data, String documentId) async {
+  Future<void> _generateAndDownloadPDF(
+      Map<String, dynamic> data, String documentId) async {
     final pdf = pw.Document();
 
     // Load fonts with error handling
@@ -165,12 +167,25 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      _buildPDFInfoRow('Certificate ID', documentId.substring(0, 6), font, boldFont),
-                      _buildPDFInfoRow('Duration', '${data['MC_Duration']} days', font, boldFont),
-                      _buildPDFInfoRow('Doctor', data['Doctor_Name'] ?? 'Not specified', font, boldFont),
-                      _buildPDFInfoRow('Start Date', data['MC_Start_Date'] ?? 'Not specified', font, boldFont),
-                      _buildPDFInfoRow('End Date', data['MC_End_Date'] ?? 'Not specified', font, boldFont),
-                      
+                      _buildPDFInfoRow('Certificate ID',
+                          documentId.substring(0, 6), font, boldFont),
+                      _buildPDFInfoRow('Duration',
+                          '${data['MC_Duration']} days', font, boldFont),
+                      _buildPDFInfoRow(
+                          'Doctor',
+                          data['Doctor_Name'] ?? 'Not specified',
+                          font,
+                          boldFont),
+                      _buildPDFInfoRow(
+                          'Start Date',
+                          data['MC_Start_Date'] ?? 'Not specified',
+                          font,
+                          boldFont),
+                      _buildPDFInfoRow(
+                          'End Date',
+                          data['MC_End_Date'] ?? 'Not specified',
+                          font,
+                          boldFont),
                       pw.SizedBox(height: 15),
                       pw.Text(
                         'Appointment Details',
@@ -180,11 +195,26 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
                         ),
                       ),
                       pw.SizedBox(height: 10),
-                      _buildPDFInfoRow('Date', data['Appointment_Date'] ?? 'Not specified', font, boldFont),
-                      _buildPDFInfoRow('Time', data['Appointment_Time'] ?? 'Not specified', font, boldFont),
-                      _buildPDFInfoRow('Service', data['Appointment_Service'] ?? 'Not specified', font, boldFont),
-                      _buildPDFInfoRow('Reason', data['Appointment_Reason'] ?? 'Not specified', font, boldFont),
-
+                      _buildPDFInfoRow(
+                          'Date',
+                          data['Appointment_Date'] ?? 'Not specified',
+                          font,
+                          boldFont),
+                      _buildPDFInfoRow(
+                          'Time',
+                          data['Appointment_Time'] ?? 'Not specified',
+                          font,
+                          boldFont),
+                      _buildPDFInfoRow(
+                          'Service',
+                          data['Appointment_Service'] ?? 'Not specified',
+                          font,
+                          boldFont),
+                      _buildPDFInfoRow(
+                          'Reason',
+                          data['Appointment_Reason'] ?? 'Not specified',
+                          font,
+                          boldFont),
                       pw.SizedBox(height: 20),
                       pw.Text(
                         'Generated on: ${DateTime.now().toString().split('.')[0]}',
@@ -208,20 +238,20 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
       // Get temporary directory
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/MC_${documentId.substring(0, 6)}.pdf');
-      
+
       // Save the PDF
       await file.writeAsBytes(await pdf.save());
-      
+
       if (!mounted) return;
 
       // Share with platform-specific handling
       if (Platform.isAndroid) {
-       final result = await Share.shareXFiles(
-  [XFile(file.path)],
-  text: 'Medical Certificate for ${data['User_Name']}',
-  subject: 'MC_${data['User_Name']}.pdf',
-  sharePositionOrigin: const Rect.fromLTWH(0, 0, 10, 10),
-);
+        final result = await Share.shareXFiles(
+          [XFile(file.path)],
+          text: 'Medical Certificate for ${data['User_Name']}',
+          subject: 'MC_${data['User_Name']}.pdf',
+          sharePositionOrigin: const Rect.fromLTWH(0, 0, 10, 10),
+        );
 
         // Handle share result
         if (result.status == ShareResultStatus.dismissed) {
@@ -236,11 +266,10 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
         }
       } else {
         await Share.shareXFiles(
-  [XFile(file.path)],
-  text: 'Medical Certificate for ${data['User_Name']}',
-  subject: 'MC_${data['User_Name']}.pdf',
-);
-
+          [XFile(file.path)],
+          text: 'Medical Certificate for ${data['User_Name']}',
+          subject: 'MC_${data['User_Name']}.pdf',
+        );
       }
     } catch (e) {
       debugPrint('Error sharing PDF: $e');
@@ -255,7 +284,8 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
     }
   }
 
-  pw.Widget _buildPDFInfoRow(String label, String value, pw.Font font, pw.Font boldFont) {
+  pw.Widget _buildPDFInfoRow(
+      String label, String value, pw.Font font, pw.Font boldFont) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(vertical: 4),
       child: pw.Row(
@@ -285,13 +315,11 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
     );
   }
 
-
-
- Widget _buildMCCard(DocumentSnapshot document) {
+  Widget _buildMCCard(DocumentSnapshot document) {
     try {
       final data = document.data() as Map<String, dynamic>;
       String documentId = document.id;
-      
+
       // Add these debug prints
       print('Document Data: $data'); // Let's see what's in the data
       print('User Name: ${data['User_Name']}'); // Check if User_Name exists
@@ -312,7 +340,7 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
                 children: [
                   Flexible(
                     child: Text(
-                    'MC ${data['User_Name'] ?? 'Unknown'}',
+                      'MC ${data['User_Name'] ?? 'Unknown'}',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
@@ -323,13 +351,14 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.teal.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          data['MC_Duration']?.toString() != null 
+                          data['MC_Duration']?.toString() != null
                               ? '${data['MC_Duration']} days'
                               : 'Duration N/A',
                           style: const TextStyle(
@@ -341,7 +370,8 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
                       const SizedBox(width: 8),
                       IconButton(
                         icon: const Icon(Icons.share, color: Colors.teal),
-                        onPressed: () => _generateAndDownloadPDF(data, documentId),
+                        onPressed: () =>
+                            _generateAndDownloadPDF(data, documentId),
                         tooltip: 'Share MC',
                       ),
                     ],
@@ -349,15 +379,13 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
                 ],
               ),
               const Divider(height: 24),
-              
               _buildInfoRow('Doctor', _getDataSafely(data, 'Doctor_Name')),
               const SizedBox(height: 8),
-              _buildInfoRow('Start Date', _getDataSafely(data, 'MC_Start_Date')),
+              _buildInfoRow(
+                  'Start Date', _getDataSafely(data, 'MC_Start_Date')),
               const SizedBox(height: 4),
               _buildInfoRow('End Date', _getDataSafely(data, 'MC_End_Date')),
-              
               const Divider(height: 24),
-              
               Text(
                 'Appointment Details',
                 style: TextStyle(
@@ -371,9 +399,11 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
               const SizedBox(height: 4),
               _buildInfoRow('Time', _getDataSafely(data, 'Appointment_Time')),
               const SizedBox(height: 4),
-              _buildInfoRow('Service', _getDataSafely(data, 'Appointment_Service')),
+              _buildInfoRow(
+                  'Service', _getDataSafely(data, 'Appointment_Service')),
               const SizedBox(height: 4),
-              _buildInfoRow('Reason', _getDataSafely(data, 'Appointment_Reason')),
+              _buildInfoRow(
+                  'Reason', _getDataSafely(data, 'Appointment_Reason')),
             ],
           ),
         ),
@@ -438,17 +468,16 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
     }
   }
 
-
   Widget _buildErrorWidget(String message) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment .center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              message.contains('index') 
-                  ? Icons.hourglass_empty 
+              message.contains('index')
+                  ? Icons.hourglass_empty
                   : Icons.error_outline,
               size: 60,
               color: Colors.red[300],
@@ -475,7 +504,7 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
 
   Widget _buildIndexingBanner() {
     if (!isIndexBuilding) return const SizedBox.shrink();
-    
+
     return Container(
       padding: const EdgeInsets.all(8),
       color: Colors.blue[50],
@@ -530,29 +559,34 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
                     : userName == null
                         ? _buildErrorWidget('Unable to load user information')
                         : _certificatesStream == null
-                            ? _buildErrorWidget('Unable to initialize certificates stream')
+                            ? _buildErrorWidget(
+                                'Unable to initialize certificates stream')
                             : RefreshIndicator(
                                 onRefresh: _getCurrentUser,
                                 child: StreamBuilder<QuerySnapshot>(
                                   stream: _certificatesStream,
                                   builder: (context, snapshot) {
-                                    if (snapshot.connectionState == ConnectionState.waiting) {
-                                      return const Center(child: CircularProgressIndicator());
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return const Center(
+                                          child: CircularProgressIndicator());
                                     }
 
                                     if (snapshot.hasError && !isIndexBuilding) {
                                       return _buildErrorWidget(
-                                        'Error loading certificates: ${snapshot.error}'
-                                      );
+                                          'Error loading certificates: ${snapshot.error}');
                                     }
 
-                                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                                    if (!snapshot.hasData ||
+                                        snapshot.data!.docs.isEmpty) {
                                       return Center(
                                         child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
                                           children: [
                                             Icon(
-                                              Icons.medical_information_outlined,
+                                              Icons
+                                                  .medical_information_outlined,
                                               size: 64,
                                               color: Colors.grey[400],
                                             ),
@@ -578,21 +612,28 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
                                       );
                                     }
 
-                                    List<DocumentSnapshot> docs = snapshot.data!.docs;
+                                    List<DocumentSnapshot> docs =
+                                        snapshot.data!.docs;
                                     if (!isIndexBuilding) {
                                       // Sort manually if index is not being built
                                       docs.sort((a, b) {
-                                        final aData = a.data() as Map<String, dynamic>;
-                                        final bData = b.data() as Map<String, dynamic>;
-                                        final aDate = aData['Created_At'] as Timestamp?;
-                                        final bDate = bData['Created_At'] as Timestamp?;
-                                        if (aDate == null || bDate == null) return 0;
+                                        final aData =
+                                            a.data() as Map<String, dynamic>;
+                                        final bData =
+                                            b.data() as Map<String, dynamic>;
+                                        final aDate =
+                                            aData['Created_At'] as Timestamp?;
+                                        final bDate =
+                                            bData['Created_At'] as Timestamp?;
+                                        if (aDate == null || bDate == null)
+                                          return 0;
                                         return bDate.compareTo(aDate);
                                       });
                                     }
 
                                     return ListView.builder(
-                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 12),
                                       itemCount: docs.length,
                                       itemBuilder: (context, index) {
                                         return _buildMCCard(docs[index]);
