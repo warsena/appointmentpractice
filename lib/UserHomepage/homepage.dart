@@ -730,65 +730,78 @@ class _UpcomingTabState extends State<UpcomingTab> {
   }
 
   // Function to display confirmation dialog for canceling the appointment
-  void _showCancelConfirmationDialog(
-      BuildContext context, String appointmentId) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        backgroundColor: Colors.white,
-        title: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.warning_amber_outlined, color: Colors.orange, size: 30),
-            SizedBox(width: 10),
-            Text(
-              'Cancel Appointment',
-              style: TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-          ],
-        ),
-        content: const Text(
-          'Are you sure you want to cancel this appointment?',
-          style: TextStyle(color: Colors.black87, fontSize: 16),
-          textAlign: TextAlign.center,
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(); // Close the dialog
-            },
-            child: const Text(
-              'No',
-              style: TextStyle(
-                color: Colors.blue,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(); // Close the dialog
-              _cancelAppointment(context, appointmentId); // Cancel appointment
-            },
-            child: const Text(
-              'Yes',
-              style: TextStyle(
-                color: Colors.red,
-                fontWeight: FontWeight.bold,
-              ),
+  void _showCancelConfirmationDialog(BuildContext context, String appointmentId) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      backgroundColor: Colors.white,
+      title: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.warning_amber_outlined, color: Colors.orange, size: 30),
+          SizedBox(width: 10),
+          Text(
+            'Cancel Appointment',
+            style: TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
             ),
           ),
         ],
       ),
-    );
-  }
+      content: const Text(
+        'Are you sure you want to cancel this appointment?',
+        style: TextStyle(color: Colors.black87, fontSize: 16),
+        textAlign: TextAlign.center,
+      ),
+      actionsAlignment: MainAxisAlignment.center, // Center align the buttons
+      actions: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center, // Center the row of buttons
+          children: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+              ),
+              child: const Text(
+                'No',
+                style: TextStyle(
+                  color: Colors.blue,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(width: 16), // Add space between buttons
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _cancelAppointment(context, appointmentId);
+              },
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+              ),
+              child: const Text(
+                'Yes',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+      actionsPadding: const EdgeInsets.only(bottom: 16), // Add padding at the bottom
+    ),
+  );
+}
 
   // Function to show a generic confirmation dialog
   void _showConfirmationDialog(BuildContext context, String title,
