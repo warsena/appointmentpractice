@@ -126,7 +126,8 @@ class _SettingState extends State<Setting> {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                UserMedicalCertificate(mcId: 'some_MC_ID_here'),
+                                UserMedicalCertificate(mcId: 
+"C15vBwlxTMxf0wgILnSb"),
                           ),
                         );
                       },

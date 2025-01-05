@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:appointmentpractice/login_page.dart';
-import 'package:appointmentpractice/Profile/doctorprofile.dart';
 import 'package:appointmentpractice/Schedule/doctorschedule.dart';
-import 'package:appointmentpractice/Profile/setting.dart'; // Import Setting page
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:appointmentpractice/Profile/setting.dart';
+import 'package:appointmentpractice/MedicalCertificate/listmedicalcertificate.dart';
 
 class Doctorhomepage extends StatefulWidget {
   const Doctorhomepage({super.key});
@@ -27,7 +24,7 @@ class _DoctorhomepageState extends State<Doctorhomepage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        centerTitle: true, // Centers the title text
+        centerTitle: true,
         backgroundColor: const Color.fromRGBO(37, 163, 255, 1),
       ),
       body: IndexedStack(
@@ -36,6 +33,7 @@ class _DoctorhomepageState extends State<Doctorhomepage> {
           _buildHomePage(),
           Container(), // Placeholder for direct navigation to DoctorSchedule
           Container(), // Placeholder for direct navigation to Setting page
+          Container(), // Placeholder for medical certificate page
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -48,10 +46,17 @@ class _DoctorhomepageState extends State<Doctorhomepage> {
               MaterialPageRoute(builder: (context) => DoctorSchedule()),
             );
           } else if (index == 2) {
-            // Navigate to the Setting page
+            // Navigate to the doctor medical certificate page
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const Setting()), // Replace with your Setting page widget
+              MaterialPageRoute(
+                  builder: (context) => const ListMedicalCertificate()),
+            );
+          } else if (index == 3) {
+            // Navigate to the setting page
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const Setting()),
             );
           } else {
             setState(() {
@@ -59,20 +64,34 @@ class _DoctorhomepageState extends State<Doctorhomepage> {
             });
           }
         },
-        selectedItemColor: const Color.fromRGBO(37, 163, 255, 1), // Custom blue color
-        unselectedItemColor: Colors.grey, // Optional: grey for unselected items
+        selectedItemColor: const Color.fromRGBO(37, 163, 255, 1),
+        unselectedItemColor: Colors.grey,
+        selectedFontSize: 12.0,
+        unselectedFontSize: 12.0,
+        iconSize: 24.0,
+        type: BottomNavigationBarType.fixed,
+        elevation: 8.0, // Adds a shadow to the bottom navigation bar
+        backgroundColor: Colors.white, // Explicit background color
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
+            backgroundColor: Colors.white,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.schedule),
             label: 'Schedule',
+            backgroundColor: Colors.white,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment_late),
+            label: 'Certificate',
+            backgroundColor: Colors.white,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Settings',
+            backgroundColor: Colors.white,
           ),
         ],
       ),
@@ -80,13 +99,22 @@ class _DoctorhomepageState extends State<Doctorhomepage> {
   }
 
   Widget _buildHomePage() {
-    return const Center(
-      child: Align(
-        alignment: Alignment.center,
-        child: Text(
-          'Welcome Doctor to the Dual Campus Booking',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+    return const Padding(
+      padding: EdgeInsets.all(16.0),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Text(
+              'Welcome Doctor to the Dual Campus Booking',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 20), // Adds some spacing below the text
+          ],
         ),
       ),
     );
