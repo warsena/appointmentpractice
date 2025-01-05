@@ -59,77 +59,184 @@ class _ListMedicalCertificateState extends State<ListMedicalCertificate> {
   }
 
   // Show delete confirmation dialog
-  Future<void> _showDeleteConfirmation(String mcId) async {
-    return showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.warning, color: Colors.red),
-              SizedBox(width: 8),
-              Text('Confirm Delete'),
-            ],
-          ),
-          content: const Text(
-            'Are you sure you want to delete this Medical Certificate? This action cannot be undone.',
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          actions: [
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.of(context).pop(),
+ Future<void> _showDeleteConfirmation(String mcId) async {
+  return showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Row(
+          children: [
+            Icon(
+              Icons.warning_rounded, // Changed to rounded warning icon
+              color: Color(0xFFDC2626), // Warmer red color
+              size: 28,
             ),
-            TextButton(
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
-              onPressed: () {
-                Navigator.of(context).pop();
-                _deleteMC(mcId);
-              },
+            SizedBox(width: 12),
+            Text(
+              'Confirm Delete',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1F2937),
+              ),
             ),
           ],
-        );
-      },
-    );
-  }
+        ),
+        content: const Text(
+          'Are you sure you want to delete this Medical Certificate? This action cannot be undone.',
+          style: TextStyle(
+            fontSize: 16,
+            color: Color(0xFF4B5563),
+            height: 1.5,
+          ),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 8,
+        actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center, // Centers the buttons
+            children: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(
+                    color: Color(0xFF6B7280),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16), // Space between buttons
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _deleteMC(mcId);
+                },
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  backgroundColor: Color(0xFFFEE2E2), // Light red background
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(
+                    color: Color(0xFFDC2626), // Matching red color
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+        actionsPadding: const EdgeInsets.fromLTRB(8, 0, 8, 16), // Added bottom padding
+        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      );
+    },
+  );
+}
 
   // Show edit confirmation dialog
-  Future<void> _showEditConfirmation(DocumentSnapshot doc) async {
-    return showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Row(
-            children: [
-              Icon(Icons.edit, color: Colors.blue),
-              SizedBox(width: 8),
-              Text('Confirm Edit'),
-            ],
-          ),
-          content: const Text(
-              'Are you sure you want to edit this Medical Certificate?'),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          actions: [
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.of(context).pop(),
+ Future<void> _showEditConfirmation(DocumentSnapshot doc) async {
+  return showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Row(
+          children: [
+            Icon(
+              Icons.edit_note,
+              color: Color(0xFF2196F3),
+              size: 28,
             ),
-            TextButton(
-              child: const Text('Edit', style: TextStyle(color: Colors.blue)),
-              onPressed: () {
-                Navigator.of(context).pop();
-                _editMC(context, doc);
-              },
+            SizedBox(width: 12),
+            Text(
+              'Confirm Edit',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1F2937),
+              ),
             ),
           ],
-        );
-      },
-    );
-  }
+        ),
+        content: const Text(
+          'Are you sure you want to edit this Medical Certificate?',
+          style: TextStyle(
+            fontSize: 16,
+            color: Color(0xFF4B5563),
+            height: 1.5,
+          ),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 8,
+        actions: [
+          // Wrap actions in a Row with mainAxisAlignment
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center, // This centers the buttons
+            children: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(
+                    color: Color(0xFF6B7280),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16), // Add spacing between buttons
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _editMC(context, doc);
+                },
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Edit',
+                  style: TextStyle(
+                    color: Color(0xFF2196F3),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+        actionsPadding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      );
+    },
+  );
+}
 
   // Date picker function
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
@@ -444,8 +551,9 @@ class _ListMedicalCertificateState extends State<ListMedicalCertificate> {
       appBar: AppBar(
         title: const Text(
           'Medical Certificates',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 24),
         ),
+        centerTitle: true,
         backgroundColor: Colors.blue,
         elevation: 2,
       ),
