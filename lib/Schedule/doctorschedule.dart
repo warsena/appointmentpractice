@@ -285,7 +285,7 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Icon(Icons.add_circle_outline,
-                                                  size: 20),
+                                                  size: 20, color: Colors.white),
                                               SizedBox(width: 8),
                                               Text(
                                                 'Create MC',
@@ -325,12 +325,12 @@ class _DoctorScheduleState extends State<DoctorSchedule> {
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
-            fontSize: 20,
+            fontSize: 24,
           ),
         ),
         backgroundColor: primaryColor,
         elevation: 0,
-        centerTitle: false,
+        centerTitle: true,
       ),
       body: isLoading
           ? Center(
