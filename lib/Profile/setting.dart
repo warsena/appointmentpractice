@@ -46,43 +46,43 @@ class _SettingState extends State<Setting> {
     }
   }
 
- // In your _SettingState class, modify the _navigateToMedicalCertificate function:
+  // In your _SettingState class, modify the _navigateToMedicalCertificate function:
 
-void _navigateToMedicalCertificate() async {
-  try {
-    // First, get the current user's ID
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) return;
+  void _navigateToMedicalCertificate() async {
+    try {
+      // First, get the current user's ID
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return;
 
-    // Query Firestore for medical certificates where the user ID matches
-    final QuerySnapshot mcSnapshot = await FirebaseFirestore.instance
-        .collection('Medical_Certificate')
-        .where('User_ID', isEqualTo: currentUser.uid) // Changed from 'userId' to 'User_ID'
-        .get();
+      // Query Firestore for medical certificates where the user ID matches
+      final QuerySnapshot mcSnapshot = await FirebaseFirestore.instance
+          .collection('Medical_Certificate')
+          .where('User_ID',
+              isEqualTo: currentUser.uid) // Changed from 'userId' to 'User_ID'
+          .get();
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    // Navigate to UserMedicalCertificate regardless of whether there are certificates or not
-    // The UserMedicalCertificate widget will handle the empty state
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const UserMedicalCertificate(),
-      ),
-    );
+      // Navigate to UserMedicalCertificate regardless of whether there are certificates or not
+      // The UserMedicalCertificate widget will handle the empty state
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const UserMedicalCertificate(),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
 
-  } catch (e) {
-    if (!mounted) return;
-    
-    print('Error navigating to medical certificate: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error: ${e.toString()}'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+      print('Error navigating to medical certificate: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -90,24 +90,22 @@ void _navigateToMedicalCertificate() async {
         userType == 'Doctor' ? Colors.blue.shade100 : Colors.teal.shade100;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Dual Campus',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: userType == 'Doctor'
-            ? const Color.fromRGBO(37, 163, 255, 1)
-            : Colors.transparent,
-        elevation: 0,
-        iconTheme: userType == 'Doctor'
-            ? const IconThemeData(color: Colors.black)
-            : const IconThemeData(color: Colors.transparent),
-        leading: userType == 'Doctor' ? null : null,
-      ),
+      // Only show AppBar for Doctor, remove it for Student and Lecturer
+      appBar: userType == 'Doctor'
+          ? AppBar(
+              title: const Text(
+                'Dual Campus',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              centerTitle: true,
+              backgroundColor: const Color.fromRGBO(37, 163, 255, 1),
+              elevation: 0,
+              iconTheme: const IconThemeData(color: Colors.black),
+            )
+          : null, // No AppBar for Student and Lecturer
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.0),
         child: Column(
@@ -115,7 +113,8 @@ void _navigateToMedicalCertificate() async {
           children: [
             if (userName != null)
               Padding(
-                padding: const EdgeInsets.only(top: 8.0),
+                padding: const EdgeInsets.only(
+                    top: 28.0), //spacing text hey dengan dual campus
                 child: Text(
                   'Hey $userName, welcome to the Dual Campus Application!',
                   style: const TextStyle(
