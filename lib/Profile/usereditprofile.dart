@@ -2,20 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
-class UserEditProfile extends StatefulWidget {     // Create a stateful widget for the user edit profile page
-  const UserEditProfile({super.key});             // Constructor with key parameter
+class UserEditProfile extends StatefulWidget {
+  // Create a stateful widget for the user edit profile page
+  const UserEditProfile({super.key}); // Constructor with key parameter
 
   // Create the mutable state for this widget
   @override
   State<UserEditProfile> createState() => _UserEditProfileState();
 }
 
-class _UserEditProfileState extends State<UserEditProfile> {          // Define the state for the UserEditProfile widget
-  
-  final FirebaseAuth _auth = FirebaseAuth.instance;                   // Initialize Firebase Authentication instance
-  
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;    // Initialize Firebase Firestore instance
+class _UserEditProfileState extends State<UserEditProfile> {
+  // Define the state for the UserEditProfile widget
+
+  final FirebaseAuth _auth =
+      FirebaseAuth.instance; // Initialize Firebase Authentication instance
+
+  final FirebaseFirestore _firestore =
+      FirebaseFirestore.instance; // Initialize Firebase Firestore instance
 
   // Create text controllers for each editable field
   final TextEditingController _nameController = TextEditingController();
@@ -200,7 +203,7 @@ class _UserEditProfileState extends State<UserEditProfile> {          // Define 
       // App bar configuration
       appBar: AppBar(
         title: const Text(
-          'User Profile',
+          'User Edit Profile',
           style: TextStyle(
             fontWeight: FontWeight.bold,
           ),
@@ -256,12 +259,12 @@ class _UserEditProfileState extends State<UserEditProfile> {          // Define 
               ),
               const SizedBox(height: 24),
               // Save changes button
-              SizedBox(
-                width: double.infinity,
+              Center(
+                // Center widget to position the button
                 child: ElevatedButton.icon(
                   onPressed: _saveChanges,
                   icon: const Icon(Icons.edit, color: Colors.white),
-                  label: const Text('Edit Profile'),
+                  label: const Text('Save Changes'),
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
                     backgroundColor: Colors.teal,
