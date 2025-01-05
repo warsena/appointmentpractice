@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:printing/printing.dart';
+import 'dart:io';
 
 class UserMedicalCertificate extends StatefulWidget {
   const UserMedicalCertificate({super.key});
@@ -67,8 +73,8 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
     }
   }
 
+
   void _initializeCertificatesStream(String name) {
-    // First try without orderBy
     _certificatesStream = FirebaseFirestore.instance
         .collection('Medical_Certificate')
         .where('User_Name', isEqualTo: name)
@@ -89,9 +95,8 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
         });
   }
 
-  Future<void> _retryWithOrderBy(String name) async {
+ Future<void> _retryWithOrderBy(String name) async {
     try {
-      // Try the query with orderBy
       await FirebaseFirestore.instance
           .collection('Medical_Certificate')
           .where('User_Name', isEqualTo: name)
@@ -99,7 +104,6 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
           .limit(1)
           .get();
 
-      // If successful, update the stream
       setState(() {
         _certificatesStream = FirebaseFirestore.instance
             .collection('Medical_Certificate')
@@ -119,7 +123,148 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
     }
   }
 
-  Widget _buildMCCard(DocumentSnapshot document) {
+  Future<void> _generateAndDownloadPDF(Map<String, dynamic> data, String documentId) async {
+    final pdf = pw.Document();
+
+    // Load fonts with error handling
+    pw.Font font;
+    pw.Font boldFont;
+    try {
+      font = await PdfGoogleFonts.nunitoRegular();
+      boldFont = await PdfGoogleFonts.nunitoBold();
+    } catch (e) {
+      // Fallback to default font if Google Fonts fail to load
+      font = pw.Font.helvetica();
+      boldFont = pw.Font.helveticaBold();
+    }
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          return pw.Container(
+            padding: const pw.EdgeInsets.all(20),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Center(
+                  child: pw.Text(
+                    'Medical Certificate',
+                    style: pw.TextStyle(
+                      font: boldFont,
+                      fontSize: 24,
+                    ),
+                  ),
+                ),
+                pw.SizedBox(height: 20),
+                pw.Container(
+                  padding: const pw.EdgeInsets.all(10),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(),
+                    borderRadius: pw.BorderRadius.circular(8),
+                  ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      _buildPDFInfoRow('Certificate ID', documentId.substring(0, 6), font, boldFont),
+                      _buildPDFInfoRow('Duration', '${data['MC_Duration']} days', font, boldFont),
+                      _buildPDFInfoRow('Doctor', data['Doctor_Name'] ?? 'Not specified', font, boldFont),
+                      _buildPDFInfoRow('Start Date', data['MC_Start_Date'] ?? 'Not specified', font, boldFont),
+                      _buildPDFInfoRow('End Date', data['MC_End_Date'] ?? 'Not specified', font, boldFont),
+                      
+                      pw.SizedBox(height: 15),
+                      pw.Text(
+                        'Appointment Details',
+                        style: pw.TextStyle(
+                          font: boldFont,
+                          fontSize: 16,
+                        ),
+                      ),
+                      pw.SizedBox(height: 10),
+                      _buildPDFInfoRow('Date', data['Appointment_Date'] ?? 'Not specified', font, boldFont),
+                      _buildPDFInfoRow('Time', data['Appointment_Time'] ?? 'Not specified', font, boldFont),
+                      _buildPDFInfoRow('Service', data['Appointment_Service'] ?? 'Not specified', font, boldFont),
+                      _buildPDFInfoRow('Reason', data['Appointment_Reason'] ?? 'Not specified', font, boldFont),
+
+                      pw.SizedBox(height: 20),
+                      pw.Text(
+                        'Generated on: ${DateTime.now().toString().split('.')[0]}',
+                        style: pw.TextStyle(
+                          font: font,
+                          fontSize: 10,
+                          color: PdfColors.grey600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+
+    try {
+      // Get temporary directory
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/MC_${documentId.substring(0, 6)}.pdf');
+      
+      // Save the PDF
+      await file.writeAsBytes(await pdf.save());
+      
+      // Share the PDF
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: 'Medical Certificate',
+        subject: 'MC_${documentId.substring(0, 6)}.pdf',
+      );
+    } catch (e) {
+      debugPrint('Error sharing PDF: $e');
+      // Show error snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error sharing PDF: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  pw.Widget _buildPDFInfoRow(String label, String value, pw.Font font, pw.Font boldFont) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 4),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.SizedBox(
+            width: 120,
+            child: pw.Text(
+              '$label:',
+              style: pw.TextStyle(
+                font: boldFont,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          pw.Expanded(
+            child: pw.Text(
+              value,
+              style: pw.TextStyle(
+                font: font,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+ Widget _buildMCCard(DocumentSnapshot document) {
     try {
       final data = document.data() as Map<String, dynamic>;
       String documentId = document.id;
@@ -148,21 +293,31 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
                       ),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      data['MC_Duration']?.toString() != null 
-                          ? '${data['MC_Duration']} days'
-                          : 'Duration N/A',
-                      style: const TextStyle(
-                        color: Colors.blue,
-                        fontWeight: FontWeight.bold,
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          data['MC_Duration']?.toString() != null 
+                              ? '${data['MC_Duration']} days'
+                              : 'Duration N/A',
+                          style: const TextStyle(
+                            color: Colors.blue,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.share, color: Colors.blue),
+                        onPressed: () => _generateAndDownloadPDF(data, documentId),
+                        tooltip: 'Share MC',
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -256,12 +411,19 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
     }
   }
 
+
+
+
+
+  
+  
+
   Widget _buildErrorWidget(String message) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment .center,
           children: [
             Icon(
               message.contains('index') 

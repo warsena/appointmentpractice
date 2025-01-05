@@ -5,7 +5,7 @@ import 'package:appointmentpractice/login_page.dart';
 import 'package:appointmentpractice/Password/changepassword.dart';
 import 'package:appointmentpractice/Profile/userprofile.dart';
 import 'package:appointmentpractice/Profile/doctorprofile.dart';
-import 'package:appointmentpractice/MedicalCertificate/usermedicalcertificate.dart'; // Import the new page
+import 'package:appointmentpractice/MedicalCertificate/usermedicalcertificate.dart';
 
 class Setting extends StatefulWidget {
   const Setting({super.key});
@@ -15,30 +15,30 @@ class Setting extends StatefulWidget {
 }
 
 class _SettingState extends State<Setting> {
-  String? userType; // Variable to store the user type
-  String? userName; // Variable to store the user name
+  String? userType;
+  String? userName;
+  String? userId;
 
   @override
   void initState() {
     super.initState();
-    _fetchUserData(); // Fetch the user data when the widget initializes
+    _fetchUserData();
   }
 
   Future<void> _fetchUserData() async {
     try {
-      // Get the current user ID
-      final userId = FirebaseAuth.instance.currentUser?.uid;
+      final currentUser = FirebaseAuth.instance.currentUser;
+      userId = currentUser?.uid;
 
       if (userId != null) {
-        // Fetch the user's data from Firestore
         final userDoc = await FirebaseFirestore.instance
             .collection('User')
             .doc(userId)
             .get();
 
         setState(() {
-          userType = userDoc['User_Type']; // Get the User_Type field
-          userName = userDoc['User_Name']; // Get the User_Name field
+          userType = userDoc['User_Type'];
+          userName = userDoc['User_Name'];
         });
       }
     } catch (e) {
@@ -46,38 +46,73 @@ class _SettingState extends State<Setting> {
     }
   }
 
+ // In your _SettingState class, modify the _navigateToMedicalCertificate function:
+
+void _navigateToMedicalCertificate() async {
+  try {
+    // First, get the current user's ID
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return;
+
+    // Query Firestore for medical certificates where the user ID matches
+    final QuerySnapshot mcSnapshot = await FirebaseFirestore.instance
+        .collection('Medical_Certificate')
+        .where('User_ID', isEqualTo: currentUser.uid) // Changed from 'userId' to 'User_ID'
+        .get();
+
+    if (!mounted) return;
+
+    // Navigate to UserMedicalCertificate regardless of whether there are certificates or not
+    // The UserMedicalCertificate widget will handle the empty state
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const UserMedicalCertificate(),
+      ),
+    );
+
+  } catch (e) {
+    if (!mounted) return;
+    
+    print('Error navigating to medical certificate: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error: ${e.toString()}'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+}
+
   @override
   Widget build(BuildContext context) {
-    // Determine the background color for Profile and Change Password items
     Color itemBackgroundColor =
         userType == 'Doctor' ? Colors.blue.shade100 : Colors.teal.shade100;
 
     return Scaffold(
       appBar: AppBar(
-  title: const Text(
-    'Dual Campus',
-    style: TextStyle(
-      color: Colors.black,
-      fontWeight: FontWeight.bold,
-    ),
-  ),
-  centerTitle: true, // Ensures the title stays in the center
-  backgroundColor: userType == 'Doctor'
-      ? const Color.fromRGBO(37, 163, 255, 1)
-      : Colors.transparent,
-  elevation: 0,
-  iconTheme: userType == 'Doctor'
-      ? const IconThemeData(color: Colors.black)
-      : const IconThemeData(color: Colors.transparent),
-  leading: userType == 'Doctor' ? null : null,
-),
-
+        title: const Text(
+          'Dual Campus',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: userType == 'Doctor'
+            ? const Color.fromRGBO(37, 163, 255, 1)
+            : Colors.transparent,
+        elevation: 0,
+        iconTheme: userType == 'Doctor'
+            ? const IconThemeData(color: Colors.black)
+            : const IconThemeData(color: Colors.transparent),
+        leading: userType == 'Doctor' ? null : null,
+      ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Display the personalized welcome message
             if (userName != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
@@ -90,7 +125,6 @@ class _SettingState extends State<Setting> {
                 ),
               ),
             const SizedBox(height: 16),
-            // Settings Options
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
@@ -115,22 +149,12 @@ class _SettingState extends State<Setting> {
                       }
                     },
                   ),
-                  // Medical Certificate Box (conditionally rendered)
                   if (userType == 'Student' || userType == 'Lecturer')
                     _buildSettingItem(
                       icon: Icons.medical_services,
                       title: 'Medical Certificate',
                       backgroundColor: itemBackgroundColor,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                UserMedicalCertificate(mcId: 
-"C15vBwlxTMxf0wgILnSb"),
-                          ),
-                        );
-                      },
+                      onTap: _navigateToMedicalCertificate,
                     ),
                   _buildSettingItem(
                     icon: Icons.lock_outline,
