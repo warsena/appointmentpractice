@@ -265,7 +265,7 @@ class _RescheduleAppointmentState extends State<RescheduleAppointment> {
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
         centerTitle: false,
-        backgroundColor: const Color(0xFF009FA0),
+        backgroundColor: Colors.teal,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -284,7 +284,7 @@ class _RescheduleAppointmentState extends State<RescheduleAppointment> {
                   height: 54,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF009FA0),
+                      backgroundColor: Colors.teal,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.0),
                       ),

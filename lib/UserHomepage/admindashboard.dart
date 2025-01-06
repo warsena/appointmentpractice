@@ -26,6 +26,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         title: const Text(
           'Admin Dashboard', // Title for the app bar
           style: TextStyle(fontWeight: FontWeight.bold), // Bold style for title

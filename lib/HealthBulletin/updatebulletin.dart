@@ -126,6 +126,7 @@ class _UpdateBulletinState extends State<UpdateBulletin> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         title: const Text('Update Bulletin', style: TextStyle(fontWeight: FontWeight.bold)),  // AppBar title
         backgroundColor: const Color.fromARGB(255, 100, 200, 185),  // AppBar background color
         elevation: 0,  // Remove shadow from AppBar

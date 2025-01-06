@@ -26,6 +26,7 @@ class _ForgotpassState extends State<Forgotpass> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
+        centerTitle: true,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios, color: Colors.teal[600]),
           onPressed: () => Navigator.of(context).pop(),
@@ -149,7 +150,7 @@ class _ForgotpassState extends State<Forgotpass> {
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password reset email sent!'), backgroundColor: Colors.green),
+        const SnackBar(content: Text('Password reset email sent!'), backgroundColor: Colors.grey),
       );
 
       // Optionally, navigate to a different screen after successful reset

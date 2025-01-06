@@ -111,6 +111,7 @@ class _UserListState extends State<UserList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         title: const Text(
           'User List',
           style: TextStyle(fontWeight: FontWeight.bold),
@@ -332,11 +333,11 @@ class _UserListState extends State<UserList> {
                 size: 24,
               ),
               SizedBox(width: 8),
-              Text('Delete Doctor'),
+              Text('Delete User'),
             ],
           ),
           content: const Text(
-            'Are you sure you want to delete this doctor? This action cannot be undone.',
+            'Are you sure you want to delete this user? This action cannot be undone.',
             style: TextStyle(fontSize: 14),
           ),
           actions: [

@@ -129,6 +129,7 @@ class _CreateBulletinState extends State<CreateBulletin> {
 
       // App bar with custom styling
       appBar: AppBar(
+        centerTitle: true,
         title: const Text(
           'Create Bulletin',
           style: TextStyle(fontWeight: FontWeight.bold),

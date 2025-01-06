@@ -104,6 +104,7 @@ class _DoctorListState extends State<DoctorList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         title: const Text(
           'Doctor List',
           style: TextStyle(
