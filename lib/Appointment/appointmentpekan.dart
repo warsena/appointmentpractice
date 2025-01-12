@@ -105,90 +105,111 @@ class _AppointmentpekanState extends State<Appointmentpekan> {
     }
   }
 
-  Future<void> _bookAppointment() async {
-    try {
-      // Check if the user is logged in
-      final User? currentUser = FirebaseAuth.instance.currentUser;
+ Future<void> _bookAppointment() async {
+  try {
+    final User? currentUser = FirebaseAuth.instance.currentUser;
 
-      if (currentUser == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Please log in to book an appointment')),
-          );
-        }
-        return;
-      }
-
-      if (selectedTimeslot.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select a timeslot')),
-        );
-        return;
-      }
-
-      String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
-
-      // Check for existing bookings
-      QuerySnapshot existingBookings = await FirebaseFirestore.instance
-          .collection('Appointment')
-          .where('Appointment_Date', isEqualTo: formattedDate)
-          .where('Appointment_Time', isEqualTo: selectedTimeslot)
-          .where('Appointment_Service', isEqualTo: selectedService)
-          .where('Appointment_Campus', isEqualTo: selectedCampus)
-          .get();
-
-      if (existingBookings.docs.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'This timeslot has just been booked. Please select another timeslot.'),
-          ),
-        );
-        await _fetchAvailableTimeslots();
-        return;
-      }
-
-      // Add a new appointment to Firestore
-      final newAppointmentRef =
-          FirebaseFirestore.instance.collection('Appointment').doc();
-
-      // Get the reason from the controller
-      String appointmentReason = reasonController.text.trim();
-
-      // Create the appointment data
-      final appointmentData = {
-        'Appointment_ID':
-            newAppointmentRef.id, // Use the document ID as Appointment_ID
-        'Appointment_Date': formattedDate,
-        'Appointment_Time': selectedTimeslot,
-        'Appointment_Campus': selectedCampus,
-        'Appointment_Service': selectedService,
-        'Appointment_Reason': appointmentReason, // Store the reason
-        'Created_At': FieldValue.serverTimestamp(),
-        'User_ID': currentUser.uid, // Use the current user's UID
-      };
-
-      // Add the appointment to Firestore
-      await newAppointmentRef
-          .set(appointmentData); // Use set() with the document reference
-
+    if (currentUser == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Your booking has been successfully booked.')),
+              content: Text('Please log in to book an appointment')),
         );
-        Navigator.pop(context);
       }
-    } catch (e) {
-      print('Error booking appointment: $e');
-      if (mounted) {
+      return;
+    }
+
+    if (selectedTimeslot.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a timeslot')),
+      );
+      return;
+    }
+
+    String formattedDate = DateFormat('yyyy-MM-dd').format(selectedDate);
+
+    // Get the current time
+    DateTime now = DateTime.now();
+
+    // Check if booking is being made for today and if the current time is past all available slots
+    if (formattedDate == DateFormat('yyyy-MM-dd').format(now)) {
+      List<String> allTimeslots = serviceTimeslots[selectedService] ?? [];
+      List<DateTime> slotTimes = allTimeslots.map((slot) {
+        return DateFormat.jm().parse(slot);
+      }).toList();
+
+      DateTime latestSlotTime = DateTime(
+        now.year,
+        now.month,
+        now.day,
+        slotTimes.last.hour,
+        slotTimes.last.minute,
+      );
+
+      if (now.isAfter(latestSlotTime)) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error booking appointment: $e')),
+          const SnackBar(content: Text('Booking for today is closed.')),
         );
+        return;
       }
     }
+
+    // Check for existing bookings
+    QuerySnapshot existingBookings = await FirebaseFirestore.instance
+        .collection('Appointment')
+        .where('Appointment_Date', isEqualTo: formattedDate)
+        .where('Appointment_Time', isEqualTo: selectedTimeslot)
+        .where('Appointment_Service', isEqualTo: selectedService)
+        .where('Appointment_Campus', isEqualTo: selectedCampus)
+        .get();
+
+    if (existingBookings.docs.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'This timeslot has just been booked. Please select another timeslot.'),
+        ),
+      );
+      await _fetchAvailableTimeslots();
+      return;
+    }
+
+    // Add a new appointment to Firestore
+    final newAppointmentRef =
+        FirebaseFirestore.instance.collection('Appointment').doc();
+
+    String appointmentReason = reasonController.text.trim();
+
+    final appointmentData = {
+      'Appointment_ID': newAppointmentRef.id,
+      'Appointment_Date': formattedDate,
+      'Appointment_Time': selectedTimeslot,
+      'Appointment_Campus': selectedCampus,
+      'Appointment_Service': selectedService,
+      'Appointment_Reason': appointmentReason,
+      'Created_At': FieldValue.serverTimestamp(),
+      'User_ID': currentUser.uid,
+    };
+
+    await newAppointmentRef.set(appointmentData);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Your booking has been successfully booked.')),
+      );
+      Navigator.pop(context);
+    }
+  } catch (e) {
+    print('Error booking appointment: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error booking appointment: $e')),
+      );
+    }
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
