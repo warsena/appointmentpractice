@@ -13,9 +13,9 @@ class _CreateBulletinState extends State<CreateBulletin> {
   // Global key for form validation
   final _formKey = GlobalKey<FormState>();
 
-  // Text controllers for title and description input fields
+  // Text controllers for title and image URL input fields
   final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _imageUrlController = TextEditingController();
 
   // Variables to store selected start and end dates
   DateTime? _startDate;
@@ -28,8 +28,8 @@ class _CreateBulletinState extends State<CreateBulletin> {
       context: context,
       // Initial date set to current date
       initialDate: DateTime.now(),
-      // Allowed date range from year 2000 to 2100
-      firstDate: DateTime(2000),
+      // Set the first selectable date to the current date
+      firstDate: DateTime.now(),
       lastDate: DateTime(2100),
       // Custom theming for date picker
       builder: (context, child) {
@@ -79,7 +79,7 @@ class _CreateBulletinState extends State<CreateBulletin> {
             .set({
           'Bulletin_ID': bulletinId, // Store the unique ID
           'Bulletin_Title': _titleController.text,
-          'Bulletin_Description': _descriptionController.text,
+          'Bulletin_Image_URL': _imageUrlController.text, // Store the image URL
           // Convert dates to ISO 8601 string format for storage
           'Bulletin_Start_Date': _startDate!.toIso8601String(),
           'Bulletin_End_Date': _endDate!.toIso8601String(),
@@ -100,7 +100,7 @@ class _CreateBulletinState extends State<CreateBulletin> {
         // Reset form and clear input fields
         _formKey.currentState!.reset();
         _titleController.clear();
-        _descriptionController.clear();
+        _imageUrlController.clear();
         setState(() {
           _startDate = null;
           _endDate = null;
@@ -183,13 +183,12 @@ class _CreateBulletinState extends State<CreateBulletin> {
                     ),
                     const SizedBox(height: 16.0),
 
-                    // Description input field with custom decoration
+                    // Image URL input field with custom decoration
                     TextFormField(
-                      controller: _descriptionController,
+                      controller: _imageUrlController,
                       decoration: InputDecoration(
-                        labelText: 'Description',
-                        prefixIcon:
-                            const Icon(Icons.description, color: Colors.teal),
+                        labelText: 'Image URL',
+                        prefixIcon: const Icon(Icons.image, color: Colors.teal),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -199,11 +198,10 @@ class _CreateBulletinState extends State<CreateBulletin> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      maxLines: 3, // Allow multiple lines for description
-                      // Validator to ensure description is not empty
+                      // Validator to ensure image URL is not empty
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter a description';
+                          return 'Please enter an image URL';
                         }
                         return null;
                       },
@@ -290,7 +288,8 @@ class _CreateBulletinState extends State<CreateBulletin> {
                     ElevatedButton(
                       onPressed: _createBulletin,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 100, 200, 185),
+                        backgroundColor:
+                            const Color.fromARGB(255, 100, 200, 185),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -300,8 +299,8 @@ class _CreateBulletinState extends State<CreateBulletin> {
                         'Create Bulletin',
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black, // Set text color to white
+                          color: Colors.black, // White text color
+                          fontWeight: FontWeight.bold, // Bold text
                         ),
                       ),
                     ),
@@ -313,13 +312,5 @@ class _CreateBulletinState extends State<CreateBulletin> {
         ),
       ),
     );
-  }
-
-  // Dispose controllers to prevent memory leaks
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
   }
 }

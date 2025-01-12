@@ -8,7 +8,7 @@ class BulletinList extends StatelessWidget {
 
   // Method to show edit confirmation dialog
   Future<bool> _showEditConfirmationDialog(BuildContext context) async {
-    return await showDialog<bool>(
+    return await showDialog<bool>( 
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
@@ -35,7 +35,6 @@ class BulletinList extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Header with icon
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -49,7 +48,6 @@ class BulletinList extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Title
                 const Text(
                   'Edit Bulletin',
                   style: TextStyle(
@@ -58,7 +56,6 @@ class BulletinList extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                // Content
                 const Text(
                   'You are about to edit this bulletin. Would you like to proceed?',
                   textAlign: TextAlign.center,
@@ -68,11 +65,9 @@ class BulletinList extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                // Action buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Cancel button
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(false),
                       style: TextButton.styleFrom(
@@ -87,7 +82,6 @@ class BulletinList extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    // Edit button
                     ElevatedButton(
                       onPressed: () => Navigator.of(context).pop(true),
                       style: ElevatedButton.styleFrom(
@@ -145,7 +139,6 @@ class BulletinList extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Warning icon
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -159,7 +152,6 @@ class BulletinList extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Title
                 const Text(
                   'Delete Bulletin',
                   style: TextStyle(
@@ -168,7 +160,6 @@ class BulletinList extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                // Content
                 const Text(
                   'Are you sure you want to delete this bulletin? This action cannot be undone.',
                   textAlign: TextAlign.center,
@@ -178,7 +169,6 @@ class BulletinList extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                // Action buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -323,48 +313,35 @@ class BulletinList extends StatelessWidget {
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                 ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 2,
                               ),
                             ),
+                            const SizedBox(width: 8),
                             Row(
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.edit, color: Colors.teal),
+                                  icon: const Icon(Icons.edit),
+                                  color: Colors.teal,
                                   onPressed: () async {
-                                    bool confirm = await _showEditConfirmationDialog(context);
-                                    if (confirm) {
-                                      Navigator.pushReplacement(
+                                    bool confirmEdit = await _showEditConfirmationDialog(context);
+                                    if (confirmEdit) {
+                                      Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => UpdateBulletin(bulletinId: docId),
+                                          builder: (context) => UpdateBulletin(docId: docId),
                                         ),
                                       );
                                     }
                                   },
                                 ),
                                 IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  icon: const Icon(Icons.delete),
+                                  color: Colors.red,
                                   onPressed: () async {
-                                    bool confirm = await _deleteBulletin(context, docId);
-                                    if (confirm) {
-                                      try {
-                                        await FirebaseFirestore.instance
-                                            .collection('Health_Bulletin')
-                                            .doc(docId)
-                                            .delete();
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Bulletin deleted successfully'),
-                                            backgroundColor: Colors.green,
-                                          ),
-                                        );
-                                      } catch (e) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text('Error deleting bulletin: $e'),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
-                                      }
+                                    bool confirmDelete = await _deleteBulletin(context, docId);
+                                    if (confirmDelete) {
+                                      await FirebaseFirestore.instance.collection('Health_Bulletin').doc(docId).delete();
                                     }
                                   },
                                 ),
@@ -378,17 +355,91 @@ class BulletinList extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              bulletin['Bulletin_Description'] ?? 'No description',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[800],
+                            if (bulletin['Bulletin_Image_URL'] != null && bulletin['Bulletin_Image_URL'].isNotEmpty)
+                              Container(
+                                width: MediaQuery.of(context).size.width,
+                                constraints: BoxConstraints(
+                                  maxHeight: MediaQuery.of(context).size.height * 0.3,
+                                ),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                clipBehavior: Clip.hardEdge,
+                                child: Image.network(
+                                  bulletin['Bulletin_Image_URL'],
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      height: 200,
+                                      color: Colors.grey[200],
+                                      child: const Center(
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.error_outline,
+                                              color: Colors.grey,
+                                              size: 40,
+                                            ),
+                                            SizedBox(height: 8),
+                                            Text(
+                                              'Failed to load image',
+                                              style: TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  loadingBuilder: (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Container(
+                                      height: 200,
+                                      color: Colors.grey[100],
+                                      child: Center(
+                                        child: CircularProgressIndicator(
+                                          value: loadingProgress.expectedTotalBytes != null
+                                              ? loadingProgress.cumulativeBytesLoaded /
+                                                  loadingProgress.expectedTotalBytes!
+                                              : null,
+                                          color: Colors.teal,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              )
+                            else
+                              Container(
+                                height: 200,
+                                color: Colors.grey[100],
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.image_not_supported,
+                                        color: Colors.grey[400],
+                                        size: 40,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'No image available',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
                             const SizedBox(height: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
                                 color: Colors.teal.shade50,
                                 borderRadius: BorderRadius.circular(8),

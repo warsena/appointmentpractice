@@ -3,122 +3,118 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Main widget to update the bulletin
 class UpdateBulletin extends StatefulWidget {
-  final String bulletinId;  // ID of the bulletin being updated
+  final String docId; // ID of the bulletin being updated
 
-  const UpdateBulletin({Key? key, required this.bulletinId}) : super(key: key);
+  const UpdateBulletin({Key? key, required this.docId}) : super(key: key);
 
   @override
   State<UpdateBulletin> createState() => _UpdateBulletinState();
 }
 
 class _UpdateBulletinState extends State<UpdateBulletin> {
-  final _formKey = GlobalKey<FormState>();  // Key for form validation
-  final TextEditingController _titleController = TextEditingController();  // Controller for title input
-  final TextEditingController _descriptionController = TextEditingController();  // Controller for description input
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _imageUrlController = TextEditingController();
 
-  DateTime? _startDate;  // Store the selected start date
-  DateTime? _endDate;  // Store the selected end date
-  bool _isLoading = true;  // Loading state to show a loading spinner while fetching data
+  DateTime? _startDate;
+  DateTime? _endDate;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadBulletinData();  // Fetch the bulletin data on initialization
+    _loadBulletinData(); // Use docId here
   }
 
-  // Load the data of the bulletin from Firestore
   Future<void> _loadBulletinData() async {
     try {
       final doc = await FirebaseFirestore.instance
           .collection('Health_Bulletin')
-          .doc(widget.bulletinId)
+          .doc(widget.docId) // Use docId to fetch the bulletin
           .get();
 
       if (doc.exists) {
         setState(() {
-          _titleController.text = doc['Bulletin_Title'];  // Set the title from Firestore
-          _descriptionController.text = doc['Bulletin_Description'];  // Set the description from Firestore
-          _startDate = DateTime.parse(doc['Bulletin_Start_Date']);  // Parse and set the start date
-          _endDate = DateTime.parse(doc['Bulletin_End_Date']);  // Parse and set the end date
-          _isLoading = false;  // Stop loading once the data is fetched
+          _titleController.text = doc['Bulletin_Title'];
+          _imageUrlController.text = doc['Bulletin_Image_URL'];
+          _startDate = DateTime.parse(doc['Bulletin_Start_Date']);
+          _endDate = DateTime.parse(doc['Bulletin_End_Date']);
+          _isLoading = false;
         });
       } else {
-        _showErrorMessage('Bulletin not found');  // Show error if bulletin doesn't exist
-        Navigator.pop(context);  // Go back to the previous screen
+        _showErrorMessage('Bulletin not found');
+        Navigator.pop(context);
       }
     } catch (e) {
-      _showErrorMessage('Error loading bulletin: $e');  // Handle any errors
+      _showErrorMessage('Error loading bulletin: $e');
     }
   }
 
-  // Show a date picker for selecting the start or end date
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
     final pickedDate = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),  // Default to current date
-      firstDate: DateTime(2000),  // Allow dates from the year 2000
-      lastDate: DateTime(2100),  // Allow dates up to the year 2100
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Colors.teal,  // Custom color for the date picker
+              primary: Colors.teal,
               onPrimary: Colors.white,
               surface: Colors.white,
               onSurface: Colors.black,
             ),
-            dialogBackgroundColor: Colors.white,  // Set background color of the dialog
+            dialogBackgroundColor: Colors.white,
           ),
-          child: child!,  // Return the date picker child widget
+          child: child!,
         );
       },
     );
 
-    // If a date is selected, update the respective start or end date
     if (pickedDate != null) {
       setState(() {
         if (isStartDate) {
-          _startDate = pickedDate;  // Set start date
+          _startDate = pickedDate;
         } else {
-          _endDate = pickedDate;  // Set end date
+          _endDate = pickedDate;
         }
       });
     }
   }
 
-  // Update the bulletin data in Firestore
   Future<void> _updateBulletin() async {
-    if (_formKey.currentState!.validate() && _startDate != null && _endDate != null) {
+    if (_formKey.currentState!.validate() &&
+        _startDate != null &&
+        _endDate != null) {
       try {
         await FirebaseFirestore.instance
             .collection('Health_Bulletin')
-            .doc(widget.bulletinId)
+            .doc(widget.docId) // Use docId to update the bulletin
             .update({
-          'Bulletin_Title': _titleController.text,  // Update title
-          'Bulletin_Description': _descriptionController.text,  // Update description
-          'Bulletin_Start_Date': _startDate!.toIso8601String(),  // Update start date
-          'Bulletin_End_Date': _endDate!.toIso8601String(),  // Update end date
+          'Bulletin_Title': _titleController.text,
+          'Bulletin_Image_URL': _imageUrlController.text,
+          'Bulletin_Start_Date': _startDate!.toIso8601String(),
+          'Bulletin_End_Date': _endDate!.toIso8601String(),
         });
 
-        _showSuccessMessage('Bulletin updated successfully');  // Show success message
-        Navigator.pop(context);  // Go back to the previous screen
+        _showSuccessMessage('Bulletin updated successfully');
+        Navigator.pop(context);
       } catch (e) {
-        _showErrorMessage('Error updating bulletin: $e');  // Handle update errors
+        _showErrorMessage('Error updating bulletin: $e');
       }
     }
   }
 
-  // Show a success message using a SnackBar
   void _showSuccessMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.blueGrey),  // Green background for success
+      SnackBar(content: Text(message), backgroundColor: Colors.blueGrey),
     );
   }
 
-  // Show an error message using a SnackBar
   void _showErrorMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),  // Red background for errors
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
@@ -127,90 +123,65 @@ class _UpdateBulletinState extends State<UpdateBulletin> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('Update Bulletin', style: TextStyle(fontWeight: FontWeight.bold)),  // AppBar title
-        backgroundColor: const Color.fromARGB(255, 100, 200, 185),  // AppBar background color
-        elevation: 0,  // Remove shadow from AppBar
+        title: const Text('Update Bulletin',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: const Color.fromARGB(255, 100, 200, 185),
+        elevation: 0,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.teal))  // Show a loading spinner while fetching data
+          ? const Center(child: CircularProgressIndicator(color: Colors.teal))
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),  // Padding around the content
+              padding: const EdgeInsets.all(16.0),
               child: Card(
-                elevation: 4,  // Card shadow elevation
+                elevation: 4,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15)),  // Rounded corners for the card
+                    borderRadius: BorderRadius.circular(15)),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),  // Padding inside the card
+                  padding: const EdgeInsets.all(16.0),
                   child: Form(
-                    key: _formKey,  // Set form key for validation
+                    key: _formKey,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,  // Stretch content to full width
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Title input field
                         TextFormField(
                           controller: _titleController,
                           decoration: InputDecoration(
-                            labelText: 'Title',  // Label text
-                            prefixIcon: const Icon(Icons.title, color: Colors.teal),  // Icon before the input
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),  // Border style
+                            labelText: 'Title',
+                            prefixIcon:
+                                const Icon(Icons.title, color: Colors.teal),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10)),
                             focusedBorder: OutlineInputBorder(
-                              borderSide: const BorderSide(color: Colors.teal, width: 2),
+                              borderSide: const BorderSide(
+                                  color: Colors.teal, width: 2),
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                           validator: (value) => value == null || value.isEmpty
-                              ? 'Please enter a title'  // Validation message
-                              : null,
-                        ),
-                        const SizedBox(height: 16.0),  // Spacing
-                        // Description input field
-                        TextFormField(
-                          controller: _descriptionController,
-                          decoration: InputDecoration(
-                            labelText: 'Description',
-                            prefixIcon: const Icon(Icons.description, color: Colors.teal),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: const BorderSide(color: Colors.teal, width: 2),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          maxLines: 3,  // Multi-line description
-                          validator: (value) => value == null || value.isEmpty
-                              ? 'Please enter a description'  // Validation message
+                              ? 'Please enter a title'
                               : null,
                         ),
                         const SizedBox(height: 16.0),
-                        // Start Date selection row
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.grey),  // Border for the date picker field
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: ListTile(
-                                  leading: const Icon(Icons.calendar_today, color: Colors.teal),  // Calendar icon
-                                  title: Text(
-                                    _startDate == null
-                                        ? 'Start Date'  // Placeholder text if no date selected
-                                        : _startDate!.toLocal().toString().split(' ')[0],  // Format selected date
-                                    style: TextStyle(
-                                      color: _startDate == null ? Colors.grey : Colors.black,  // Change text color if no date selected
-                                    ),
-                                  ),
-                                  trailing: IconButton(
-                                    icon: const Icon(Icons.edit_calendar, color: Colors.teal),  // Edit icon to trigger date picker
-                                    onPressed: () => _selectDate(context, true),  // Call date picker for start date
-                                  ),
-                                ),
-                              ),
+                        TextFormField(
+                          controller: _imageUrlController,
+                          decoration: InputDecoration(
+                            labelText: 'Image URL',
+                            prefixIcon: const Icon(Icons.description,
+                                color: Colors.teal),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(
+                                  color: Colors.teal, width: 2),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                          ],
+                          ),
+                          maxLines: 3,
+                          validator: (value) => value == null || value.isEmpty
+                              ? 'Please enter a description'
+                              : null,
                         ),
-                        const SizedBox(height: 16.0),  // Spacing
-                        // End Date selection row
+                        const SizedBox(height: 16.0),
                         Row(
                           children: [
                             Expanded(
@@ -220,18 +191,61 @@ class _UpdateBulletinState extends State<UpdateBulletin> {
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: ListTile(
-                                  leading: const Icon(Icons.calendar_today, color: Colors.teal),
+                                  leading: const Icon(Icons.calendar_today,
+                                      color: Colors.teal),
                                   title: Text(
-                                    _endDate == null
-                                        ? 'End Date'  // Placeholder text if no date selected
-                                        : _endDate!.toLocal().toString().split(' ')[0],  // Format selected date
+                                    _startDate == null
+                                        ? 'Start Date'
+                                        : _startDate!
+                                            .toLocal()
+                                            .toString()
+                                            .split(' ')[0],
                                     style: TextStyle(
-                                      color: _endDate == null ? Colors.grey : Colors.black,
+                                      color: _startDate == null
+                                          ? Colors.grey
+                                          : Colors.black,
                                     ),
                                   ),
                                   trailing: IconButton(
-                                    icon: const Icon(Icons.edit_calendar, color: Colors.teal),
-                                    onPressed: () => _selectDate(context, false),  // Call date picker for end date
+                                    icon: const Icon(Icons.edit_calendar,
+                                        color: Colors.teal),
+                                    onPressed: () => _selectDate(context, true),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16.0),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: ListTile(
+                                  leading: const Icon(Icons.calendar_today,
+                                      color: Colors.teal),
+                                  title: Text(
+                                    _endDate == null
+                                        ? 'End Date'
+                                        : _endDate!
+                                            .toLocal()
+                                            .toString()
+                                            .split(' ')[0],
+                                    style: TextStyle(
+                                      color: _endDate == null
+                                          ? Colors.grey
+                                          : Colors.black,
+                                    ),
+                                  ),
+                                  trailing: IconButton(
+                                    icon: const Icon(Icons.edit_calendar,
+                                        color: Colors.teal),
+                                    onPressed: () =>
+                                        _selectDate(context, false),
                                   ),
                                 ),
                               ),
@@ -239,17 +253,25 @@ class _UpdateBulletinState extends State<UpdateBulletin> {
                           ],
                         ),
                         const SizedBox(height: 24.0),
-                        // Update button to save changes
                         ElevatedButton(
                           onPressed: _updateBulletin,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color.fromARGB(255, 100, 200, 185),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
                           child: const Text(
-                            'Update Bulletin',  // Button text
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+                            'Update Bulletin',
+                            style: TextStyle(
+                              fontWeight:
+                                  FontWeight.bold, // Makes the text bold
+                              color: Colors.black, // Makes the text white
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color.fromARGB(255, 100, 200, 185),// Background color of the button
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 16.0), // Padding
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(10), // Button shape
+                            ),
                           ),
                         ),
                       ],
@@ -259,12 +281,5 @@ class _UpdateBulletinState extends State<UpdateBulletin> {
               ),
             ),
     );
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();  // Dispose the controller for title
-    _descriptionController.dispose();  // Dispose the controller for description
-    super.dispose();
   }
 }
