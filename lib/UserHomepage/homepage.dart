@@ -298,7 +298,6 @@ class HealthBulletinPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get the current date at the start of the day
     final now = DateTime.now();
     final currentDate = DateTime(now.year, now.month, now.day);
 
@@ -308,14 +307,12 @@ class HealthBulletinPage extends StatelessWidget {
           .orderBy('Bulletin_Start_Date', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
-        // Loading state
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
             child: CircularProgressIndicator(color: Colors.teal),
           );
         }
 
-        // Error state
         if (snapshot.hasError) {
           return Center(
             child: Text(
@@ -325,7 +322,6 @@ class HealthBulletinPage extends StatelessWidget {
           );
         }
 
-        // No bulletins
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const Center(
             child: Text(
@@ -335,7 +331,6 @@ class HealthBulletinPage extends StatelessWidget {
           );
         }
 
-        // Filter and display active bulletins
         final bulletins = snapshot.data!.docs.where((doc) {
           final data = doc.data() as Map<String, dynamic>;
           final endDateStr = data['Bulletin_End_Date'];
@@ -344,7 +339,6 @@ class HealthBulletinPage extends StatelessWidget {
           final endDate = DateTime.tryParse(endDateStr);
           if (endDate == null) return false;
 
-          // Set end date to end of day for comparison
           final endDateCompare = DateTime(
             endDate.year,
             endDate.month,
@@ -391,12 +385,51 @@ class HealthBulletinPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      bulletin['Bulletin_Description'] ??
-                          'No description available',
-                      style: const TextStyle(fontSize: 16),
-                      textAlign: TextAlign.justify, //Justify text
-                    ),
+                    if (bulletin['Bulletin_Image_URL'] != null)
+                      Container(
+                        width: MediaQuery.of(context).size.width,
+                        constraints: BoxConstraints(
+                          maxHeight: MediaQuery.of(context).size.height * 0.3,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        clipBehavior: Clip.hardEdge,
+                        child: Image.network(
+                          bulletin['Bulletin_Image_URL']!,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              height: 200,
+                              color: Colors.grey[200],
+                              child: const Center(
+                                child: Icon(
+                                  Icons.error_outline,
+                                  color: Colors.grey,
+                                  size: 40,
+                                ),
+                              ),
+                            );
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              height: 200,
+                              color: Colors.grey[100],
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                                  color: Colors.teal,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    const SizedBox(height: 8),
                   ],
                 ),
               ),
@@ -499,7 +532,7 @@ class AppointmentPage extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.error_outline,
-                          color: Colors.red[300], // Error icon color 
+                          color: Colors.red[300], // Error icon color
                           size: 80,
                         ),
                         const SizedBox(height: 20),
@@ -909,7 +942,7 @@ class _UpcomingTabState extends State<UpcomingTab> {
           .doc(appointment['Appointment_ID'])
           .update({
         'Appointment_Attendance': 'Attend',
-        'isBookingConfirmed': true,
+        'isAttendanceConfirmed': true,
       });
 
       setState(() {
@@ -917,7 +950,7 @@ class _UpcomingTabState extends State<UpcomingTab> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Booking confirmed successfully')),
+        const SnackBar(content: Text('Attendance confirmed successfully')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -960,6 +993,25 @@ class _UpcomingTabState extends State<UpcomingTab> {
 
         final appointments = snapshot.data!.docs;
 
+        // Sort appointments: latest upcoming first, past ones last
+        appointments.sort((a, b) {
+          DateTime dateA =
+              DateTime.parse((a['Appointment_Date'] ?? '').toString());
+          DateTime dateB =
+              DateTime.parse((b['Appointment_Date'] ?? '').toString());
+
+          bool isPastA = _isAppointmentPast(a['Appointment_Date']);
+          bool isPastB = _isAppointmentPast(b['Appointment_Date']);
+
+          // If both are past or both are upcoming, sort by date descending
+          if (isPastA == isPastB) {
+            return dateB.compareTo(dateA);
+          }
+
+          // Place upcoming appointments before past ones
+          return isPastA ? 1 : -1;
+        });
+
         return ListView.builder(
           padding: const EdgeInsets.all(12.0),
           itemCount: appointments.length,
@@ -971,7 +1023,7 @@ class _UpcomingTabState extends State<UpcomingTab> {
 
             bool isPastAppointment = _isAppointmentPast(appointmentDate);
             bool isConfirmed =
-                appointment['isBookingConfirmed'] ?? false; // Check Firestore
+                appointment['isAttendanceConfirmed'] ?? false; // Check Firestore
 
             return Card(
               elevation: 4,
@@ -1043,8 +1095,8 @@ class _UpcomingTabState extends State<UpcomingTab> {
                             icon: const Icon(Icons.check,
                                 size: 16, color: Colors.white),
                             label: isConfirmed
-                                ? const Text('Booking Confirmed')
-                                : const Text('Confirm Booking'),
+                                ? const Text('Attendance Confirmed')
+                                : const Text('Confirm Attendance'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
                               foregroundColor: Colors.white,
