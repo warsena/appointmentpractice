@@ -167,7 +167,7 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                          _buildPDFInfoRow(
+                      _buildPDFInfoRow(
                           'Doctor',
                           data['Doctor_Name'] ?? 'Not specified',
                           font,
@@ -193,6 +193,8 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
                         ),
                       ),
                       pw.SizedBox(height: 10),
+                      _buildPDFInfoRow('Username',
+                          data['User_Name'] ?? 'Not specified', font, boldFont),
                       _buildPDFInfoRow(
                           'Date',
                           data['Appointment_Date'] ?? 'Not specified',
@@ -333,46 +335,40 @@ class _UserMedicalCertificateState extends State<UserMedicalCertificate> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Add UMP logo at the top of the card
+              Center(
+                child: Image.asset(
+                  'assets/images/ump_logo.png',
+                  height: 60, // Adjust size as needed
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(height: 16),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.end, // Align to the right
                 children: [
-                  Flexible(
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     child: Text(
-                      'MC ${data['User_Name'] ?? 'Unknown'}',
+                      data['MC_Duration']?.toString() != null
+                          ? '${data['MC_Duration']} days'
+                          : 'Duration N/A',
                       style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
                         color: Colors.teal,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.teal.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          data['MC_Duration']?.toString() != null
-                              ? '${data['MC_Duration']} days'
-                              : 'Duration N/A',
-                          style: const TextStyle(
-                            color: Colors.teal,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        icon: const Icon(Icons.share, color: Colors.teal),
-                        onPressed: () =>
-                            _generateAndDownloadPDF(data, documentId),
-                        tooltip: 'Share MC',
-                      ),
-                    ],
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.share, color: Colors.teal),
+                    onPressed: () => _generateAndDownloadPDF(data, documentId),
+                    tooltip: 'Share MC',
                   ),
                 ],
               ),
